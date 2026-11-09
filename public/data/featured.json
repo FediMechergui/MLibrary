@@ -1,0 +1,959 @@
+{
+  "books": [
+    {
+      "id": "gutenberg:1342",
+      "title": "Pride and Prejudice",
+      "authors": [
+        "Austen, Jane"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1342",
+      "cover": null,
+      "subjects": [
+        "England -- Fiction",
+        "Young women -- Fiction",
+        "Love stories",
+        "Sisters -- Fiction",
+        "Domestic fiction",
+        "Courtship -- Fiction",
+        "Social classes -- Fiction"
+      ],
+      "description": "England -- Fiction · Young women -- Fiction · Love stories · Sisters -- Fiction · Domestic fiction · Courtship -- Fiction · Social classes -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1998-06-01"
+    },
+    {
+      "id": "gutenberg:11",
+      "title": "Alice's Adventures in Wonderland",
+      "authors": [
+        "Carroll, Lewis"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/11",
+      "cover": null,
+      "subjects": [
+        "Fantasy fiction",
+        "Children's stories",
+        "Imaginary places -- Juvenile fiction",
+        "Alice (Fictitious character from Carroll) -- Juvenile fiction"
+      ],
+      "description": "Fantasy fiction · Children's stories · Imaginary places -- Juvenile fiction · Alice (Fictitious character from Carroll) -- Juvenile fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2008-06-27"
+    },
+    {
+      "id": "gutenberg:84",
+      "title": "Frankenstein; or, The modern Prometheus",
+      "authors": [
+        "Shelley, Mary Wollstonecraft"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/84",
+      "cover": null,
+      "subjects": [
+        "Science fiction",
+        "Horror tales",
+        "Gothic fiction",
+        "Scientists -- Fiction",
+        "Monsters -- Fiction",
+        "Frankenstein, Victor (Fictitious character) -- Fiction",
+        "Frankenstein's monster (Fictitious character) -- Fiction"
+      ],
+      "description": "Science fiction · Horror tales · Gothic fiction · Scientists -- Fiction · Monsters -- Fiction · Frankenstein, Victor (Fictitious character) -- Fiction · Frankenstein's monster (Fictitious character) -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1993-10-01"
+    },
+    {
+      "id": "gutenberg:2701",
+      "title": "Moby Dick; Or, The Whale",
+      "authors": [
+        "Melville, Herman"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/2701",
+      "cover": null,
+      "subjects": [
+        "Whaling -- Fiction",
+        "Sea stories",
+        "Psychological fiction",
+        "Ship captains -- Fiction",
+        "Adventure stories",
+        "Mentally ill -- Fiction",
+        "Ahab, Captain (Fictitious character) -- Fiction",
+        "Whales -- Fiction"
+      ],
+      "description": "Whaling -- Fiction · Sea stories · Psychological fiction · Ship captains -- Fiction · Adventure stories · Mentally ill -- Fiction · Ahab, Captain (Fictitious character) -- Fiction · Whales -- Fiction · Whaling ships -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2001-07-01"
+    },
+    {
+      "id": "gutenberg:174",
+      "title": "The Picture of Dorian Gray",
+      "authors": [
+        "Wilde, Oscar"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/174",
+      "cover": null,
+      "subjects": [
+        "Didactic fiction",
+        "Supernatural -- Fiction",
+        "Conduct of life -- Fiction",
+        "Portraits -- Fiction",
+        "Great Britain -- History -- Victoria, 1837-1901 -- Fiction",
+        "London (England) -- History -- 1800-1950 -- Fiction",
+        "Appearance (Philosophy) -- Fiction",
+        "Paranormal fiction"
+      ],
+      "description": "Didactic fiction · Supernatural -- Fiction · Conduct of life -- Fiction · Portraits -- Fiction · Great Britain -- History -- Victoria, 1837-1901 -- Fiction · London (England) -- History -- 1800-1950 -- Fiction · Appearance (Philosophy) -- Fiction · Paranormal fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1994-10-01"
+    },
+    {
+      "id": "gutenberg:1661",
+      "title": "The Adventures of Sherlock Holmes",
+      "authors": [
+        "Doyle, Arthur Conan"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1661",
+      "cover": null,
+      "subjects": [
+        "Holmes, Sherlock (Fictitious character) -- Fiction",
+        "Private investigators -- England -- Fiction",
+        "Detective and mystery stories, English"
+      ],
+      "description": "Holmes, Sherlock (Fictitious character) -- Fiction · Private investigators -- England -- Fiction · Detective and mystery stories, English",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1999-03-01"
+    },
+    {
+      "id": "gutenberg:1184",
+      "title": "The Count of Monte Cristo",
+      "authors": [
+        "Dumas, Alexandre",
+        "Maquet, Auguste"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1184",
+      "cover": null,
+      "subjects": [
+        "Historical fiction",
+        "Revenge -- Fiction",
+        "Adventure stories",
+        "Prisoners -- Fiction",
+        "France -- History -- 19th century -- Fiction",
+        "Pirates -- Fiction",
+        "Dantès, Edmond (Fictitious character) -- Fiction"
+      ],
+      "description": "Historical fiction · Revenge -- Fiction · Adventure stories · Prisoners -- Fiction · France -- History -- 19th century -- Fiction · Pirates -- Fiction · Dantès, Edmond (Fictitious character) -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1998-01-01"
+    },
+    {
+      "id": "gutenberg:141",
+      "title": "Mansfield Park",
+      "authors": [
+        "Austen, Jane"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/141",
+      "cover": null,
+      "subjects": [
+        "England -- Fiction",
+        "Young women -- Fiction",
+        "Love stories",
+        "Domestic fiction",
+        "Country homes -- Fiction",
+        "Adoptees -- Fiction",
+        "Children of the rich -- Fiction",
+        "Cousins -- Fiction"
+      ],
+      "description": "England -- Fiction · Young women -- Fiction · Love stories · Domestic fiction · Country homes -- Fiction · Adoptees -- Fiction · Children of the rich -- Fiction · Cousins -- Fiction · Uncles -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1994-06-01"
+    },
+    {
+      "id": "gutenberg:2650",
+      "title": "Du côté de chez Swann",
+      "authors": [
+        "Proust, Marcel"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/2650",
+      "cover": null,
+      "subjects": [
+        "Autobiographical fiction",
+        "Villages -- France -- Fiction",
+        "France -- Social life and customs -- 19th century -- Fiction"
+      ],
+      "description": "Autobiographical fiction · Villages -- France -- Fiction · France -- Social life and customs -- 19th century -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2001-05-01"
+    },
+    {
+      "id": "gutenberg:13951",
+      "title": "Les trois mousquetaires",
+      "authors": [
+        "Dumas, Alexandre",
+        "Maquet, Auguste"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/13951",
+      "cover": null,
+      "subjects": [
+        "Historical fiction",
+        "France -- History -- Louis XIII, 1610-1643 -- Fiction",
+        "Adventure and adventurers -- Fiction",
+        "Swordsmen -- Fiction"
+      ],
+      "description": "Historical fiction · France -- History -- Louis XIII, 1610-1643 -- Fiction · Adventure and adventurers -- Fiction · Swordsmen -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2004-11-04"
+    },
+    {
+      "id": "gutenberg:74",
+      "title": "The Adventures of Tom Sawyer, Complete",
+      "authors": [
+        "Twain, Mark"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/74",
+      "cover": null,
+      "subjects": [
+        "Humorous stories",
+        "Bildungsromans",
+        "Boys -- Fiction",
+        "Male friendship -- Fiction",
+        "Adventure stories",
+        "Missouri -- Fiction",
+        "Sawyer, Tom (Fictitious character) -- Fiction",
+        "Child witnesses -- Fiction"
+      ],
+      "description": "Humorous stories · Bildungsromans · Boys -- Fiction · Male friendship -- Fiction · Adventure stories · Missouri -- Fiction · Sawyer, Tom (Fictitious character) -- Fiction · Child witnesses -- Fiction · Runaway children -- Fiction · Mississippi River Valley -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2004-07-01"
+    },
+    {
+      "id": "gutenberg:98",
+      "title": "A Tale of Two Cities",
+      "authors": [
+        "Dickens, Charles"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/98",
+      "cover": null,
+      "subjects": [
+        "Historical fiction",
+        "France -- History -- Revolution, 1789-1799 -- Fiction",
+        "London (England) -- History -- 18th century -- Fiction",
+        "War stories",
+        "Executions and executioners -- Fiction",
+        "French -- England -- London -- Fiction",
+        "Lookalikes -- Fiction",
+        "British -- France -- Paris -- Fiction"
+      ],
+      "description": "Historical fiction · France -- History -- Revolution, 1789-1799 -- Fiction · London (England) -- History -- 18th century -- Fiction · War stories · Executions and executioners -- Fiction · French -- England -- London -- Fiction · Lookalikes -- Fiction · British -- France -- Paris -- Fiction · Paris (France) -- History -- 1789-1799 -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1994-01-01"
+    },
+    {
+      "id": "gutenberg:345",
+      "title": "Dracula",
+      "authors": [
+        "Stoker, Bram"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/345",
+      "cover": null,
+      "subjects": [
+        "Horror tales",
+        "Epistolary fiction",
+        "Gothic fiction",
+        "Vampires -- Fiction",
+        "Dracula, Count (Fictitious character) -- Fiction",
+        "Transylvania (Romania) -- Fiction",
+        "Whitby (England) -- Fiction"
+      ],
+      "description": "Horror tales · Epistolary fiction · Gothic fiction · Vampires -- Fiction · Dracula, Count (Fictitious character) -- Fiction · Transylvania (Romania) -- Fiction · Whitby (England) -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "1995-10-01"
+    },
+    {
+      "id": "gutenberg:1232",
+      "title": "The Prince",
+      "authors": [
+        "Machiavelli, Niccolò",
+        "Marriott, W. K. (William Kenaz)"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/1232",
+      "cover": null,
+      "subjects": [
+        "State, The -- Early works to 1800",
+        "Political science -- Philosophy -- Early works to 1800",
+        "Political ethics -- Early works to 1800"
+      ],
+      "description": "State, The -- Early works to 1800 · Political science -- Philosophy -- Early works to 1800 · Political ethics -- Early works to 1800",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2006-02-11"
+    },
+    {
+      "id": "gutenberg:5200",
+      "title": "Metamorphosis",
+      "authors": [
+        "Kafka, Franz",
+        "Wyllie, David (Translator) [Translator]"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/5200",
+      "cover": null,
+      "subjects": [
+        "Psychological fiction",
+        "Metamorphosis -- Fiction"
+      ],
+      "description": "Psychological fiction · Metamorphosis -- Fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2005-08-17"
+    },
+    {
+      "id": "gutenberg:219",
+      "title": "Heart of Darkness",
+      "authors": [
+        "Conrad, Joseph"
+      ],
+      "language": "en",
+      "languages": [
+        "en"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/219",
+      "cover": null,
+      "subjects": [
+        "Africa -- Fiction",
+        "Europeans -- Africa -- Fiction",
+        "Trading posts -- Fiction",
+        "Degeneration -- Fiction",
+        "Imperialism -- Fiction",
+        "Psychological fiction"
+      ],
+      "description": "Africa -- Fiction · Europeans -- Africa -- Fiction · Trading posts -- Fiction · Degeneration -- Fiction · Imperialism -- Fiction · Psychological fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2006-01-09"
+    },
+    {
+      "id": "gutenberg:79733",
+      "title": "Pages mystiques",
+      "authors": [
+        "Séverine"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79733",
+      "cover": null,
+      "subjects": [
+        "French essays"
+      ],
+      "description": "French essays",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-05"
+    },
+    {
+      "id": "gutenberg:79741",
+      "title": "Adorable Clio",
+      "authors": [
+        "Giraudoux, Jean"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79741",
+      "cover": null,
+      "subjects": [
+        "World War, 1914-1918 -- Personal narratives, French"
+      ],
+      "description": "World War, 1914-1918 -- Personal narratives, French",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-07"
+    },
+    {
+      "id": "gutenberg:79746",
+      "title": "Les liens invisibles",
+      "authors": [
+        "Lagerlöf, Selma",
+        "Bellessort, André"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79746",
+      "cover": null,
+      "subjects": [
+        "Swedish fiction -- Translations into French",
+        "Short stories, Swedish -- Translations into French"
+      ],
+      "description": "Swedish fiction -- Translations into French · Short stories, Swedish -- Translations into French",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-09"
+    },
+    {
+      "id": "gutenberg:79747",
+      "title": "L'histoire de Guillaume le Maréchal, T. 1",
+      "authors": [
+        "Meyer, Paul"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79747",
+      "cover": null,
+      "subjects": [
+        "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry",
+        "Great Britain -- History -- Angevin period, 1154-1216 -- Poetry",
+        "France -- History -- Capetians, 987-1328 -- Poetry"
+      ],
+      "description": "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry · Great Britain -- History -- Angevin period, 1154-1216 -- Poetry · France -- History -- Capetians, 987-1328 -- Poetry",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-09"
+    },
+    {
+      "id": "gutenberg:79748",
+      "title": "L'histoire de Guillaume le Maréchal, T. 2",
+      "authors": [
+        "Meyer, Paul"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79748",
+      "cover": null,
+      "subjects": [
+        "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry",
+        "Great Britain -- History -- Angevin period, 1154-1216 -- Poetry",
+        "France -- History -- Capetians, 987-1328 -- Poetry"
+      ],
+      "description": "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry · Great Britain -- History -- Angevin period, 1154-1216 -- Poetry · France -- History -- Capetians, 987-1328 -- Poetry",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-09"
+    },
+    {
+      "id": "gutenberg:79756",
+      "title": "L'histoire de Guillaume le Maréchal, T. 3",
+      "authors": [
+        "Meyer, Paul"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79756",
+      "cover": null,
+      "subjects": [
+        "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry",
+        "Great Britain -- History -- Angevin period, 1154-1216 -- Poetry",
+        "France -- History -- Capetians, 987-1328 -- Poetry"
+      ],
+      "description": "Pembroke, William Marshal, Earl of, 1144?-1219 -- Poetry · Great Britain -- History -- Angevin period, 1154-1216 -- Poetry · France -- History -- Capetians, 987-1328 -- Poetry",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-09"
+    },
+    {
+      "id": "gutenberg:79758",
+      "title": "Histoire d'un cheval de bois",
+      "authors": [
+        "Marcel, Jeanne",
+        "Bayard, Émile Antoine"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79758",
+      "cover": null,
+      "subjects": [
+        "Children's stories, French"
+      ],
+      "description": "Children's stories, French",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-10"
+    },
+    {
+      "id": "gutenberg:79760",
+      "title": "Réponse de M. Émile Faguet au discours de M. René Doumic",
+      "authors": [
+        "Faguet, Émile"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79760",
+      "cover": null,
+      "subjects": [
+        "Boissier, Gaston, 1823-1908"
+      ],
+      "description": "Boissier, Gaston, 1823-1908",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-10"
+    },
+    {
+      "id": "gutenberg:79762",
+      "title": "Le parement et triumphe des dames",
+      "authors": [
+        "La Marche, Olivier de",
+        "Desrey, Pierre"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79762",
+      "cover": null,
+      "subjects": [
+        "French literature -- To 1500"
+      ],
+      "description": "French literature -- To 1500",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-11"
+    },
+    {
+      "id": "gutenberg:79796",
+      "title": "Œuvres de Froissart: Chroniques, Tome 12, 1386-1389",
+      "authors": [
+        "Froissart, Jean",
+        "Kervyn de Lettenhove, Joseph Marie Bruno Constantin, Baron"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79796",
+      "cover": null,
+      "subjects": [
+        "Europe -- History -- 476-1492",
+        "Great Britain -- History -- 14th century",
+        "Burgundy (France) -- History",
+        "Hundred Years' War, 1339-1453",
+        "Flanders -- History",
+        "France -- History -- House of Valois, 1328-1589"
+      ],
+      "description": "Europe -- History -- 476-1492 · Great Britain -- History -- 14th century · Burgundy (France) -- History · Hundred Years' War, 1339-1453 · Flanders -- History · France -- History -- House of Valois, 1328-1589",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-15"
+    },
+    {
+      "id": "gutenberg:79836",
+      "title": "Pendragon",
+      "authors": [
+        "Assollant, Alfred",
+        "Gilbert, Camille"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79836",
+      "cover": null,
+      "subjects": [
+        "Historical fiction",
+        "Alexander, the Great, 356 B.C.-323 B.C. -- Juvenile fiction",
+        "Gauls -- Juvenile fiction"
+      ],
+      "description": "Historical fiction · Alexander, the Great, 356 B.C.-323 B.C. -- Juvenile fiction · Gauls -- Juvenile fiction",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-21"
+    },
+    {
+      "id": "gutenberg:79839",
+      "title": "Claude Monet",
+      "authors": [
+        "Geffroy, Gustave"
+      ],
+      "language": "fr",
+      "languages": [
+        "fr"
+      ],
+      "source": "gutenberg",
+      "sourceUrl": "https://www.gutenberg.org/ebooks/79839",
+      "cover": null,
+      "subjects": [
+        "Monet, Claude, 1840-1926"
+      ],
+      "description": "Monet, Claude, 1840-1926",
+      "access": "read",
+      "rights": "Project Gutenberg edition. US public-domain status is checked before online reading; check local rules for other countries.",
+      "formats": [
+        "TXT"
+      ],
+      "issued": "2026-10-22"
+    },
+    {
+      "id": "wikisource:ar:1611",
+      "title": "ألف ليلة وليلة/الجزء الرابع",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1611",
+      "cover": null,
+      "subjects": [],
+      "description": "&lt;ألف ليلة وليلة ومما يحكى أيها الملك السعيد أنه كان في مدينة مصر المحروسة رجل إسكافي يرقع الزرابين القديمة وكان اسمه معزة وكان له زوجةً اسمها فاطمة ولقبها",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 11996
+    },
+    {
+      "id": "wikisource:ar:1609",
+      "title": "ألف ليلة وليلة/الجزء الثاني",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1609",
+      "cover": null,
+      "subjects": [],
+      "description": "&lt;ألف ليلة وليلة قالت: بلغني أيها الملك السعيد أن الخليفة اقسم أنه لا يقتل إلا العبد لأن الشاب معذور، ثم أن الخليفة التفت إلى جعفر وقال له أحضر لي هذا العبد",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 23369
+    },
+    {
+      "id": "wikisource:ar:1612",
+      "title": "ألف ليلة وليلة",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1612",
+      "cover": null,
+      "subjects": [],
+      "description": "الأولين عبرة للآخرين و ها هي واحدة مما تركوه لنا فها هي واحدة منها إنها ألف ليلة وليلة طالعوها تجدون بها غرائب و عجائب . الجزء الأول الجزء الثاني الجزء الثالث",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 90
+    },
+    {
+      "id": "wikisource:ar:1876",
+      "title": "ألف ليلة وليلة/السندباد البحري",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1876",
+      "cover": null,
+      "subjects": [],
+      "description": "&lt;ألف ليلة وليلة قالت: بلغني أنه كان في زمن الخليفة أمير المؤمنين هارون الرشيد بمدينة بغداد رجل يقال له السندباد الحمال، وكان رجلاً فقير الحال يحمل تجارته",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 35686
+    },
+    {
+      "id": "wikisource:ar:1607",
+      "title": "ألف ليلة وليلة/الجزء الأول",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1607",
+      "cover": null,
+      "subjects": [],
+      "description": "لنا قتلها، وهذه الصبية اختطفتها ليلة عرسها، وهي بنت اثنتي عشرة سنة ولم تعرف أحدًا غيري وكنت أجيئها في كل عشرة أيام ليلة واحدة في زي رجل أعجمي. فلما تحققت",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 25842
+    },
+    {
+      "id": "wikisource:ar:1610",
+      "title": "ألف ليلة وليلة/الجزء الثالث",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=1610",
+      "cover": null,
+      "subjects": [],
+      "description": "&lt;ألف ليلة وليلة فلم يسمعوا منه مقاله ولم يلتفوا إليه بل ضربوه ومزقوا أثوابه، فلما تمزقت أثوابه وانكشف بدنه وجدوا أثر الضرب بالمقارع على جنبيه فقالوا له:",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 65459
+    },
+    {
+      "id": "wikisource:ar:114748",
+      "title": "مجلة الرسالة/العدد 522/ألف ليلة. . .",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=114748",
+      "cover": null,
+      "subjects": [],
+      "description": "مجلة الرسالة/العدد 522/ألف ليلة. . . → الحديث ذو شجون ​مجلة الرسالة - العدد 522​ ألف ليلة. . . على هامش النقد ← ملاحظات: بتاريخ: 05 - 07 - 1943 العدد 522",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 1318
+    },
+    {
+      "id": "wikisource:ar:254903",
+      "title": "ألف ليلة وليلة (مؤسسة هنداوي، 2022)",
+      "authors": [
+        "Wikisource"
+      ],
+      "language": "ar",
+      "languages": [
+        "ar"
+      ],
+      "source": "wikisource",
+      "sourceUrl": "https://ar.wikisource.org/?curid=254903",
+      "cover": null,
+      "subjects": [],
+      "description": "​ألف ليلة وليلة (مؤسسة هنداوي، 2022)​ تنزيل بصيغة     ألف ليلة وليلة (مؤسسة هنداوي، 2022) الأجزاء (غير مدرج في الأصل) الجزء الأول الجزء الثاني الجزء الثالث",
+      "access": "read",
+      "rights": "Rights and attribution on the Wikisource page",
+      "formats": [
+        "TXT"
+      ],
+      "wordCount": 31
+    }
+  ],
+  "updatedAt": "2026-11-09T10:26:57.921Z",
+  "indexed": 66386,
+  "counts": {
+    "en": 62161,
+    "fr": 4252,
+    "ar": 1
+  }
+}
