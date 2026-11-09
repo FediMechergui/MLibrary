@@ -135,6 +135,27 @@ test("EPUB downloads open automatically, keep attribution, and reopen offline", 
   }
 });
 
+test("a transient file request retries automatically before importing", async ({
+  page,
+}) => {
+  const bytes = await readFile("tests/fixtures/reader.epub");
+  let requests = 0;
+  await page.route("**/api/file?**", (route) => {
+    if (++requests === 1) return route.abort("connectionreset");
+    return route.fulfill({
+      contentType: "application/octet-stream",
+      headers: { "X-Book-Length": String(bytes.length) },
+      body: bytes,
+    });
+  });
+  await catalogue(page);
+  await expect(
+    page.frameLocator(".epub-reader iframe").locator("body"),
+  ).toContainText("The open library");
+  expect(requests).toBe(2);
+  expect(await offlineFlag(page)).toBe(true);
+});
+
 test("cancelled downloads do not import a partial file", async ({ page }) => {
   const bytes = await readFile("tests/fixtures/reader.epub");
   let release!: () => void;

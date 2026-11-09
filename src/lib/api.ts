@@ -171,6 +171,31 @@ export async function readerFileChunk(
   end: number,
   signal?: AbortSignal,
 ) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await fetchReaderFileChunk(value, start, end, signal);
+    } catch (error) {
+      if (
+        attempt ||
+        signal?.aborted ||
+        !(
+          error instanceof TypeError ||
+          (error instanceof Error && error.name === "TimeoutError") ||
+          error instanceof TemporaryDownloadError
+        )
+      )
+        throw error;
+    }
+  }
+  throw new Error("The book download could not be completed.");
+}
+class TemporaryDownloadError extends Error {}
+async function fetchReaderFileChunk(
+  value: string,
+  start: number,
+  end: number,
+  signal?: AbortSignal,
+) {
   const url = archiveFileUrl(value);
   const parts = url.pathname.split("/");
   if (parts.length !== 4) throw new Error("Unsupported source file");
@@ -185,7 +210,10 @@ export async function readerFileChunk(
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || "The book file could not be loaded.");
+    const message = error.error || "The book file could not be loaded.";
+    throw [502, 503, 504].includes(response.status)
+      ? new TemporaryDownloadError(message)
+      : new Error(message);
   }
   const size = Number(response.headers.get("X-Book-Length"));
   const bytes = new Uint8Array(await response.arrayBuffer());
