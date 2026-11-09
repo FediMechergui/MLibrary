@@ -69,6 +69,9 @@ async function click(label) {
   );
 }
 async function screenshot(name) {
+  await evaluate(
+    `Promise.all(document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{})))`,
+  );
   const { data } = await send("Page.captureScreenshot", { format: "png" });
   await writeFile(`artifacts/${name}.png`, Buffer.from(data, "base64"));
 }
@@ -437,8 +440,8 @@ try {
       `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
       "downloaded PDF page turn",
     );
-    await screenshot("android-auto-import-pdf");
     await assertScanPixels();
+    await screenshot("android-auto-import-pdf");
     await send("Fetch.disable");
     socket.removeEventListener("message", selectPdf);
     await click("Back to library");
@@ -470,8 +473,8 @@ try {
       `document.querySelector('.page-indicator')?.textContent.includes('Page 3')`,
       "offline imported PDF page turn",
     );
-    await screenshot("android-auto-import-offline");
     await assertScanPixels();
+    await screenshot("android-auto-import-offline");
     await click("Back to library");
     await send("Network.emulateNetworkConditions", {
       offline: false,
