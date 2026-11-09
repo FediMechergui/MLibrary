@@ -729,6 +729,10 @@ textarea:focus-visible {
   --reader-ink: #493c2b;
   --reader-line: #daceb5;
 }
+.reader .button.secondary,
+.reader .text-button {
+  color: var(--reader-ink);
+}
 .reader-topbar {
   background: var(--reader-bg);
   height: 76px;

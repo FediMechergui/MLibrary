@@ -67,7 +67,11 @@ export default async function handler(request) {
         chapter: url.searchParams.get("chapter") || undefined,
       });
       return Response.json(data, {
-        headers: { ...headers, "Cache-Control": "public, max-age=300" },
+        headers: {
+          ...headers,
+          "Cache-Control":
+            data.type === "source" ? "no-store" : "public, max-age=300",
+        },
       });
     }
     if (path === "/file") {
@@ -107,7 +111,7 @@ export default async function handler(request) {
                 error.message === "No publicly accessible reader file"
               ? 404
               : 502,
-        headers,
+        headers: { ...headers, "Cache-Control": "no-store" },
       },
     );
   }

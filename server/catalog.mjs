@@ -105,9 +105,8 @@ export const sourceDirectory = [
 ];
 
 export async function fetchUpstream(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     ...options,
-    signal: options.signal ?? AbortSignal.timeout(12000),
     headers: {
       "User-Agent": `MLibrary/0.1 (${process.env.CATALOG_CONTACT || "https://github.com/FediMechergui/MLibrary"})`,
       Accept: "application/json",
@@ -116,6 +115,23 @@ export async function fetchUpstream(url, options = {}) {
   });
   if (!response.ok) throw new Error(`Source returned ${response.status}`);
   return response;
+}
+export async function fetchWithRetry(url, options = {}) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await fetch(url, {
+        ...options,
+        signal: options.signal ?? AbortSignal.timeout(8000),
+      });
+    } catch (error) {
+      if (
+        attempt ||
+        options.signal?.aborted ||
+        !(error instanceof TypeError || error.name === "TimeoutError")
+      )
+        throw error;
+    }
+  }
 }
 async function json(url) {
   return (await fetchUpstream(url)).json();

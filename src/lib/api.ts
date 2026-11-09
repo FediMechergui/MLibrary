@@ -3,7 +3,7 @@ import { offlineBook } from "./state";
 export const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API}/api${path}`, {
-    signal: signal || AbortSignal.timeout(30000),
+    signal: signal || AbortSignal.timeout(45000),
   });
   const body = await response.json();
   if (!response.ok)
@@ -51,7 +51,7 @@ export async function loadBook(
         sourceUrl?: string;
       }
   >(
-    `/content?${new URLSearchParams({ id: book.id, language: book.language, ...(chapter ? { chapter } : {}) })}`,
+    `/content?${new URLSearchParams({ id: book.id, language: book.language, reader: "2", ...(chapter ? { chapter } : {}) })}`,
   );
   if (data.type !== "remote") return data;
   const url = archiveFileUrl(data.url);
@@ -123,7 +123,7 @@ export async function readerFileChunk(
     end: String(end - 1),
   });
   const response = await fetch(`${API}/api/file?${query}`, {
-    signal: signal || AbortSignal.timeout(30000),
+    signal: signal || AbortSignal.timeout(45000),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));

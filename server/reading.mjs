@@ -1,4 +1,4 @@
-import { fetchUpstream } from "./catalog.mjs";
+import { fetchUpstream, fetchWithRetry } from "./catalog.mjs";
 
 export const archiveIdentifier = /^[A-Za-z0-9][A-Za-z0-9._-]{0,179}$/;
 const isTrue = (value) =>
@@ -39,10 +39,9 @@ export async function archiveResponse(url, range) {
       )
     )
       throw new Error("Unsupported archive download host");
-    const response = await fetch(current, {
+    const response = await fetchWithRetry(current, {
       redirect: "manual",
       credentials: "omit",
-      signal: AbortSignal.timeout(15000),
       headers: {
         ...(range ? { Range: range } : {}),
         "User-Agent":
@@ -234,8 +233,8 @@ export async function resolveOpenLibrary(id, language, readText) {
       try {
         const content = await resolveArchive(candidate, readText);
         if (content.type !== "source") return content;
-      } catch {
-        /* Try another matching edition when a provider file is missing. */
+      } catch (error) {
+        if (error.message !== "Source returned 404") throw error;
       }
     }
     return null;
@@ -263,8 +262,8 @@ export async function resolveOpenLibrary(id, language, readText) {
       ];
       const alternate = await tryEditions(alternatives);
       if (alternate) return alternate;
-    } catch {
-      /* Keep an explicit unavailable result when no file resolves. */
+    } catch (error) {
+      if (error.message !== "Source returned 404") throw error;
     }
   }
   return {

@@ -203,6 +203,8 @@ test("Open Library tries another matching edition when the first has no accessib
 test("Open Library resolves a matching language edition and never falls back to an unrelated language", async (t) => {
   let archives = 0;
   t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).includes("editions.json"))
+      return Response.json({ entries: [] });
     if (String(url).includes("search.json"))
       return Response.json({
         docs: [
@@ -230,6 +232,49 @@ test("Open Library resolves a matching language edition and never falls back to 
   assert.equal(arabic.type, "source");
   assert.equal(arabic.available, false);
   assert.equal(archives, 1);
+});
+test("temporary network failures retry and never become a cached unavailable edition", async (t) => {
+  let calls = 0;
+  const retry = t.mock.method(globalThis, "fetch", async (url) => {
+    calls++;
+    if (calls === 1) throw new TypeError("fetch failed");
+    if (String(url).includes("search.json"))
+      return Response.json({
+        docs: [
+          {
+            editions: { docs: [{ ia: ["retry-edition"], language: ["eng"] }] },
+          },
+        ],
+      });
+    if (String(url).includes("metadata")) return Response.json(item);
+    return new Response("An available book.");
+  });
+  const content = await resolveOpenLibrary("OL123W", "en", readLimited);
+  assert.equal(content.type, "text");
+  assert.equal(content.text, "An available book.");
+  retry.mock.restore();
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).includes("search.json"))
+      return Response.json({
+        docs: [
+          {
+            editions: {
+              docs: [{ ia: ["network-failure"], language: ["eng"] }],
+            },
+          },
+        ],
+      });
+    throw new TypeError("fetch failed");
+  });
+  const result = await lambda({
+    httpMethod: "GET",
+    rawUrl:
+      "https://mlibrary.test/api/content?id=openlibrary:OL123W&language=en",
+    headers: {},
+  });
+  assert.equal(result.statusCode, 502);
+  assert.equal(result.headers["cache-control"], "no-store");
+  assert.equal(JSON.parse(result.body).type, undefined);
 });
 test("Wikisource chapter navigation retains the contents and stays within the selected work", async (t) => {
   t.mock.method(globalThis, "fetch", async (url) => {
