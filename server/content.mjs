@@ -1,5 +1,10 @@
 import { fetchUpstream } from "./catalog.mjs";
 import { parseHTML } from "linkedom";
+import {
+  archiveIdentifier,
+  resolveArchive,
+  resolveOpenLibrary,
+} from "./reading.mjs";
 const LIMIT = 4 * 1024 * 1024;
 export async function readLimited(response, maxBytes = LIMIT) {
   if (Number(response.headers.get("content-length")) > maxBytes) {
@@ -28,10 +33,21 @@ export function parseBookId(id) {
     return { source: "gutenberg", id: id.split(":")[1] };
   const wiki = /^wikisource:(en|fr|ar):([1-9]\d{0,9})$/.exec(id);
   if (wiki) return { source: "wikisource", language: wiki[1], id: wiki[2] };
+  if (/^openlibrary:OL[1-9]\d{0,12}W$/.test(id))
+    return { source: "openlibrary", id: id.split(":")[1] };
+  if (
+    id.startsWith("archive:") &&
+    archiveIdentifier.test(id.slice(8)) &&
+    !id.includes("..")
+  )
+    return { source: "archive", id: id.slice(8) };
   throw new Error("Unsupported book identifier");
 }
-export async function getContent(bookId) {
+export async function getContent(bookId, { language = "en", chapter } = {}) {
   const book = parseBookId(bookId);
+  if (book.source === "archive") return resolveArchive(book.id, readLimited);
+  if (book.source === "openlibrary")
+    return resolveOpenLibrary(book.id, language, readLimited);
   if (book.source === "gutenberg") {
     const metadata = await (
       await fetchUpstream(`https://www.gutenberg.org/ebooks/${book.id}.rdf`, {
@@ -60,6 +76,13 @@ export async function getContent(bookId) {
     };
   }
   const u = new URL(`https://${book.language}.wikisource.org/w/api.php`);
+  if (
+    chapter &&
+    (typeof chapter !== "string" ||
+      chapter.length > 350 ||
+      /[\x00-\x1f]/.test(chapter))
+  )
+    throw new Error("Invalid chapter title");
   u.search = new URLSearchParams({
     action: "parse",
     pageid: book.id,
@@ -68,7 +91,15 @@ export async function getContent(bookId) {
     disableeditsection: "1",
     maxlag: "5",
   }).toString();
-  const data = await (await fetchUpstream(u)).json();
+  const root = await (await fetchUpstream(u)).json();
+  let data = root;
+  if (chapter && chapter !== root.parse?.title) {
+    if (!chapter.startsWith(`${root.parse?.title}/`))
+      throw new Error("This chapter does not belong to the selected work");
+    u.searchParams.delete("pageid");
+    u.searchParams.set("page", chapter);
+    data = await (await fetchUpstream(u)).json();
+  }
   if (!data.parse?.text)
     throw new Error("This Wikisource page could not be loaded.");
   const { document } = parseHTML(
@@ -87,19 +118,27 @@ export async function getContent(bookId) {
     .replace(/[ \t]+/g, " ")
     .replace(/\n\s*\n\s*\n/g, "\n\n")
     .trim();
-  const title = data.parse.title;
-  const chapters = (data.parse.links || [])
+  const title = root.parse.title;
+  const chapters = (root.parse.links || [])
     .filter(
       (l) =>
         l.ns === 0 && l["*"].startsWith(`${title}/`) && l.exists !== undefined,
     )
     .map((l) => ({
       title: l["*"],
+      id: l["*"],
       url: `https://${book.language}.wikisource.org/wiki/${encodeURIComponent(l["*"])}`,
     }));
+  if (chapter && chapter !== title)
+    chapters.unshift({
+      title,
+      id: title,
+      url: `https://${book.language}.wikisource.org/wiki/${encodeURIComponent(title)}`,
+    });
   return {
     type: "text",
     text,
+    chapter: data.parse.title,
     chapters,
     sourceUrl: `https://${book.language}.wikisource.org/?curid=${book.id}`,
     attribution:

@@ -9,7 +9,7 @@ export function BookCover({
 }) {
   const [failed, setFailed] = useState(false);
   const hash = [...book.id].reduce((a, c) => a + c.charCodeAt(0), 0);
-  const useImage = book.cover && book.source !== "gutenberg" && !failed;
+  const useImage = book.cover && !failed;
   return (
     <div
       className={`book-cover palette-${hash % 7} ${large ? "large" : ""}`}

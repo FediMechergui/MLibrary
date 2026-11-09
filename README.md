@@ -13,12 +13,16 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 - English, French, and Arabic interface translations and RTL layout.
 - Full-text reading, animated page turns, paged and continuous reading, paper/sepia/night themes, font controls, bookmarks, and progress restoration.
 - Imported EPUB and PDF reading; EPUB scripts are disabled. PDF keeps the source layout. Files up to 50 MB can be imported from the device.
+- Persistent four-color highlights, notes, and passage anchors in text, EPUB, and selectable PDFs. Image-only PDFs require a text/OCR layer for automatic selection.
+- **My Quotes**: saved passages, favorites, search, tags, editable notes, return to passage, and three PNG card styles. Android cards use the native save/share chooser. Source viewers also support manually entered quotes.
+- Book tags and reading preferences for subjects, purposes, and languages; preferences reorder the starter collection. Focus mode hides reader controls.
+- Internal Wikisource chapter navigation. Open Library resolves language-matched Internet Archive editions; explicitly licensed public files use the app reader, and other editions use the original source viewer inside the app. Android uses an isolated in-app WebView with a return toolbar; web uses embedded source pages where the provider permits framing.
 - Saved shelves, device-local offline book files, daily goals, active reading time, streaks, and milestones.
 - Two bundled complete starter books, _Pride and Prejudice_ and _Alice’s Adventures in Wonderland_, with the original Gutenberg license text preserved.
 - Hourly scheduled checks of Gutenberg's official CSV feed, conditional requests, a validated compressed snapshot in Netlify Blobs, a bundled fallback, and cached federated queries.
 - Android project, launcher icon, splash screen, system back-button handling, and APK build scripts.
 
-This is the first working release, not yet the world's largest library. Accounts, cross-device sync, OCR ingestion, full-text indexing of millions of works, annotation export, audio, and a Play Store release remain future work. The product is free to use; upstream services and hosting still have quotas and possible operating costs.
+Version 0.2 adds the reading room redesign and a new book/bookmark identity. Catalogue records without an available edition remain unavailable for full reading; previews and borrowing remain controlled by the source. An imported copy can be read inside the app. Accounts, cross-device sync, OCR ingestion, full-text indexing of millions of works, audio, and a Play Store release remain future work. The product is free to use; upstream services and hosting still have quotas and possible operating costs.
 
 ## Run locally
 
@@ -56,6 +60,9 @@ The Gutenberg CSV has no copyright field. Before serving an online Gutenberg tex
 | `GET /api/search?q=&language=all&source=all&page=1` | Search with source-level totals and partial-failure status   |
 | `GET /api/content?id=gutenberg:84`                  | Rights-checked Gutenberg text                                |
 | `GET /api/content?id=wikisource:ar:123`             | Selected Wikisource page, attribution, and links to subpages |
+| `GET /api/content?id=wikisource:fr:123&chapter=Title/Chapter` | Read a chapter belonging to the selected work |
+| `GET /api/content?id=archive:ITEM` | Licensed public text/file or source-reader availability |
+| `GET /api/content?id=openlibrary:OL123W&language=en` | Resolve a matching edition, then check its actual availability |
 | `GET /api/sources`                                  | Integrated, discovery, and directory sources                 |
 | `GET /api/sync-status`                              | Last scheduled update                                        |
 | `GET /api/health`                                   | Backend health                                               |
@@ -64,7 +71,7 @@ Languages: `en`, `fr`, `ar`, `all`. Sources: `gutenberg`, `wikisource`, `openlib
 
 ## Android
 
-Requires JDK 21 and Android SDK platform 36. The APK bundles the interface, fonts, and starter books. It uses the deployed HTTPS backend for discovery and online reading.
+Requires JDK 21 and Android SDK platform 36 to build; **Android 8.0 (API 26) or later** to install. In-app browser data isolation is provided by Android 9+; Android 8 shares WebView storage. The APK bundles the interface, fonts, and starter books. It uses the deployed HTTPS backend for discovery and online reading.
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Microsoft\jdk-21.0.12.101-hotspot'
@@ -77,7 +84,9 @@ The installable development build is copied to `artifacts/MLibrary-debug.apk`. F
 
 For a native smoke test, install and launch the debug APK on a disposable emulator. Find its PID with `adb shell pidof app.mlibrary.reader`, then run `adb forward tcp:9223 localabstract:webview_devtools_remote_<PID>`. Run `node scripts/android-smoke.mjs --reset`; the explicit reset clears this app's shelf and settings on the test device. The script checks the native runtime, reading controls, offline reopening, and Arabic RTL through the app's WebView and writes screenshots to `artifacts/`.
 
-Book files live in IndexedDB and shelf/progress metadata in local storage. Clearing app/site data removes them. Progress export includes metadata, not book files. No user account or server-side personal reading history is created.
+Book files live in IndexedDB. Shelves, progress, highlights, notes, quotes, tags, and preferences live in local storage. The existing version-1 storage key is migrated with defaults for new fields. Clearing app/site data removes them. Progress export includes this metadata, not book files. No user account or server-side personal reading history is created. Source viewers do not expose their cross-origin selections or native page progress to MLibrary; use manual quote entry there. Archive's web reader can report page fragments, but no percentage is invented when its page count is unknown.
+
+Run `npm run icons` to regenerate web PNGs, Android launcher images, and splash screens from `public/icon.svg`. The Android adaptive foreground is the corresponding vector in `android/app/src/main/res/drawable/mlibrary_mark.xml`.
 
 ## Deploy
 

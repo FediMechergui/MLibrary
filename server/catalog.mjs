@@ -40,7 +40,7 @@ export const sourceDirectory = [
     url: "https://archive.org/details/texts",
     kind: "discovery",
     description:
-      "Scanned books and digitized collections. Read at the original source.",
+      "Scanned books and digitized collections. Open editions use the app reader or an embedded source viewer.",
     rights:
       "Availability, borrowing, and item rights are checked at the source.",
   },

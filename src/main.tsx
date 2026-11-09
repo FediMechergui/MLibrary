@@ -10,6 +10,7 @@ import "@fontsource/noto-naskh-arabic/400.css";
 import "@fontsource/noto-naskh-arabic/600.css";
 import App from "./App";
 import "./styles.css";
+import "./reading-room.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

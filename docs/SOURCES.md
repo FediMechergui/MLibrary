@@ -15,6 +15,16 @@ Open Library documents a default request limit of one request per second and hig
 
 The public Gutendex server was tested but timed out from this environment. MLibrary therefore does not depend on it for production discovery or reading.
 
+### Reading integration in version 0.2
+
+The table above records the initial catalogue adapters. Reading now additionally resolves Open Library work IDs to editions in the selected language and inspects Internet Archive item metadata. An unrestricted file with explicit public-domain or Creative Commons metadata can use the native text, EPUB, or PDF reader. Private, dark, restricted, and encrypted files are excluded. File requests validate the Archive HTTPS host across redirects and enforce size limits. Other scans use Archive's official embedded BookReader; source-managed previews and loans remain source-managed. A catalogue record alone never becomes a downloadable edition.
+
+Wikisource chapter links now load inside the same reader and retain the work's contents list. Text, EPUB, and selectable PDF passages support saved highlights, notes, tags, and quote cards. Source-hosted viewers support manual quote entry, because browser origin boundaries and the Android in-app browser do not expose their text selections. Web framing restrictions can prevent embedding a source website; the Android app uses its own WebView with a return toolbar.
+
+Live resolver checks on 9 November 2026 returned full text for `ost-english-madamebovarystud00flau` (656,924 characters), an embedded scan for Open Library `OL5040656W`, and source-controlled restricted access for `norwegianwood0000mura`. These checks verify individual editions, not every book by an author.
+
+Primary implementation references: [Archive metadata API](https://archive.org/developers/md-read.html), [Open Library edition search](https://openlibrary.org/dev/docs/api/search), [Archive BookReader](https://github.com/internetarchive/bookreader), and [Capacitor in-app browser](https://capacitorjs.com/docs/apis/inappbrowser).
+
 ## Linked collections and next adapters
 
 | Collection                                                            | Role                                                                                                             | Integration considerations                                                                                                                                                                    |
@@ -34,7 +44,34 @@ The public Gutendex server was tested but timed out from this environment. MLibr
 
 The [supplied Softonic listing](https://anybooks.fr.softonic.com/android) describes offline reading, adjustable font size and brightness, white/night/sepia themes, and reading rewards. Those reading patterns informed MLibrary's settings, offline shelves, and milestones. MLibrary uses its own interface and assets.
 
-The listing exposes version 3.23.0 and a historical APK hash, but the download page could not be retrieved in this run. No authenticated original APK was obtained or executed. Product observations from that listing are not presented as hands-on testing. The emulator work is for MLibrary itself.
+The initial implementation used the listing as a feature reference. Its emulator checks were for MLibrary, not AnyBooks.
+
+### Follow-up investigation: 9 November 2026
+
+**Updated result:** the user subsequently supplied the APK, which successfully opened on an Android 9 emulator. Its hash matches Softonic's published file, but the manifest identifies **3.19.0**, not the advertised 3.23.0. Static inspection identifies `api.anybooks.live` as the bundled production catalogue backend, with resource URLs supplied by that service and a Firebase remote-configuration override. Runtime traffic confirms requests to this hostname and DNS failures. After a normal restart, the app also queried `api.anybooks.mobi`, which returned `NXDOMAIN`. The Library loaded its interface without books, search returned a no-results message, and the Bookshelf remained empty. See the [APK inspection and emulator evidence](ANYBOOKS-AUDIT.md) for verified findings and runtime limits. The acquisition failures below describe the earlier search, before the file was supplied.
+
+| Check | Observed result |
+| --- | --- |
+| [Softonic original reference](https://anybooks.fr.softonic.com/android) and [English download page](https://anybooks.en.softonic.com/android/download) | Indexed listing identifies version 3.23.0. The French download request returned HTTP 412; the English download page failed in a fresh browser session. |
+| [Uptodown archive](https://anybooks-read-free-books-novels-and-stories.en.uptodown.com/android/download) | A normal browser loaded the page. Clicking its download button produced no APK within 45 seconds. The page includes a Turnstile verification widget. |
+| [APKPure archive](https://apkpure.net/anybooks%F0%9F%93%96free-download-library-novels-stories/com.newanybooks/download) | After its browser redirect, the page stopped at an EdgeOne human-verification screen. No APK downloaded. |
+| [APKCombo archive](https://apkcombo.com/anybooks-novels-stories-your-mobile-library/anybooks.book.pdf.epub.txt/) | The download host failed DNS resolution from the local browser. |
+| [FileHippo](https://filehippo.com/android/download_anybooks/) | The listing explicitly says a direct download is not provided. |
+| [Softplanet](https://www.softplanet.co/anybooks) | The local browser received HTTP 403. |
+| [Developer website](https://www.anybooks.app/) | The local fetch failed DNS resolution (`ENOTFOUND`). This alone does not establish whether every historical app backend is offline. |
+| Internet Archive CDX query for `anybooks.app/*.apk` | Returned an empty result. This narrow query does not prove that no other archive or subdomain contains an APK. |
+| Additional public archive checks after confirming no local APK is available | Internet Archive catalogue searches for AnyBooks returned zero records. A broader Wayback query covering developer subdomains timed out after 25 seconds. GitHub public code search for `anybooks.app` returned no matches. These results do not establish that no copy or API documentation exists elsewhere. |
+| Local files and Android tooling | No AnyBooks APK found in the project or matching downloads. Android SDK and emulator images are installed; no connected device had an existing app available to inspect. |
+
+Version identity matters. Softonic publishes SHA-256 `c0160df86193bf6a36a309d538cfd2f575842003d298e9bb191a6b3abd68f741` and labels the download **3.23.0**; the supplied file matches that hash but its verified manifest says **3.19.0**. Uptodown instead lists **3.22.0**, package `free.collection.download.read.ebook.anybooks`, ARMv7, and SHA-256 `a7376364ec4b782691ead55fcb7890f389e35ee725d489f2f0c4954ec6cc8e9e`. APKPure's inspected archive uses `com.newanybooks`. The latter two binaries were not obtained or verified locally. These identities must not be conflated with newer similarly named apps.
+
+The supplied binary's signature, manifest, source map, bundled EPUB metadata, and service configuration have now been inspected. An Android 11 attempt crashed in ARM translation; Android 9 subsequently allowed inspection of onboarding, Library, search, Bookshelf, profile, and interface-language screens. Catalogue access remained unavailable; both observed API hostnames failed to resolve. The client does not establish permission to integrate its catalogue, nor verified evidence that AnyBooks used any of MLibrary's connected providers. Its server-side ingestion sources cannot be determined from this client alone.
+
+### Second APK: BookHub 1.1.0
+
+The subsequently supplied `com.freenovel.anybooks.bookhub-1.1.0.apk` was also inspected and tested on Android 9. It uses the **same signing certificate** as AnyBooks 3.19.0, with a different package and the production API `https://api.bookhubapp.com`. Its download code takes a resource URL from book metadata. DNS succeeds for that API, but ordinary HTTPS requests timed out from this environment; the app's Library did not load book records, search returned a no-results message, and its shelf stayed empty. Both observed language menus offered English, Hindi, and Tamil.
+
+No working catalogue or book download source was obtained. The app advertises a contributor portal at `https://bookhubapp.com/create`, with Facebook sign-in and a form for uploading the contributor's own content; this does not establish where every catalogue book originated. The Gutenberg reference inside bundled FBReader resources is an example URL for adding a custom catalogue, not evidence that BookHub ingested Gutenberg. See the [BookHub investigation and comparison](BOOKHUB-AUDIT.md) for verified endpoints, APK identity, screenshots, and limits.
 
 ## Data rules
 

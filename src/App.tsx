@@ -30,8 +30,17 @@ import {
   WifiSlash,
   CaretDown,
   CircleNotch,
+  Quotes,
+  SlidersHorizontal,
 } from "@phosphor-icons/react";
-import type { AppState, Book, Language, SearchResult, Source } from "./types";
+import type {
+  AppState,
+  Book,
+  Language,
+  ReadingMark,
+  SearchResult,
+  Source,
+} from "./types";
 import { translator, languageNames } from "./lib/i18n";
 import type { MessageKey } from "./lib/i18n";
 import {
@@ -44,8 +53,12 @@ import {
 } from "./lib/state";
 import { getSources, getSyncStatus, searchBooks } from "./lib/api";
 import { BookCover } from "./components/BookCover";
+import { MyQuotes, ReadingPreferences } from "./components/ReadingNotes";
+import { SourcePanel } from "./components/SourceReader";
+import { readerText } from "./lib/reader-i18n";
+import { normalizeTags } from "./lib/annotations";
 const Reader = lazy(() => import("./components/Reader"));
-type Tab = "discover" | "library" | "journey" | "sources";
+type Tab = "discover" | "library" | "quotes" | "journey" | "sources";
 const sourceNames: Record<string, string> = {
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
@@ -64,6 +77,11 @@ const genreKeys: MessageKey[] = [
 export default function App() {
   const [state, update] = useLibraryState();
   const t = translator(state.language);
+  const r = readerText(state.language);
+  const [initialMark, setInitialMark] = useState<ReadingMark>();
+  const [sourceView, setSourceView] = useState("");
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [shelfTag, setShelfTag] = useState("");
   const [tab, setTab] = useState<Tab>("discover");
   const [featured, setFeatured] = useState<Book[]>([]);
   const [detail, setDetail] = useState<Book | null>(null);
@@ -199,7 +217,9 @@ export default function App() {
     let removeListener: (() => void) | undefined;
     import("@capacitor/app").then(async ({ App }) => {
       const listener = await App.addListener("backButton", () => {
-        if (reading) setReading(null);
+        if (sourceView) setSourceView("");
+        else if (preferencesOpen) setPreferencesOpen(false);
+        else if (reading) setReading(null);
         else if (detail) setDetail(null);
         else if (tab !== "discover") setTab("discover");
         else App.minimizeApp();
@@ -207,7 +227,7 @@ export default function App() {
       removeListener = () => listener.remove();
     });
     return () => removeListener?.();
-  }, [reading, detail, tab]);
+  }, [reading, detail, tab, sourceView, preferencesOpen]);
 
   const saveBook = (book: Book) => {
     update((s) =>
@@ -217,7 +237,7 @@ export default function App() {
     );
     notify(t("savedToast"));
   };
-  const openBook = (book: Book) => {
+  const openBook = (book: Book, mark?: ReadingMark) => {
     update((s) => ({
       ...s,
       shelf: {
@@ -230,6 +250,7 @@ export default function App() {
       },
     }));
     setDetail(null);
+    setInitialMark(mark);
     setReading(book);
   };
   const changeFilter = (fn: () => void) => {
@@ -245,7 +266,7 @@ export default function App() {
     });
     setTab("discover");
   };
-  const handleImport = async (file?: File) => {
+  const handleImport = async (file?: File, read = false) => {
     if (!file) return;
     try {
       const book = await importBook(file, state.language);
@@ -257,7 +278,8 @@ export default function App() {
         },
       }));
       notify(t("imported"));
-      setDetail(book);
+      if (read) openBook(book);
+      else setDetail(book);
     } catch {
       notify(t("importError"));
     } finally {
@@ -284,11 +306,33 @@ export default function App() {
     (e) => e.status === "reading" && e.progress,
   );
   const todayMinutes = Math.floor((state.activity[localDay()] || 0) / 60);
-  const displayed = result?.books || (isBrowse ? featured : []);
+  const preferenceScore = (book: Book) => {
+    const subjects = book.subjects.join(" ").toLowerCase();
+    const purposes: Record<string, string[]> = {
+      escape: ["fiction", "adventure", "fantasy"],
+      learn: ["science", "history", "biography"],
+      reflect: ["poetry", "philosophy"],
+      research: ["science", "history", "philosophy"],
+    };
+    const interests = [
+      ...state.preferences.genres.map((v) => v.toLowerCase()),
+      ...state.preferences.purposes.flatMap((p) => purposes[p] || []),
+    ];
+    return (
+      interests.filter((genre) => subjects.includes(genre)).length * 3 +
+      (state.preferences.languages.includes(book.language as Language) ? 1 : 0)
+    );
+  };
+  const displayed =
+    result?.books ||
+    (isBrowse
+      ? [...featured].sort((a, b) => preferenceScore(b) - preferenceScore(a))
+      : []);
   const shelf = entries.filter(
     (e) =>
-      shelfTab === "all" ||
-      (shelfTab === "offline" ? e.offline : e.status === shelfTab),
+      (!shelfTag || e.tags?.includes(shelfTag)) &&
+      (shelfTab === "all" ||
+        (shelfTab === "offline" ? e.offline : e.status === shelfTab)),
   );
 
   const renderCard = (book: Book) => (
@@ -361,7 +405,10 @@ export default function App() {
         }
       >
         <Reader
+          key={reading.id}
           book={reading}
+          initialMark={initialMark}
+          onImport={(file) => void handleImport(file, true)}
           state={state}
           update={update}
           onClose={() => setReading(null)}
@@ -396,6 +443,7 @@ export default function App() {
             [
               { key: "discover", Icon: Compass },
               { key: "library", Icon: Books },
+              { key: "quotes", Icon: Quotes },
               { key: "journey", Icon: ChartLineUp },
               { key: "sources", Icon: GlobeHemisphereWest },
             ] as const
@@ -407,10 +455,16 @@ export default function App() {
               aria-current={tab === key ? "page" : undefined}
             >
               <Icon size={22} weight={tab === key ? "fill" : "regular"} />
-              <span>{t(key)}</span>
+              <span>{key === "quotes" ? r("quotes") : t(key)}</span>
               {key === "library" && entries.length > 0 && (
                 <small>{entries.length}</small>
               )}
+              {key === "quotes" &&
+                Object.values(state.marks).some((m) => m.quoted) && (
+                  <small>
+                    {Object.values(state.marks).filter((m) => m.quoted).length}
+                  </small>
+                )}
             </button>
           ))}
         </nav>
@@ -441,7 +495,10 @@ export default function App() {
       </aside>
       <div className="main-shell">
         <header className="topbar">
-          <span className="breadcrumb">{t(tab)}</span>
+          <span className="breadcrumb">
+            <img className="mobile-brand-mark" src="/icon.svg" alt="MLibrary" />
+            {tab === "quotes" ? r("quotes") : t(tab)}
+          </span>
           <form className="header-search" onSubmit={submitSearch}>
             <MagnifyingGlass size={20} />
             <input
@@ -496,6 +553,14 @@ export default function App() {
           </div>
         )}
         <main>
+          {tab === "quotes" && (
+            <MyQuotes
+              state={state}
+              update={update}
+              notify={notify}
+              onRead={openBook}
+            />
+          )}
           {tab === "discover" && (
             <>
               {isBrowse && (
@@ -531,6 +596,13 @@ export default function App() {
                       <i />
                       <span lang="ar">العربية</span>
                     </div>
+                    <button
+                      className="text-button preference-link"
+                      onClick={() => setPreferencesOpen(true)}
+                    >
+                      <SlidersHorizontal size={17} />
+                      {r("preferences")}
+                    </button>
                   </div>
                   <div className="hero-art">
                     <div className="hero-art-caption">
@@ -628,7 +700,14 @@ export default function App() {
                         ? `“${search}”`
                         : t(isBrowse ? "curated" : "results")}
                     </h2>
-                    {isBrowse && <p>{t("curatedCopy")}</p>}
+                    {isBrowse && (
+                      <p>
+                        {state.preferences.genres.length ||
+                        state.preferences.purposes.length
+                          ? r("yourInterests")
+                          : t("curatedCopy")}
+                      </p>
+                    )}
                   </div>
                   <div className="catalogue-filters">
                     <label>
@@ -800,6 +879,27 @@ export default function App() {
                   </button>
                 ))}
               </div>
+              {entries.some((e) => e.tags?.length) && (
+                <div className="tag-filters">
+                  <button
+                    className={`chip ${!shelfTag ? "active" : ""}`}
+                    onClick={() => setShelfTag("")}
+                  >
+                    {r("anyTag")}
+                  </button>
+                  {[...new Set(entries.flatMap((e) => e.tags || []))].map(
+                    (tag) => (
+                      <button
+                        key={tag}
+                        className={`chip ${shelfTag === tag ? "active" : ""}`}
+                        onClick={() => setShelfTag(tag)}
+                      >
+                        #{tag}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
               {shelf.length ? (
                 <div className="book-grid">
                   {shelf.map((e) => renderCard(e.book))}
@@ -823,7 +923,12 @@ export default function App() {
               <p className="import-note">{t("importHint")}</p>
             </>
           )}
-          {tab === "journey" && <Journey state={state} update={update} />}
+          {tab === "journey" && (
+            <>
+              <Journey state={state} update={update} />
+              <ReadingPreferences state={state} update={update} />
+            </>
+          )}
           {tab === "sources" && (
             <>
               <PageHeading
@@ -867,15 +972,13 @@ export default function App() {
                       <span>
                         {s.languages.map((l) => languageNames[l]).join(" · ")}
                       </span>
-                      <a
+                      <button
                         className="text-button"
-                        href={s.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        onClick={() => setSourceView(s.url)}
                       >
                         {t("visit")}
                         <ArrowUpRight size={19} />
-                      </a>
+                      </button>
                     </div>
                   </article>
                 ))}
@@ -940,29 +1043,18 @@ export default function App() {
               <p className="detail-description" dir="auto">
                 {detail.description || t("noDescription")}
               </p>
-              {detail.source === "wikisource" && (
-                <p className="detail-note">{t("chaptersNote")}</p>
-              )}
               <div className="detail-buttons">
-                {detail.access === "read" ? (
-                  <button
-                    className="button primary"
-                    onClick={() => openBook(detail)}
-                  >
-                    <BookOpen size={20} />
-                    {state.shelf[detail.id]?.progress ? t("resume") : t("read")}
-                  </button>
-                ) : (
-                  <a
-                    className="button primary"
-                    href={detail.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {t(detail.access === "borrow" ? "borrow" : "source")}
-                    <ArrowUpRight size={20} />
-                  </a>
-                )}
+                <button
+                  className="button primary"
+                  onClick={() => openBook(detail)}
+                >
+                  <BookOpen size={20} />
+                  {state.shelf[detail.id]?.progress
+                    ? t("resume")
+                    : detail.access === "read"
+                      ? t("read")
+                      : r("readerInside")}
+                </button>
                 <button
                   className="button secondary"
                   onClick={() =>
@@ -978,18 +1070,54 @@ export default function App() {
                   {t(state.shelf[detail.id] ? "saved" : "save")}
                 </button>
               </div>
+              <form
+                className="book-tag-editor"
+                key={detail.id}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const tags = normalizeTags(
+                    String(new FormData(e.currentTarget).get("tags") || ""),
+                  );
+                  update((s) => ({
+                    ...s,
+                    shelf: {
+                      ...s.shelf,
+                      [detail.id]: {
+                        ...(s.shelf[detail.id] || newEntry(detail)),
+                        tags,
+                      },
+                    },
+                  }));
+                  notify(r("tagSaved"));
+                }}
+              >
+                <label htmlFor="book-tags">{r("tagLibrary")}</label>
+                <div>
+                  <input
+                    id="book-tags"
+                    name="tags"
+                    maxLength={400}
+                    defaultValue={
+                      state.shelf[detail.id]?.tags?.join(", ") || ""
+                    }
+                    placeholder={r("tagPlaceholder")}
+                  />
+                  <button className="button secondary" type="submit">
+                    {r("done")}
+                  </button>
+                </div>
+              </form>
               <div className="rights-note">
                 <strong>{t("rights")}</strong>
                 <p>{detail.rights}</p>
                 {detail.sourceUrl && (
-                  <a
-                    href={detail.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    className="text-button"
+                    onClick={() => setSourceView(detail.sourceUrl)}
                   >
                     {t("original")}
                     <ArrowUpRight size={15} />
-                  </a>
+                  </button>
                 )}
               </div>
             </div>
@@ -1014,6 +1142,21 @@ export default function App() {
             </div>
           </div>
         </Modal>
+      )}
+      {preferencesOpen && (
+        <Modal
+          label={r("preferences")}
+          onClose={() => setPreferencesOpen(false)}
+        >
+          <ReadingPreferences state={state} update={update} />
+        </Modal>
+      )}
+      {sourceView && (
+        <SourcePanel
+          url={sourceView}
+          language={state.language}
+          onClose={() => setSourceView("")}
+        />
       )}
       {toast && (
         <div className="toast" role="status">

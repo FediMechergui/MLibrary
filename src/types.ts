@@ -20,17 +20,52 @@ export type BookContent =
   | {
       type: "text";
       text: string;
-      chapters: { title: string; url: string }[];
+      chapters: { title: string; url: string; id?: string }[];
       sourceUrl: string;
       attribution: string;
+      chapter?: string;
     }
-  | { type: "epub" | "pdf"; data: ArrayBuffer };
+  | { type: "epub"; data: ArrayBuffer }
+  | { type: "pdf"; data: ArrayBuffer }
+  | {
+      type: "source";
+      url: string;
+      embedUrl?: string;
+      available: boolean;
+      message: string;
+      attribution: string;
+    };
+export type HighlightColor = "honey" | "sage" | "rose" | "sky";
+export type ReadingAnchor = {
+  type: "text" | "epub" | "pdf" | "source";
+  start?: number;
+  end?: number;
+  cfi?: string;
+  page: number;
+  chapter?: string;
+};
+export type ReadingMark = {
+  id: string;
+  book: Book;
+  text: string;
+  anchor: ReadingAnchor;
+  color: HighlightColor;
+  note: string;
+  tags: string[];
+  quoted: boolean;
+  favorite: boolean;
+  cardStyle: "paper" | "forest" | "clay";
+  createdAt: number;
+};
+export type ReaderSelection = { text: string; anchor: ReadingAnchor };
 export type Progress = {
   position: number;
   total: number;
   percent: number;
   cfi?: string;
   offset?: number;
+  chapter?: string;
+  fragment?: string;
   updatedAt: number;
 };
 export type Bookmark = {
@@ -40,6 +75,8 @@ export type Bookmark = {
   offset?: number;
   label: string;
   createdAt: number;
+  chapter?: string;
+  fragment?: string;
 };
 export type ShelfEntry = {
   book: Book;
@@ -48,6 +85,7 @@ export type ShelfEntry = {
   progress?: Progress;
   bookmarks: Bookmark[];
   offline: boolean;
+  tags?: string[];
 };
 export type ReaderSettings = {
   theme: "paper" | "sepia" | "night";
@@ -55,6 +93,8 @@ export type ReaderSettings = {
   fontSize: number;
   lineHeight: number;
   font: "serif" | "sans";
+  highlightColor: HighlightColor;
+  focus: boolean;
 };
 export type AppState = {
   version: 1;
@@ -63,6 +103,8 @@ export type AppState = {
   activity: Record<string, number>;
   dailyGoal: number;
   settings: ReaderSettings;
+  marks: Record<string, ReadingMark>;
+  preferences: { genres: string[]; purposes: string[]; languages: Language[] };
 };
 export type SearchResult = {
   books: Book[];

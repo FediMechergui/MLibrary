@@ -8,12 +8,16 @@ export const defaults: AppState = {
   shelf: {},
   activity: {},
   dailyGoal: 20,
+  marks: {},
+  preferences: { genres: [], purposes: [], languages: ["en", "fr", "ar"] },
   settings: {
     theme: "paper",
     mode: "flip",
     fontSize: 20,
     lineHeight: 1.8,
     font: "serif",
+    highlightColor: "honey",
+    focus: false,
   },
 };
 function load(): AppState {
@@ -24,6 +28,8 @@ function load(): AppState {
           ...defaults,
           ...raw,
           settings: { ...defaults.settings, ...raw.settings },
+          marks: raw.marks && typeof raw.marks === "object" ? raw.marks : {},
+          preferences: { ...defaults.preferences, ...raw.preferences },
         }
       : defaults;
   } catch {
@@ -70,6 +76,7 @@ export const newEntry = (book: Book) => ({
   status: "want" as const,
   bookmarks: [],
   offline: false,
+  tags: [] as string[],
 });
 export async function importBook(file: File, language: string): Promise<Book> {
   const extension = file.name.split(".").pop()?.toLowerCase();

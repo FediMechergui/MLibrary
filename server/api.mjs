@@ -20,7 +20,7 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "0.1.0", time: new Date().toISOString() },
+        { status: "ok", version: "0.2.0", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
@@ -61,9 +61,9 @@ export default async function handler(request) {
       });
     }
     if (path === "/content") {
-      const data = await getContent(url.searchParams.get("id") || "");
+      const data = await getContent(url.searchParams.get("id") || "", { language: url.searchParams.get("language") || "en", chapter: url.searchParams.get("chapter") || undefined });
       return Response.json(data, {
-        headers: { ...headers, "Cache-Control": "public, max-age=86400" },
+        headers: { ...headers, "Cache-Control": "public, max-age=300" },
       });
     }
     return Response.json({ error: "Not found" }, { status: 404, headers });

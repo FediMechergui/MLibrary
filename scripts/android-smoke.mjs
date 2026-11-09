@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 // Connect directly to the app's forwarded WebView. Android WebViews do not
 // implement browser-level context/download management used by desktop runners.
 const targets = await (await fetch("http://127.0.0.1:9223/json")).json();
@@ -141,7 +142,41 @@ try {
     downloadThroughput: -1,
     uploadThroughput: -1,
   });
-  await click("Back to library");
+  if (process.argv.includes("--notes")) {
+    await evaluate(`(() => { const el = document.querySelector('[data-reading-text]'); const node = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode(); const range = document.createRange(); range.setStart(node, 0); range.setEnd(node, Math.min(100, node.textContent.length)); const s = getSelection(); s.removeAllRanges(); s.addRange(range); el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true})); })()`);
+    await until(`document.querySelector('.mark-editor')`, "native passage selection");
+    await evaluate(`(() => { const input = document.querySelector('.mark-editor textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'A passage to return to.'); input.dispatchEvent(new Event('input',{bubbles:true})); })()`);
+    await click("Save quote");
+    await until(`document.querySelector('.text-page mark')`, "native persistent highlight");
+    await click("Back to library");
+    await evaluate(`Array.from(document.querySelectorAll('.nav-item')).find(b => b.textContent.includes('My Quotes')).click()`);
+    await until(`document.querySelector('.quote-card')`, "native My Quotes card");
+    await screenshot("android-myquotes-webview");
+    const adb = process.env.ANDROID_HOME ? `${process.env.ANDROID_HOME}/platform-tools/adb.exe` : `${process.env.LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe`;
+    const serial = process.env.ANDROID_SERIAL || "emulator-5564";
+    const device = (...args) => execFileSync(adb, ["-s", serial, ...args], { encoding: "utf8", timeout: 15000, windowsHide: true });
+    await click("Share card");
+    let shared = false;
+    for (let attempt = 0; attempt < 20; attempt++) { const activity = device("shell", "dumpsys", "activity", "activities"); if (/ChooserActivity/.test(activity)) { shared = true; break; } await new Promise(r => setTimeout(r, 400)); }
+    assert.equal(shared, true, "Android native share chooser opens");
+    device("shell", "screencap", "-p", "/sdcard/mlibrary-share-test.png"); device("pull", "/sdcard/mlibrary-share-test.png", "artifacts/android-native-share.png");
+    device("shell", "input", "keyevent", "4");
+    console.log("PASS: Native PNG generation, file provider, and Android share chooser.");
+    await click("Our sources");
+    await until(`document.querySelector('.source-row')`, "source directory");
+    await evaluate(`document.querySelector('.source-row .text-button').click()`);
+    await click("Open source reader");
+    let sourceOpen = false;
+    for (let attempt = 0; attempt < 20; attempt++) { const activity = device("shell", "dumpsys", "activity", "activities"); if (/OSIAB|InAppBrowser|InAppWebView|WebViewActivity/.test(activity)) { sourceOpen = true; break; } await new Promise(r => setTimeout(r, 400)); }
+    assert.equal(sourceOpen, true, "Source opens in the native in-app browser");
+    device("shell", "screencap", "-p", "/sdcard/mlibrary-source-test.png"); device("pull", "/sdcard/mlibrary-source-test.png", "artifacts/android-native-source.png");
+    device("shell", "input", "keyevent", "4");
+    await until(`document.querySelector('.source-panel')`, "return from native source reader");
+    await click("Back");
+    await click("Discover");
+    console.log("PASS: Source reader stays inside the Android app and returns to MLibrary.");
+  }
+  else await click("Back to library");
   await evaluate(
     `(() => {const el = document.querySelector('select[aria-label="Language"]'); el.value='ar'; el.dispatchEvent(new Event('change',{bubbles:true}));})()`,
   );

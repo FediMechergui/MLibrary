@@ -20,6 +20,9 @@ import {
   TextAa,
   X,
   ArrowUpRight,
+  Highlighter,
+  CornersOut,
+  Quotes,
 } from "@phosphor-icons/react";
 import type {
   AppState,
@@ -28,6 +31,8 @@ import type {
   Bookmark,
   Progress,
   ReaderSettings,
+  ReadingMark,
+  ReaderSelection,
 } from "../types";
 import { translator } from "../lib/i18n";
 import { loadBook } from "../lib/api";
@@ -35,12 +40,19 @@ import { localDay, newEntry, saveOffline } from "../lib/state";
 import type { Book as EpubBook, Rendition } from "epubjs";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { highlightColors, intersectMarks } from "../lib/annotations";
+import { readerText } from "../lib/reader-i18n";
+import { MarkEditor } from "./ReadingNotes";
+import { SourceReader, SourcePanel } from "./SourceReader";
+import { selectedOffsets, paintTextMarks } from "../lib/selection";
 type Props = {
   book: Book;
   state: AppState;
   update: (fn: (s: AppState) => AppState) => void;
   onClose: () => void;
   notify: (message: string) => void;
+  initialMark?: ReadingMark;
+  onImport: (file: File) => void;
 };
 export default function Reader({
   book,
@@ -48,13 +60,36 @@ export default function Reader({
   update,
   onClose,
   notify,
+  initialMark,
+  onImport,
 }: Props) {
   const t = translator(state.language),
     settings = state.settings;
+  const r = readerText(state.language);
+  const [chapter, setChapter] = useState(
+    initialMark?.anchor.chapter || state.shelf[book.id]?.progress?.chapter,
+  );
+  const [selection, setSelection] = useState<ReaderSelection | null>(null);
+  const [editing, setEditing] = useState<ReadingMark | undefined>();
+  const [sourceView, setSourceView] = useState("");
+  const marks = useMemo(
+    () => Object.values(state.marks).filter((m) => m.book.id === book.id),
+    [state.marks, book.id],
+  );
+  const select = useCallback((value: ReaderSelection) => {
+    setEditing(undefined);
+    setSelection(value);
+  }, []);
+  const editMark = useCallback((value: ReadingMark) => {
+    setEditing(value);
+    setSelection(value);
+  }, []);
   const [content, setContent] = useState<BookContent | null>(null);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [panel, setPanel] = useState<"settings" | "contents" | null>(null);
+  const [panel, setPanel] = useState<
+    "settings" | "contents" | "highlights" | null
+  >(null);
   const [busy, setBusy] = useState(false);
   const [jump, setJump] = useState<Bookmark | null>(null);
   const [ready, setReady] = useState(false);
@@ -66,7 +101,19 @@ export default function Reader({
       updatedAt: Date.now(),
     },
   );
-  const initial = useRef(state.shelf[book.id]?.progress);
+  const initial = useRef<Progress | undefined>(
+    initialMark
+      ? {
+          position: initialMark.anchor.page,
+          offset: initialMark.anchor.start,
+          cfi: initialMark.anchor.cfi,
+          chapter: initialMark.anchor.chapter,
+          total: 1,
+          percent: 0,
+          updatedAt: Date.now(),
+        }
+      : state.shelf[book.id]?.progress,
+  );
   const navigation = useRef<{ next: () => void; prev: () => void } | null>(
     null,
   );
@@ -75,6 +122,7 @@ export default function Reader({
     update((s) => ({ ...s, settings: { ...s.settings, ...patch } }));
   const saveProgress = useCallback(
     (progress: Progress) => {
+      progress = { ...progress, chapter };
       setPosition(progress);
       setReady(true);
       update((s) => {
@@ -85,20 +133,20 @@ export default function Reader({
         };
       });
     },
-    [book, update],
+    [book, update, chapter],
   );
   useEffect(() => {
     let active = true;
     setError("");
     setContent(null);
     setReady(false);
-    loadBook(book)
+    loadBook(book, chapter)
       .then((data) => active && setContent(data))
       .catch((e) => active && setError(e.message));
     return () => {
       active = false;
     };
-  }, [book, retry]);
+  }, [book, retry, chapter]);
   useEffect(() => {
     if (!ready || error) return;
     let lastTick = Date.now(),
@@ -146,14 +194,20 @@ export default function Reader({
     const handler = (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLSelectElement
+        e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
       )
         return;
       if (e.key === "Escape") {
-        if (panel) setPanel(null);
+        if (sourceView) setSourceView("");
+        else if (selection) setSelection(null);
+        else if (panel) setPanel(null);
+        else if (settings.focus) patchSettings({ focus: false });
         else onClose();
       }
-      if (panel) return;
+      if (panel || selection || sourceView || window.getSelection()?.toString())
+        return;
       if (e.key === (book.language === "ar" ? "ArrowLeft" : "ArrowRight")) {
         e.preventDefault();
         navigation.current?.next();
@@ -165,13 +219,15 @@ export default function Reader({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [panel, onClose, book.language]);
+  }, [panel, onClose, book.language, selection, sourceView, settings.focus]);
   const bookmark = () => {
     const mark: Bookmark = {
       id: crypto.randomUUID(),
       position: position.position,
       cfi: position.cfi,
       offset: position.offset,
+      chapter,
+      fragment: position.fragment,
       label: `${t("page")} ${position.position + 1}`,
       createdAt: Date.now(),
     };
@@ -183,7 +239,9 @@ export default function Reader({
           ...s.shelf[book.id],
           bookmarks: [
             ...s.shelf[book.id].bookmarks.filter((b) =>
-              b.cfi ? b.cfi !== mark.cfi : b.position !== mark.position,
+              b.cfi
+                ? b.cfi !== mark.cfi
+                : b.position !== mark.position || b.chapter !== mark.chapter,
             ),
             mark,
           ],
@@ -193,7 +251,7 @@ export default function Reader({
     notify(t("bookmarked"));
   };
   const download = async () => {
-    if (!content) return;
+    if (!content || content.type === "source") return;
     setBusy(true);
     try {
       await saveOffline(book.id, content);
@@ -222,8 +280,42 @@ export default function Reader({
     notify(t("completed"));
   };
   const isEnd = ready && position.percent >= 99.5;
+  const jumpTo = (mark: Bookmark) => {
+    if (mark.chapter !== chapter) {
+      initial.current = {
+        position: mark.position,
+        offset: mark.offset,
+        cfi: mark.cfi,
+        chapter: mark.chapter,
+        total: 1,
+        percent: 0,
+        updatedAt: Date.now(),
+      };
+      setChapter(mark.chapter);
+    }
+    setJump({ ...mark });
+    setPanel(null);
+    setSelection(null);
+  };
+  const viewerMarks = marks.filter(
+    (m) =>
+      !m.anchor.chapter ||
+      m.anchor.chapter === chapter ||
+      (content?.type === "text" && m.anchor.chapter === content.chapter),
+  );
   return (
-    <div className={`reader theme-${settings.theme}`}>
+    <div
+      className={`reader theme-${settings.theme} ${settings.focus ? "reader-focused" : ""}`}
+    >
+      {settings.focus && (
+        <button
+          className="focus-exit"
+          aria-label={r("exitFocus")}
+          onClick={() => patchSettings({ focus: false })}
+        >
+          <CornersOut size={20} />
+        </button>
+      )}
       <header className="reader-topbar">
         <button
           className="icon-button"
@@ -237,6 +329,16 @@ export default function Reader({
           <span>{book.authors[0] || "MLibrary"}</span>
         </div>
         <div className="reader-actions">
+          <button
+            className="icon-button"
+            aria-label={r("highlights")}
+            aria-expanded={panel === "highlights"}
+            onClick={() =>
+              setPanel(panel === "highlights" ? null : "highlights")
+            }
+          >
+            <Highlighter size={23} />
+          </button>
           <button
             className="icon-button"
             aria-label={t("contents")}
@@ -289,15 +391,13 @@ export default function Reader({
               {t("retry")}
             </button>
             {book.sourceUrl && (
-              <a
+              <button
                 className="text-button"
-                href={book.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => setSourceView(book.sourceUrl)}
               >
                 {t("original")}
                 <ArrowUpRight size={16} />
-              </a>
+              </button>
             )}
           </div>
         )}
@@ -305,6 +405,11 @@ export default function Reader({
           <>
             {content.type === "text" ? (
               <TextViewer
+                key={chapter || "text"}
+                marks={viewerMarks}
+                onSelect={select}
+                onEdit={editMark}
+                chapter={content.chapter || chapter}
                 text={content.text}
                 settings={settings}
                 direction={book.language === "ar" ? "rtl" : "ltr"}
@@ -315,6 +420,22 @@ export default function Reader({
               />
             ) : content.type === "epub" ? (
               <EpubViewer
+                marks={viewerMarks}
+                onSelect={select}
+                onEdit={editMark}
+                data={content.data}
+                settings={settings}
+                initial={initial.current}
+                onProgress={saveProgress}
+                navigation={navigation}
+                jump={jump}
+                onError={setError}
+              />
+            ) : content.type === "pdf" ? (
+              <PdfViewer
+                marks={viewerMarks}
+                onSelect={select}
+                onEdit={editMark}
                 data={content.data}
                 settings={settings}
                 initial={initial.current}
@@ -324,14 +445,12 @@ export default function Reader({
                 onError={setError}
               />
             ) : (
-              <PdfViewer
-                data={content.data}
-                settings={settings}
+              <SourceReader
+                content={content}
+                language={state.language}
                 initial={initial.current}
                 onProgress={saveProgress}
-                navigation={navigation}
-                jump={jump}
-                onError={setError}
+                onImport={onImport}
               />
             )}
           </>
@@ -345,10 +464,18 @@ export default function Reader({
             <aside
               className="reader-panel"
               role="dialog"
-              aria-label={t(panel === "settings" ? "settings" : "contents")}
+              aria-label={
+                panel === "highlights"
+                  ? r("highlights")
+                  : t(panel === "settings" ? "settings" : "contents")
+              }
             >
               <div className="panel-heading">
-                <h2>{t(panel === "settings" ? "settings" : "contents")}</h2>
+                <h2>
+                  {panel === "highlights"
+                    ? r("highlights")
+                    : t(panel === "settings" ? "settings" : "contents")}
+                </h2>
                 <button
                   className="icon-button"
                   aria-label={t("close")}
@@ -357,8 +484,98 @@ export default function Reader({
                   <X size={21} />
                 </button>
               </div>
-              {panel === "settings" ? (
+              {panel === "highlights" ? (
+                <div className="reader-marks">
+                  <p className="panel-note">
+                    {r(
+                      content?.type === "source"
+                        ? "sourceQuoteHint"
+                        : "selectText",
+                    )}
+                  </p>
+                  {!marks.length && (
+                    <p className="panel-note">{r("noHighlights")}</p>
+                  )}
+                  {marks.map((mark) => (
+                    <article
+                      key={mark.id}
+                      style={{
+                        borderInlineStartColor: highlightColors[mark.color],
+                      }}
+                    >
+                      <button
+                        className="passage-jump"
+                        onClick={() =>
+                          jumpTo({
+                            id: mark.id,
+                            position: mark.anchor.page,
+                            offset: mark.anchor.start,
+                            cfi: mark.anchor.cfi,
+                            chapter: mark.anchor.chapter,
+                            label: "",
+                            createdAt: mark.createdAt,
+                          })
+                        }
+                      >
+                        <blockquote dir="auto">{mark.text}</blockquote>
+                      </button>
+                      {mark.note && <p>{mark.note}</p>}
+                      <small>
+                        {mark.tags.map((tag) => `#${tag}`).join(" · ")}
+                      </small>
+                      <div>
+                        <button
+                          className="text-button"
+                          onClick={() => {
+                            editMark(mark);
+                            setPanel(null);
+                          }}
+                        >
+                          {r("edit")}
+                        </button>
+                        <button
+                          className="text-button"
+                          onClick={() =>
+                            update((s) => {
+                              const next = { ...s.marks };
+                              delete next[mark.id];
+                              return { ...s, marks: next };
+                            })
+                          }
+                        >
+                          {r("removeHighlight")}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                  {content?.type === "source" && (
+                    <button
+                      className="button primary"
+                      onClick={() => {
+                        select({
+                          text: "",
+                          anchor: { type: "source", page: position.position },
+                        });
+                        setPanel(null);
+                      }}
+                    >
+                      <Quotes size={18} />
+                      {r("manualQuote")}
+                    </button>
+                  )}
+                </div>
+              ) : panel === "settings" ? (
                 <>
+                  <button
+                    className="button secondary focus-setting"
+                    onClick={() => {
+                      patchSettings({ focus: true });
+                      setPanel(null);
+                    }}
+                  >
+                    <CornersOut size={19} />
+                    {r("focusMode")}
+                  </button>
                   <label className="setting-label">{t("theme")}</label>
                   <div className="theme-options">
                     {(["paper", "sepia", "night"] as const).map((theme) => (
@@ -444,7 +661,12 @@ export default function Reader({
                   <div className="panel-divider" />
                   <button
                     className="button secondary download-button"
-                    disabled={!content || busy || entry?.offline}
+                    disabled={
+                      !content ||
+                      content.type === "source" ||
+                      busy ||
+                      entry?.offline
+                    }
                     onClick={download}
                   >
                     {busy ? (
@@ -465,8 +687,7 @@ export default function Reader({
                       <div className="bookmark-row" key={mark.id}>
                         <button
                           onClick={() => {
-                            setJump({ ...mark });
-                            setPanel(null);
+                            jumpTo(mark);
                           }}
                         >
                           <BookmarkSimple size={17} />
@@ -505,19 +726,29 @@ export default function Reader({
                   {content?.type === "text" && content.chapters.length > 0 && (
                     <>
                       <label className="setting-label">{t("original")}</label>
-                      <p className="panel-note">{t("chaptersNote")}</p>
                       {content.chapters.map((ch) => (
-                        <a
+                        <button
                           className="chapter-link"
                           key={ch.url}
-                          href={ch.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() => {
+                            initial.current = undefined;
+                            setJump(null);
+                            setChapter(
+                              ch.id ||
+                                decodeURIComponent(
+                                  new URL(ch.url).pathname.replace(
+                                    /^\/wiki\//,
+                                    "",
+                                  ),
+                                ),
+                            );
+                            setPanel(null);
+                          }}
                           dir="auto"
                         >
                           {ch.title}
                           <ArrowUpRight size={15} />
-                        </a>
+                        </button>
                       ))}
                     </>
                   )}
@@ -529,15 +760,13 @@ export default function Reader({
                       : book.rights}
                   </p>
                   {book.sourceUrl && (
-                    <a
+                    <button
                       className="text-button"
-                      href={book.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={() => setSourceView(book.sourceUrl)}
                     >
                       {t("original")}
                       <ArrowUpRight size={16} />
-                    </a>
+                    </button>
                   )}
                 </>
               )}
@@ -564,9 +793,15 @@ export default function Reader({
         </button>
         <div className="page-indicator">
           <span>
-            {t("page")} {position.position + 1} {t("of")} {position.total}
+            {content?.type === "source"
+              ? r("sourceReader")
+              : `${t("page")} ${position.position + 1} ${t("of")} ${position.total}`}
           </span>
-          <small>{Math.round(position.percent)}%</small>
+          <small>
+            {content?.type === "source"
+              ? r("sourceNote")
+              : `${Math.round(position.percent)}%`}
+          </small>
         </div>
         {isEnd && entry?.status !== "finished" ? (
           <button className="finish-button" onClick={finished}>
@@ -584,11 +819,39 @@ export default function Reader({
           </button>
         )}
       </footer>
+      {selection && (
+        <MarkEditor
+          key={
+            editing?.id ||
+            `${selection.anchor.start}-${selection.anchor.cfi}-${selection.text}`
+          }
+          book={book}
+          selection={selection}
+          existing={editing}
+          state={state}
+          update={update}
+          notify={notify}
+          onClose={() => {
+            setSelection(null);
+            window.getSelection()?.removeAllRanges();
+          }}
+        />
+      )}
+      {sourceView && (
+        <SourcePanel
+          url={sourceView}
+          language={state.language}
+          onClose={() => setSourceView("")}
+        />
+      )}
     </div>
   );
 }
 
 type ViewerProps = {
+  marks: ReadingMark[];
+  onSelect: (selection: ReaderSelection) => void;
+  onEdit: (mark: ReadingMark) => void;
   settings: ReaderSettings;
   initial?: Progress;
   onProgress: (p: Progress) => void;
@@ -660,7 +923,11 @@ function TextViewer({
   onProgress,
   navigation,
   jump,
-}: ViewerProps & { text: string; direction: "rtl" | "ltr" }) {
+  marks,
+  onSelect,
+  onEdit,
+  chapter,
+}: ViewerProps & { text: string; direction: "rtl" | "ltr"; chapter?: string }) {
   const root = useRef<HTMLDivElement>(null);
   const offset = useRef(initial?.offset || 0);
   const [dimensions, setDimensions] = useState({ width: 600, height: 650 });
@@ -773,12 +1040,69 @@ function TextViewer({
     return () => observer.disconnect();
   }, [settings.mode, pages]);
   const touch = useRef({ x: 0, y: 0 });
+  const capture = () => {
+    if (!root.current) return;
+    const value = selectedOffsets(root.current);
+    if (
+      value &&
+      value.end - value.start <= 5000 &&
+      text.slice(value.start, value.end).trim()
+    )
+      onSelect({
+        text: text.slice(value.start, value.end),
+        anchor: {
+          type: "text",
+          start: value.start,
+          end: value.end,
+          page: safeIndex,
+          chapter,
+        },
+      });
+  };
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const changed = () => {
+      clearTimeout(timer);
+      timer = setTimeout(capture, 450);
+    };
+    document.addEventListener("selectionchange", changed);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("selectionchange", changed);
+    };
+  }, [text, safeIndex, chapter, onSelect]);
+  const pageContent = (page: Page) => (
+    <div data-reading-text data-offset={page.offset}>
+      {intersectMarks(
+        marks.filter((m) => m.anchor.type === "text"),
+        page.offset,
+        page.offset + page.text.length,
+      ).map((piece) =>
+        piece.mark ? (
+          <mark
+            key={piece.start}
+            data-mark={piece.mark.id}
+            style={{ background: highlightColors[piece.mark.color] }}
+            onClick={() => {
+              if (!window.getSelection()?.toString()) onEdit(piece.mark!);
+            }}
+          >
+            {text.slice(piece.start, piece.end)}
+          </mark>
+        ) : (
+          <span key={piece.start}>{text.slice(piece.start, piece.end)}</span>
+        ),
+      )}
+    </div>
+  );
   return (
     <div
       ref={root}
       className={`text-reader mode-${settings.mode} font-${settings.font}`}
       dir={direction}
       style={{ fontSize: settings.fontSize, lineHeight: settings.lineHeight }}
+      onPointerUp={capture}
+      onKeyUp={capture}
       onTouchStart={(e) => {
         touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }}
@@ -786,6 +1110,7 @@ function TextViewer({
         const dx = e.changedTouches[0].clientX - touch.current.x,
           dy = e.changedTouches[0].clientY - touch.current.y;
         if (
+          !window.getSelection()?.toString() &&
           settings.mode !== "scroll" &&
           Math.abs(dx) > 70 &&
           Math.abs(dx) > Math.abs(dy) * 1.5
@@ -800,7 +1125,7 @@ function TextViewer({
             key={page.offset}
             className="text-page scroll-page"
           >
-            <div>{page.text}</div>
+            {pageContent(page)}
             <small>{i + 1}</small>
           </section>
         ))
@@ -809,7 +1134,7 @@ function TextViewer({
           className={`text-page ${settings.mode === "flip" ? `flip-page turn-${turn}` : ""}`}
           key={`${safeIndex}-${pages.length}`}
         >
-          <div>{pages[safeIndex].text}</div>
+          {pageContent(pages[safeIndex])}
         </article>
       )}
     </div>
@@ -824,11 +1149,48 @@ function EpubViewer({
   navigation,
   jump,
   onError,
+  marks,
+  onSelect,
+  onEdit,
 }: ViewerProps & { data: ArrayBuffer; onError: (s: string) => void }) {
   const container = useRef<HTMLDivElement>(null);
   const bookRef = useRef<EpubBook | null>(null);
   const rendition = useRef<Rendition | null>(null);
   const currentSettings = useRef(settings);
+  const marksRef = useRef(marks),
+    selectRef = useRef(onSelect),
+    editRef = useRef(onEdit);
+  marksRef.current = marks;
+  selectRef.current = onSelect;
+  editRef.current = onEdit;
+  const painted = useRef<string[]>([]);
+  const currentPage = useRef(0);
+  const paint = () => {
+    const view = rendition.current;
+    if (!view) return;
+    painted.current.forEach((cfi) => view.annotations.remove(cfi, "highlight"));
+    painted.current = [];
+    marksRef.current
+      .filter((m) => m.anchor.type === "epub" && m.anchor.cfi)
+      .forEach((m) => {
+        try {
+          view.annotations.highlight(
+            m.anchor.cfi!,
+            {},
+            () => editRef.current(m),
+            "reading-highlight",
+            {
+              fill: highlightColors[m.color],
+              "fill-opacity": "0.45",
+              "mix-blend-mode": "multiply",
+            },
+          );
+          painted.current.push(m.anchor.cfi!);
+        } catch {
+          /* A malformed location must not prevent reading the edition. */
+        }
+      });
+  };
   currentSettings.current = settings;
   const applyTheme = useCallback(() => {
     const s = currentSettings.current;
@@ -880,6 +1242,14 @@ function EpubViewer({
           allowScriptedContent: false,
         });
         rendition.current = view;
+        view.on("selected", (cfi: string, contents: { window: Window }) => {
+          const text = contents.window.getSelection()?.toString() || "";
+          if (text.trim() && text.length <= 5000)
+            selectRef.current({
+              text,
+              anchor: { type: "epub", cfi, page: currentPage.current },
+            });
+        });
         view.on(
           "relocated",
           (loc: {
@@ -891,6 +1261,7 @@ function EpubViewer({
             atEnd: boolean;
           }) => {
             if (!active) return;
+            currentPage.current = loc.start.displayed.page - 1;
             const length =
               (book.spine as unknown as { length: number }).length || 1;
             const fraction =
@@ -920,6 +1291,7 @@ function EpubViewer({
         if (!active) return;
         applyTheme();
         await view.display(initial?.cfi);
+        paint();
         if (!active) return;
         resize = new ResizeObserver(() => {
           if (!container.current) return;
@@ -949,6 +1321,9 @@ function EpubViewer({
     };
   }, [data]);
   useEffect(() => {
+    paint();
+  }, [marks]);
+  useEffect(() => {
     applyTheme();
   }, [
     settings.theme,
@@ -971,9 +1346,17 @@ function PdfViewer({
   navigation,
   jump,
   onError,
+  marks,
+  onSelect,
+  onEdit,
 }: ViewerProps & { data: ArrayBuffer; onError: (s: string) => void }) {
   const root = useRef<HTMLDivElement>(null),
     canvas = useRef<HTMLCanvasElement>(null);
+  const textLayer = useRef<HTMLDivElement>(null),
+    pageBox = useRef<HTMLDivElement>(null);
+  const marksRef = useRef(marks);
+  marksRef.current = marks;
+  const [textReady, setTextReady] = useState(0);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
     [index, setIndex] = useState(initial?.position || 0),
     [width, setWidth] = useState(700);
@@ -1015,6 +1398,7 @@ function PdfViewer({
     if (!pdf || !canvas.current) return;
     let active = true;
     let render: { cancel: () => void } | undefined;
+    let layerTask: { cancel: () => void } | undefined;
     (async () => {
       try {
         const page = await pdf.getPage(Math.min(index + 1, pdf.numPages));
@@ -1028,6 +1412,14 @@ function PdfViewer({
         el.height = viewport.height * ratio;
         el.style.width = `${viewport.width}px`;
         el.style.height = `${viewport.height}px`;
+        if (pageBox.current) {
+          pageBox.current.style.width = `${viewport.width}px`;
+          pageBox.current.style.height = `${viewport.height}px`;
+          pageBox.current.style.setProperty(
+            "--total-scale-factor",
+            String(viewport.scale),
+          );
+        }
         const task = page.render({
           canvas: el,
           viewport,
@@ -1035,6 +1427,18 @@ function PdfViewer({
         });
         render = task;
         await task.promise;
+        if (active && textLayer.current) {
+          textLayer.current.replaceChildren();
+          const { TextLayer } = await import("pdfjs-dist");
+          const layer = new TextLayer({
+            textContentSource: await page.getTextContent(),
+            container: textLayer.current,
+            viewport,
+          });
+          layerTask = layer;
+          await layer.render();
+          if (active) setTextReady((n) => n + 1);
+        }
         if (active)
           onProgress({
             position: index,
@@ -1056,6 +1460,7 @@ function PdfViewer({
     return () => {
       active = false;
       render?.cancel();
+      layerTask?.cancel();
     };
   }, [pdf, index, width, onProgress, onError]);
   useEffect(() => {
@@ -1073,14 +1478,67 @@ function PdfViewer({
   useEffect(() => {
     if (jump) setIndex(jump.position);
   }, [jump]);
+  useEffect(() => {
+    if (textLayer.current)
+      paintTextMarks(
+        textLayer.current,
+        marks.filter((m) => m.anchor.type === "pdf" && m.anchor.page === index),
+      );
+  }, [marks, index, textReady]);
+  const capture = () => {
+    if (!root.current) return;
+    const value = selectedOffsets(root.current);
+    if (value?.text.trim() && value.text.length <= 5000)
+      onSelect({
+        text: value.text,
+        anchor: {
+          type: "pdf",
+          page: index,
+          start: value.start,
+          end: value.end,
+        },
+      });
+  };
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const changed = () => {
+      clearTimeout(timer);
+      timer = setTimeout(capture, 450);
+    };
+    document.addEventListener("selectionchange", changed);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("selectionchange", changed);
+    };
+  }, [index, onSelect]);
   return (
-    <div ref={root} className="pdf-reader">
-      <canvas
-        ref={canvas}
-        key={index}
-        className={settings.mode === "flip" ? "flip-page" : ""}
-        aria-label={`PDF page ${index + 1}`}
-      />
+    <div
+      ref={root}
+      className="pdf-reader"
+      onPointerUp={capture}
+      onKeyUp={capture}
+    >
+      <div className="pdf-page" ref={pageBox}>
+        <canvas
+          ref={canvas}
+          key={index}
+          className={settings.mode === "flip" ? "flip-page" : ""}
+          aria-label={`PDF page ${index + 1}`}
+        />
+        <div
+          ref={textLayer}
+          className="textLayer"
+          data-reading-text
+          data-offset="0"
+          onClick={(e) => {
+            const id = (e.target as HTMLElement).closest<HTMLElement>(
+              "[data-mark]",
+            )?.dataset.mark;
+            const mark = marks.find((m) => m.id === id);
+            if (mark && !window.getSelection()?.toString()) onEdit(mark);
+          }}
+        />
+      </div>
     </div>
   );
 }
