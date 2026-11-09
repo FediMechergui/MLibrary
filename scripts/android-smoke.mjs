@@ -43,7 +43,11 @@ async function evaluate(expression) {
     returnByValue: true,
     awaitPromise: true,
   });
-  if (data.exceptionDetails) throw new Error(data.exceptionDetails.text);
+  if (data.exceptionDetails)
+    throw new Error(
+      data.exceptionDetails.exception?.description ||
+        data.exceptionDetails.text,
+    );
   return data.result.value;
 }
 async function until(expression, label, timeout = 60000) {
@@ -83,7 +87,7 @@ try {
     );
     await evaluate(`localStorage.removeItem('mlibrary:v1')`);
     await evaluate(
-      `new Promise((resolve, reject) => { const request=indexedDB.open('keyval-store'); request.onerror=()=>reject(request.error); request.onsuccess=()=>{ const database=request.result; if(!database.objectStoreNames.contains('keyval')) { database.close(); resolve(); return; } const tx=database.transaction('keyval','readwrite');tx.objectStore('keyval').clear();tx.oncomplete=()=>{database.close();resolve();};tx.onerror=()=>reject(tx.error);};})`,
+      `new Promise((resolve, reject) => { const request=indexedDB.open('keyval-store'); request.onupgradeneeded=()=>request.result.createObjectStore('keyval'); request.onerror=()=>reject(request.error); request.onsuccess=()=>{ const database=request.result; if(!database.objectStoreNames.contains('keyval')) { database.close(); resolve(); return; } const tx=database.transaction('keyval','readwrite');tx.objectStore('keyval').clear();tx.oncomplete=()=>{database.close();resolve();};tx.onerror=()=>reject(tx.error);};})`,
     );
     await reload();
   }
@@ -97,187 +101,206 @@ try {
     false,
   );
   await screenshot("android-home-webview");
-  await evaluate(`document.querySelector('.book-grid .book-open').click()`);
-  await click("Start reading");
-  await until(
-    `document.querySelector('.text-page')?.textContent.includes('Project Gutenberg')`,
-    "book text",
-  );
-  await click("Next page");
-  await until(
-    `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
-    "page turn",
-  );
-  await click("Reading settings");
-  await click("Night");
-  await until(
-    `document.querySelector('.reader')?.classList.contains('theme-night')`,
-    "night theme",
-  );
-  await click("Save offline");
-  await until(
-    `Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Saved offline' && b.disabled)`,
-    "offline save",
-  );
-  await click("Close");
-  await screenshot("android-reader-webview");
-  await click("Back to library");
-  await send("Network.enable");
-  await send("Network.emulateNetworkConditions", {
-    offline: true,
-    latency: 0,
-    downloadThroughput: 0,
-    uploadThroughput: 0,
-  });
-  await reload();
-  await until(
-    `document.querySelector('.book-grid .book-open')`,
-    "offline app reload",
-  );
-  await evaluate(`document.querySelector('.book-grid .book-open').click()`);
-  await click("Continue reading");
-  await until(
-    `document.querySelector('.text-page')?.textContent.length > 10`,
-    "offline reader after reload",
-  );
-  await send("Network.emulateNetworkConditions", {
-    offline: false,
-    latency: 0,
-    downloadThroughput: -1,
-    uploadThroughput: -1,
-  });
-  if (process.argv.includes("--notes")) {
-    await evaluate(
-      `(() => { const el = document.querySelector('[data-reading-text]'); const node = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode(); const range = document.createRange(); range.setStart(node, 0); range.setEnd(node, Math.min(100, node.textContent.length)); const s = getSelection(); s.removeAllRanges(); s.addRange(range); el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true})); })()`,
-    );
+  if (!process.argv.includes("--downloads-only")) {
+    await evaluate(`document.querySelector('.book-grid .book-open').click()`);
+    await click("Start reading");
     await until(
-      `document.querySelector('.mark-editor')`,
-      "native passage selection",
+      `document.querySelector('.text-page')?.textContent.includes('Project Gutenberg')`,
+      "book text",
     );
-    await evaluate(
-      `(() => { const input = document.querySelector('.mark-editor textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'A passage to return to.'); input.dispatchEvent(new Event('input',{bubbles:true})); })()`,
-    );
-    await click("Save quote");
+    await click("Next page");
     await until(
-      `document.querySelector('.text-page mark')`,
-      "native persistent highlight",
+      `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
+      "page turn",
     );
+    await click("Reading settings");
+    await click("Night");
+    await until(
+      `document.querySelector('.reader')?.classList.contains('theme-night')`,
+      "night theme",
+    );
+    await click("Save offline");
+    await until(
+      `Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Saved offline' && b.disabled)`,
+      "offline save",
+    );
+    await click("Close");
+    await screenshot("android-reader-webview");
     await click("Back to library");
-    await evaluate(
-      `Array.from(document.querySelectorAll('.nav-item')).find(b => b.textContent.includes('My Quotes')).click()`,
-    );
+    await send("Network.enable");
+    await send("Network.emulateNetworkConditions", {
+      offline: true,
+      latency: 0,
+      downloadThroughput: 0,
+      uploadThroughput: 0,
+    });
+    await reload();
     await until(
-      `document.querySelector('.quote-card')`,
-      "native My Quotes card",
+      `document.querySelector('.book-grid .book-open')`,
+      "offline app reload",
     );
-    await screenshot("android-myquotes-webview");
-    const adb = process.env.ANDROID_HOME
-      ? `${process.env.ANDROID_HOME}/platform-tools/adb.exe`
-      : `${process.env.LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe`;
-    const serial = process.env.ANDROID_SERIAL || "emulator-5564";
-    const device = (...args) =>
-      execFileSync(adb, ["-s", serial, ...args], {
-        encoding: "utf8",
-        timeout: 15000,
-        windowsHide: true,
-      });
-    await click("Share card");
-    let shared = false;
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const activity = device("shell", "dumpsys", "activity", "activities");
-      if (/ChooserActivity/.test(activity)) {
-        shared = true;
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    assert.equal(shared, true, "Android native share chooser opens");
-    device("shell", "screencap", "-p", "/sdcard/mlibrary-share-test.png");
-    device(
-      "pull",
-      "/sdcard/mlibrary-share-test.png",
-      "artifacts/android-native-share.png",
+    await evaluate(`document.querySelector('.book-grid .book-open').click()`);
+    await click("Continue reading");
+    await until(
+      `document.querySelector('.text-page')?.textContent.length > 10`,
+      "offline reader after reload",
     );
-    device("shell", "input", "keyevent", "4");
-    console.log(
-      "PASS: Native PNG generation, file provider, and Android share chooser.",
-    );
-    if (process.argv.includes("--sources")) {
-      await click("Our sources");
-      await until(`document.querySelector('.source-row')`, "source directory");
+    await send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1,
+    });
+    if (process.argv.includes("--notes")) {
       await evaluate(
-        `document.querySelector('.source-row .text-button').click()`,
-      );
-      await click("Open source reader");
-      let sourceOpen = false;
-      for (let attempt = 0; attempt < 30; attempt++) {
-        const activity =
-          device("shell", "dumpsys", "activity", "activities")
-            .split("\n")
-            .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
-          "";
-        if (/OSIABWebViewActivity/.test(activity)) {
-          sourceOpen = true;
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 400));
-      }
-      assert.equal(
-        sourceOpen,
-        true,
-        "Source opens in the native in-app browser",
-      );
-      device("shell", "uiautomator", "dump", "/sdcard/mlibrary-source-ui.xml");
-      const sourceUI = device("shell", "cat", "/sdcard/mlibrary-source-ui.xml");
-      const closeNode = sourceUI.match(
-        /<node[^>]*resource-id="app\.mlibrary\.reader:id\/close_button"[^>]*>/,
-      )?.[0];
-      const bounds = closeNode?.match(
-        /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/,
-      );
-      assert.ok(bounds, "Native source toolbar has the MLibrary return button");
-      device("shell", "screencap", "-p", "/sdcard/mlibrary-source-test.png");
-      device(
-        "pull",
-        "/sdcard/mlibrary-source-test.png",
-        "artifacts/android-native-source.png",
-      );
-      device(
-        "shell",
-        "input",
-        "tap",
-        String(Math.round((Number(bounds[1]) + Number(bounds[3])) / 2)),
-        String(Math.round((Number(bounds[2]) + Number(bounds[4])) / 2)),
-      );
-      let returned = false;
-      for (let attempt = 0; attempt < 30; attempt++) {
-        const activity =
-          device("shell", "dumpsys", "activity", "activities")
-            .split("\n")
-            .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
-          "";
-        if (/app.mlibrary.reader\/\.MainActivity/.test(activity)) {
-          returned = true;
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 400));
-      }
-      assert.equal(
-        returned,
-        true,
-        "MLibrary resumes after the source browser closes",
+        `(() => { const el = document.querySelector('[data-reading-text]'); const node = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode(); const range = document.createRange(); range.setStart(node, 0); range.setEnd(node, Math.min(100, node.textContent.length)); const s = getSelection(); s.removeAllRanges(); s.addRange(range); el.dispatchEvent(new PointerEvent('pointerup', {bubbles:true})); })()`,
       );
       await until(
-        `document.querySelector('.source-panel')`,
-        "return from native source reader",
+        `document.querySelector('.mark-editor')`,
+        "native passage selection",
       );
-      await click("Back");
-      await click("Discover");
+      await evaluate(
+        `(() => { const input = document.querySelector('.mark-editor textarea'); Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,'A passage to return to.'); input.dispatchEvent(new Event('input',{bubbles:true})); })()`,
+      );
+      await click("Save quote");
+      await until(
+        `document.querySelector('.text-page mark')`,
+        "native persistent highlight",
+      );
+      await click("Back to library");
+      await evaluate(
+        `Array.from(document.querySelectorAll('.nav-item')).find(b => b.textContent.includes('My Quotes')).click()`,
+      );
+      await until(
+        `document.querySelector('.quote-card')`,
+        "native My Quotes card",
+      );
+      await screenshot("android-myquotes-webview");
+      const adb = process.env.ANDROID_HOME
+        ? `${process.env.ANDROID_HOME}/platform-tools/adb.exe`
+        : `${process.env.LOCALAPPDATA}/Android/Sdk/platform-tools/adb.exe`;
+      const serial = process.env.ANDROID_SERIAL || "emulator-5564";
+      const device = (...args) =>
+        execFileSync(adb, ["-s", serial, ...args], {
+          encoding: "utf8",
+          timeout: 15000,
+          windowsHide: true,
+        });
+      await click("Share card");
+      let shared = false;
+      for (let attempt = 0; attempt < 20; attempt++) {
+        const activity = device("shell", "dumpsys", "activity", "activities");
+        if (/ChooserActivity/.test(activity)) {
+          shared = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+      assert.equal(shared, true, "Android native share chooser opens");
+      device("shell", "screencap", "-p", "/sdcard/mlibrary-share-test.png");
+      device(
+        "pull",
+        "/sdcard/mlibrary-share-test.png",
+        "artifacts/android-native-share.png",
+      );
+      device("shell", "input", "keyevent", "4");
       console.log(
-        "PASS: Source reader stays inside the Android app and returns to MLibrary.",
+        "PASS: Native PNG generation, file provider, and Android share chooser.",
       );
-    } else await click("Discover");
-  } else await click("Back to library");
+      if (process.argv.includes("--sources")) {
+        await click("Our sources");
+        await until(
+          `document.querySelector('.source-row')`,
+          "source directory",
+        );
+        await evaluate(
+          `document.querySelector('.source-row .text-button').click()`,
+        );
+        await click("Open source reader");
+        let sourceOpen = false;
+        for (let attempt = 0; attempt < 30; attempt++) {
+          const activity =
+            device("shell", "dumpsys", "activity", "activities")
+              .split("\n")
+              .find((line) =>
+                /topResumedActivity|mResumedActivity/.test(line),
+              ) || "";
+          if (/OSIABWebViewActivity/.test(activity)) {
+            sourceOpen = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 400));
+        }
+        assert.equal(
+          sourceOpen,
+          true,
+          "Source opens in the native in-app browser",
+        );
+        device(
+          "shell",
+          "uiautomator",
+          "dump",
+          "/sdcard/mlibrary-source-ui.xml",
+        );
+        const sourceUI = device(
+          "shell",
+          "cat",
+          "/sdcard/mlibrary-source-ui.xml",
+        );
+        const closeNode = sourceUI.match(
+          /<node[^>]*resource-id="app\.mlibrary\.reader:id\/close_button"[^>]*>/,
+        )?.[0];
+        const bounds = closeNode?.match(
+          /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/,
+        );
+        assert.ok(
+          bounds,
+          "Native source toolbar has the MLibrary return button",
+        );
+        device("shell", "screencap", "-p", "/sdcard/mlibrary-source-test.png");
+        device(
+          "pull",
+          "/sdcard/mlibrary-source-test.png",
+          "artifacts/android-native-source.png",
+        );
+        device(
+          "shell",
+          "input",
+          "tap",
+          String(Math.round((Number(bounds[1]) + Number(bounds[3])) / 2)),
+          String(Math.round((Number(bounds[2]) + Number(bounds[4])) / 2)),
+        );
+        let returned = false;
+        for (let attempt = 0; attempt < 30; attempt++) {
+          const activity =
+            device("shell", "dumpsys", "activity", "activities")
+              .split("\n")
+              .find((line) =>
+                /topResumedActivity|mResumedActivity/.test(line),
+              ) || "";
+          if (/app.mlibrary.reader\/\.MainActivity/.test(activity)) {
+            returned = true;
+            break;
+          }
+          await new Promise((r) => setTimeout(r, 400));
+        }
+        assert.equal(
+          returned,
+          true,
+          "MLibrary resumes after the source browser closes",
+        );
+        await until(
+          `document.querySelector('.source-panel')`,
+          "return from native source reader",
+        );
+        await click("Back");
+        await click("Discover");
+        console.log(
+          "PASS: Source reader stays inside the Android app and returns to MLibrary.",
+        );
+      } else await click("Discover");
+    } else await click("Back to library");
+  } else await send("Network.enable");
   if (process.argv.includes("--books")) {
     await evaluate(
       `(() => { const s=JSON.parse(localStorage.getItem('mlibrary:v1')); const books=[{id:'openlibrary:OL5040656W',title:'Abroad',authors:['Thomas Crane'],source:'openlibrary',sourceUrl:'https://openlibrary.org/works/OL5040656W'},{id:'archive:norwegianwood0000mura',title:'Norwegian Wood',authors:['Haruki Murakami'],source:'archive',sourceUrl:'https://archive.org/details/norwegianwood0000mura'}]; for(const b of books) s.shelf[b.id]={book:{...b,language:'en',languages:['en'],cover:null,subjects:[],description:'',access:'source',rights:'Source availability checked when opened',formats:[]},addedAt:Date.now(),status:'want',bookmarks:[],offline:false,tags:[]};localStorage.setItem('mlibrary:v1',JSON.stringify(s)); })()`,
@@ -335,11 +358,17 @@ try {
       "PASS: Real online books open in MLibrary's own reader; restricted books do not launch a website.",
     );
   }
-  if (process.argv.includes("--downloads")) {
+  if (
+    process.argv.includes("--downloads") ||
+    process.argv.includes("--downloads-only")
+  ) {
     // Choose the real public PDF variant of this edition for a download-only
     // test. Only metadata is overridden; all file bytes come from production.
     const identifier = "abroadcranethoma00craniala";
     const id = `archive:${identifier}`;
+    await evaluate(
+      `if (!localStorage.getItem('mlibrary:v1')) localStorage.setItem('mlibrary:v1',JSON.stringify({version:1,shelf:{}}));`,
+    );
     const selectPdf = (event) => {
       const message = JSON.parse(event.data);
       if (message.method !== "Fetch.requestPaused") return;
@@ -453,7 +482,9 @@ try {
   await until(`document.documentElement.dir === 'rtl'`, "Arabic RTL");
   await screenshot("android-arabic-webview");
   console.log(
-    "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
+    process.argv.includes("--downloads-only")
+      ? "PASS: Android native runtime, automatic download/import, offline PDF reading, and Arabic RTL."
+      : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
   );
 } catch (error) {
   console.error(error);
