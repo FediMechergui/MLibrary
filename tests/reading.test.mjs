@@ -79,6 +79,36 @@ test("reader file endpoint never fetches private or encrypted files and rejects 
     /requested book pages/,
   );
 });
+test("a dropped download body retries the complete byte range without publishing partial bytes", async (t) => {
+  let downloads = 0;
+  t.mock.method(globalThis, "fetch", async (url) => {
+    if (String(url).includes("metadata"))
+      return Response.json({
+        metadata: {},
+        files: [{ name: "scan.pdf", format: "Text PDF", size: "8" }],
+      });
+    downloads++;
+    if (downloads === 1)
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new Uint8Array([99, 99]));
+            controller.error(
+              new DOMException("Transfer timed out", "TimeoutError"),
+            );
+          },
+        }),
+        { status: 206, headers: { "content-range": "bytes 0-7/8" } },
+      );
+    return new Response("%PDF-123", {
+      status: 206,
+      headers: { "content-range": "bytes 0-7/8" },
+    });
+  });
+  const result = await getReaderFileChunk("range-body-retry", "scan.pdf", 0, 7);
+  assert.equal(result.bytes.toString(), "%PDF-123");
+  assert.equal(downloads, 2);
+});
 test("licensed public text is readable; restricted, encrypted, private and dark items are not downloaded", async (t) => {
   for (const patch of [
     {},

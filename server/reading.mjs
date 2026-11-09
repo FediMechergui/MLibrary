@@ -40,6 +40,7 @@ export async function archiveResponse(url, range) {
     )
       throw new Error("Unsupported archive download host");
     const response = await fetchWithRetry(current, {
+      timeoutMs: range ? 15000 : 8000,
       redirect: "manual",
       credentials: "omit",
       headers: {
@@ -83,6 +84,7 @@ export async function getReaderFileChunk(id, name, start, end) {
     const data = await (
       await fetchUpstream(
         `https://archive.org/metadata/${encodeURIComponent(id)}`,
+        { timeoutMs: 15000 },
       )
     ).json();
     cached = { files: publicFiles(data), expires: Date.now() + 60000 };
@@ -105,6 +107,24 @@ export async function getReaderFileChunk(id, name, start, end) {
   )
     throw new Error("No publicly accessible reader file");
   end = Math.min(end, size - 1);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return await readFileRange(id, name, start, end, size);
+    } catch (error) {
+      // A connection can fail after headers arrived. Retry the complete range;
+      // never concatenate bytes from the failed response with its replacement.
+      if (
+        attempt ||
+        !(
+          error instanceof TypeError ||
+          ["TimeoutError", "AbortError"].includes(error.name)
+        )
+      )
+        throw error;
+    }
+  }
+}
+async function readFileRange(id, name, start, end, size) {
   const response = await archiveResponse(
     `https://archive.org/download/${encodeURIComponent(id)}/${encodeURIComponent(name)}`,
     `bytes=${start}-${end}`,

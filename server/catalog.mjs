@@ -116,12 +116,15 @@ export async function fetchUpstream(url, options = {}) {
   if (!response.ok) throw new Error(`Source returned ${response.status}`);
   return response;
 }
-export async function fetchWithRetry(url, options = {}) {
+export async function fetchWithRetry(
+  url,
+  { timeoutMs = 8000, ...options } = {},
+) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       return await fetch(url, {
         ...options,
-        signal: options.signal ?? AbortSignal.timeout(8000),
+        signal: options.signal ?? AbortSignal.timeout(timeoutMs),
       });
     } catch (error) {
       if (
