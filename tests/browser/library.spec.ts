@@ -1,5 +1,35 @@
 import { test, expect } from "@playwright/test";
 
+test("reader waits for its font before enabling the first page turn", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  let releaseFonts!: () => void;
+  const fonts = new Promise<void>((resolve) => {
+    releaseFonts = resolve;
+  });
+  await page.route(/newsreader.*\.woff2$/, async (route) => {
+    await fonts;
+    await route.continue();
+  });
+  try {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.locator(".book-grid .book-open").first().click();
+    await page
+      .getByRole("button", { name: "Start reading", exact: true })
+      .click();
+    await expect(page.locator(".text-page")).toContainText("Project Gutenberg");
+    const next = page.getByRole("button", { name: "Next page", exact: true });
+    await expect(next).toBeDisabled();
+    releaseFonts();
+    await expect(next).toBeEnabled();
+    await next.click();
+    await expect(page.locator(".page-indicator")).toContainText("Page 2");
+  } finally {
+    releaseFonts();
+  }
+});
+
 test("discover, save, read, bookmark, change theme, and reopen offline copy", async ({
   page,
 }) => {
@@ -93,17 +123,15 @@ test("mobile Arabic layout, imported text, scroll mode, and reading milestones",
   });
   await page.getByLabel("اللغة", { exact: true }).selectOption("en");
   await page.getByRole("button", { name: /^My library/ }).click();
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "The Quiet Library.txt",
-      mimeType: "text/plain",
-      buffer: Buffer.from(
-        "A library is a place where many voices can be heard. Read a little, and discover another world.\n\n".repeat(
-          120,
-        ),
+  await page.locator("input[type=file]").setInputFiles({
+    name: "The Quiet Library.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(
+      "A library is a place where many voices can be heard. Read a little, and discover another world.\n\n".repeat(
+        120,
       ),
-    });
+    ),
+  });
   await page
     .getByRole("button", { name: "Start reading", exact: true })
     .click();

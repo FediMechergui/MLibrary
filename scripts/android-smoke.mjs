@@ -1,27 +1,165 @@
-import { chromium, expect } from '@playwright/test';
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9223');
-const context = browser.contexts()[0];
-const page = context.pages()[0];
-await expect(page.getByRole('heading', { name: 'So many worlds. One little library.' })).toBeVisible({ timeout: 30000 });
-console.log('Android home rendered:', await page.title());
-console.log('Android native runtime:', await page.evaluate(() => window.Capacitor?.isNativePlatform()));
-console.log('Horizontal overflow:', await page.evaluate(() => document.documentElement.scrollWidth > innerWidth));
-await page.screenshot({ path: 'artifacts/android-home-webview.png' });
-await page.locator('.book-grid .book-open').first().click();
-await page.getByRole('button', { name: 'Start reading', exact: true }).click();
-await expect(page.locator('.text-page')).toContainText('Project Gutenberg');
-await page.getByRole('button', { name: 'Next page', exact: true }).click();
-await expect(page.locator('.page-indicator')).toContainText('Page 2');
-await page.getByRole('button', { name: 'Reading settings' }).click();
-await page.getByRole('button', { name: 'Night', exact: true }).click();
-await expect(page.locator('.reader')).toHaveClass(/theme-night/);
-await page.getByRole('button', { name: 'Save offline', exact: true }).click();
-await expect(page.getByRole('button', { name: 'Saved offline', exact: true })).toBeDisabled();
-await page.getByRole('button', { name: 'Close', exact: true }).click();
-await page.screenshot({ path: 'artifacts/android-reader-webview.png' });
-await page.getByRole('button', { name: 'Back to library' }).click();
-await page.getByLabel('Language', { exact: true }).selectOption('ar');
-await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-await page.screenshot({ path: 'artifacts/android-arabic-webview.png' });
-console.log('Android reader, page turn, night theme, offline save, and Arabic RTL passed.');
-await browser.close();
+import assert from "node:assert/strict";
+import { writeFile } from "node:fs/promises";
+// Connect directly to the app's forwarded WebView. Android WebViews do not
+// implement browser-level context/download management used by desktop runners.
+const targets = await (await fetch("http://127.0.0.1:9223/json")).json();
+const target = targets.find((t) => t.type === "page");
+if (!target)
+  throw new Error(
+    "No Android WebView found. Launch the debug APK and forward its devtools socket first.",
+  );
+const socket = new WebSocket(target.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => {
+  socket.addEventListener("open", resolve, { once: true });
+  socket.addEventListener("error", reject, { once: true });
+});
+let nextId = 0;
+const pending = new Map();
+socket.addEventListener("message", (event) => {
+  const message = JSON.parse(event.data);
+  if (pending.has(message.id)) {
+    const { resolve, reject, timer } = pending.get(message.id);
+    clearTimeout(timer);
+    pending.delete(message.id);
+    if (message.error) reject(new Error(message.error.message));
+    else resolve(message.result);
+  }
+});
+function send(method, params = {}) {
+  return new Promise((resolve, reject) => {
+    const id = ++nextId;
+    const timer = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`Timed out: ${method} ${params.expression || ""}`));
+    }, 60000);
+    pending.set(id, { resolve, reject, timer });
+    socket.send(JSON.stringify({ id, method, params }));
+  });
+}
+async function evaluate(expression) {
+  const data = await send("Runtime.evaluate", {
+    expression,
+    returnByValue: true,
+  });
+  if (data.exceptionDetails) throw new Error(data.exceptionDetails.text);
+  return data.result.value;
+}
+async function until(expression, label) {
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
+    if (await evaluate(`Boolean(${expression})`)) {
+      console.log(`PASS: ${label}`);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  throw new Error(`Android assertion failed: ${label}`);
+}
+async function click(label) {
+  const expression = `Array.from(document.querySelectorAll('button')).find(b => !b.disabled && (b.getAttribute('aria-label') || b.textContent.trim()) === ${JSON.stringify(label)})`;
+  await until(`Boolean(${expression})`, `${label} enabled`);
+  await evaluate(
+    `(() => { const button = ${expression}; button.click(); return true; })()`,
+  );
+}
+async function screenshot(name) {
+  const { data } = await send("Page.captureScreenshot", { format: "png" });
+  await writeFile(`artifacts/${name}.png`, Buffer.from(data, "base64"));
+}
+async function reload() {
+  await evaluate("window.__androidSmokeReload = true");
+  await send("Page.reload");
+  await until("window.__androidSmokeReload !== true", "new document loaded");
+}
+try {
+  if (process.argv.includes("--reset")) {
+    // Explicit opt-in: use only on a disposable test emulator.
+    await evaluate(`document.querySelector('.reader-topbar button')?.click()`);
+    await until(
+      `!document.querySelector('.reader')`,
+      "reader closed before reset",
+    );
+    await evaluate(`localStorage.removeItem('mlibrary:v1')`);
+    await reload();
+  }
+  await until(
+    `document.querySelector('h1')?.textContent.includes('So many worlds.')`,
+    "home",
+  );
+  assert.equal(await evaluate("window.Capacitor.isNativePlatform()"), true);
+  assert.equal(
+    await evaluate("document.documentElement.scrollWidth > innerWidth"),
+    false,
+  );
+  await screenshot("android-home-webview");
+  await evaluate(`document.querySelector('.book-grid .book-open').click()`);
+  await click("Start reading");
+  await until(
+    `document.querySelector('.text-page')?.textContent.includes('Project Gutenberg')`,
+    "book text",
+  );
+  await click("Next page");
+  await until(
+    `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
+    "page turn",
+  );
+  await click("Reading settings");
+  await click("Night");
+  await until(
+    `document.querySelector('.reader')?.classList.contains('theme-night')`,
+    "night theme",
+  );
+  await click("Save offline");
+  await until(
+    `Array.from(document.querySelectorAll('button')).some(b => b.textContent.trim() === 'Saved offline' && b.disabled)`,
+    "offline save",
+  );
+  await click("Close");
+  await screenshot("android-reader-webview");
+  await click("Back to library");
+  await send("Network.enable");
+  await send("Network.emulateNetworkConditions", {
+    offline: true,
+    latency: 0,
+    downloadThroughput: 0,
+    uploadThroughput: 0,
+  });
+  await reload();
+  await until(
+    `document.querySelector('.book-grid .book-open')`,
+    "offline app reload",
+  );
+  await evaluate(`document.querySelector('.book-grid .book-open').click()`);
+  await click("Continue reading");
+  await until(
+    `document.querySelector('.text-page')?.textContent.length > 10`,
+    "offline reader after reload",
+  );
+  await send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  });
+  await click("Back to library");
+  await evaluate(
+    `(() => {const el = document.querySelector('select[aria-label="Language"]'); el.value='ar'; el.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+  );
+  await until(`document.documentElement.dir === 'rtl'`, "Arabic RTL");
+  await screenshot("android-arabic-webview");
+  console.log(
+    "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
+  );
+} catch (error) {
+  console.error(error);
+  await screenshot("android-failure").catch(() => {});
+  throw error;
+} finally {
+  await send("Network.emulateNetworkConditions", {
+    offline: false,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  }).catch(() => {});
+  socket.close();
+}

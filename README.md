@@ -75,6 +75,8 @@ npm.cmd run android:build
 
 The installable development build is copied to `artifacts/MLibrary-debug.apk`. For macOS/Linux, build the web app with `VITE_API_BASE_URL`, run `npx cap sync android`, then `./gradlew assembleDebug` inside `android`. GitHub Actions can also build the APK on demand. Play Store publication requires a permanent signing key and release setup.
 
+For a native smoke test, install and launch the debug APK on a disposable emulator. Find its PID with `adb shell pidof app.mlibrary.reader`, then run `adb forward tcp:9223 localabstract:webview_devtools_remote_<PID>`. Run `node scripts/android-smoke.mjs --reset`; the explicit reset clears this app's shelf and settings on the test device. The script checks the native runtime, reading controls, offline reopening, and Arabic RTL through the app's WebView and writes screenshots to `artifacts/`.
+
 Book files live in IndexedDB and shelf/progress metadata in local storage. Clearing app/site data removes them. Progress export includes metadata, not book files. No user account or server-side personal reading history is created.
 
 ## Deploy

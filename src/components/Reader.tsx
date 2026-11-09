@@ -675,7 +675,7 @@ function TextViewer({
     if (!el) return;
     const observer = new ResizeObserver(() => {
       const style = getComputedStyle(el);
-      setDimensions({
+      const next = {
         width:
           el.clientWidth -
           parseFloat(style.paddingLeft) -
@@ -684,7 +684,12 @@ function TextViewer({
           el.clientHeight -
           parseFloat(style.paddingTop) -
           parseFloat(style.paddingBottom),
-      });
+      };
+      setDimensions((previous) =>
+        previous.width === next.width && previous.height === next.height
+          ? previous
+          : next,
+      );
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -714,6 +719,7 @@ function TextViewer({
   }, [pages]);
   const safeIndex = Math.min(index, pages.length - 1);
   useEffect(() => {
+    if (!fontsReady) return;
     offset.current = pages[safeIndex].offset;
     onProgress({
       position: safeIndex,
@@ -723,10 +729,12 @@ function TextViewer({
       offset: offset.current,
       updatedAt: Date.now(),
     });
-  }, [safeIndex, pages, onProgress]);
+  }, [safeIndex, pages, onProgress, fontsReady]);
   const go = useCallback(
     (next: number) => {
       const value = Math.max(0, Math.min(pages.length - 1, next));
+      // Keep a navigation intent through a concurrent font/viewport reflow.
+      offset.current = pages[value].offset;
       setTurn(value > index ? "next" : "prev");
       setIndex(value);
       if (settings.mode === "scroll")
@@ -735,9 +743,9 @@ function TextViewer({
           ?.scrollIntoView({ block: "start", behavior: "smooth" });
       else root.current?.scrollTo(0, 0);
     },
-    [index, pages.length, settings.mode],
+    [index, pages, settings.mode],
   );
-  useEffect(() => {
+  useLayoutEffect(() => {
     navigation.current = {
       next: () => go(index + 1),
       prev: () => go(index - 1),

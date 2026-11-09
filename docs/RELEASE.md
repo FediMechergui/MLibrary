@@ -6,6 +6,8 @@ Website: https://mlibrary-fedimechergui.netlify.app
 
 `MLibrary-debug.apk` is an installable Android development build for Android 7.0 and later. It is signed with the local Android debug certificate. It is not a Play Store release. Install it only on devices where you want to test this preview.
 
-SHA-256: `bb517ea3d9397dac62c2da9cb389adb7f36bdb826578cd17c89c418c18698323`
+SHA-256: `84791f1847a2caa32faa4806c7f580d6d3588552ee7b129fcaed4f71f1460e72`
+
+Verified with 11 backend tests, six browser checks, and an Android 15 emulator smoke test including page turns, night mode, offline reopening, and Arabic RTL. Hourly catalogue updates have completed successfully in production.
 
 Personal shelves and reading history stay on the device. Arabic Wikisource entries can be chapters; Archive/Open Library availability is handled at the source. See README and the source research for current limits and the plan for a much larger catalogue.
