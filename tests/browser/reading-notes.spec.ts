@@ -129,9 +129,22 @@ test("text highlights persist, become tagged quote cards, export, and return to 
   );
 });
 
-test("PDF text is selectable and annotations stay on their page", async ({
+test("PDF reading and highlights work without newer WebView JavaScript APIs", async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    for (const [target, key] of [
+      [Promise, "try"],
+      [Promise, "withResolvers"],
+      [URL, "parse"],
+    ] as const) {
+      Object.defineProperty(target, key, {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+    }
+  });
   await page.goto("/");
   await page
     .locator("input[type=file]")

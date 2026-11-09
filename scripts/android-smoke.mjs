@@ -416,7 +416,7 @@ try {
       "automatic download begins",
     );
     await until(
-      `document.querySelector('.pdf-reader canvas')?.width > 0`,
+      `document.querySelector('.pdf-reader canvas')?.width > 0 && document.querySelector('button[aria-label="Next page"]:not([disabled])')`,
       "downloaded PDF opens automatically",
       180000,
     );
@@ -455,7 +455,7 @@ try {
     );
     await click("Continue reading");
     await until(
-      `document.querySelector('.pdf-reader canvas')?.width > 0`,
+      `document.querySelector('.pdf-reader canvas')?.width > 0 && document.querySelector('button[aria-label="Next page"]:not([disabled])')`,
       "saved PDF blob reopens offline",
     );
     await click("Next page");

@@ -39,7 +39,7 @@ import type { DownloadProgress } from "../lib/api";
 import { localDay, newEntry, saveOffline } from "../lib/state";
 import type { Book as EpubBook, Rendition } from "epubjs";
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import pdfWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 import { highlightColors, intersectMarks } from "../lib/annotations";
 import { readerText } from "../lib/reader-i18n";
 import { MarkEditor } from "./ReadingNotes";
@@ -1417,7 +1417,7 @@ function PdfViewer({
     let task: { destroy: () => Promise<void> } | undefined;
     (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
+        const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
         let transport:
           | InstanceType<typeof pdfjs.PDFDataRangeTransport>
@@ -1539,7 +1539,7 @@ function PdfViewer({
         await task.promise;
         if (active && textLayer.current) {
           textLayer.current.replaceChildren();
-          const { TextLayer } = await import("pdfjs-dist");
+          const { TextLayer } = await import("pdfjs-dist/legacy/build/pdf.mjs");
           const layer = new TextLayer({
             textContentSource: await page.getTextContent(),
             container: textLayer.current,
