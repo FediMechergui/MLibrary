@@ -14,7 +14,7 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 - Full-text reading, animated page turns, paged and continuous reading, paper/sepia/night themes, font controls, bookmarks, and progress restoration.
 - Imported EPUB and PDF reading; EPUB scripts are disabled. PDF keeps the source layout. Files up to 50 MB can be imported from the device.
 - Persistent four-color highlights, notes, and passage anchors in text, EPUB, and selectable PDFs. Image-only PDFs require a text/OCR layer for automatic selection.
-- **My Quotes**: saved passages, favorites, search, tags, editable notes, return to passage, and three PNG card styles. Android cards use the native save/share chooser. Source viewers also support manually entered quotes.
+- **My Quotes**: saved passages, favorites, search, tags, editable notes, return to passage, and three PNG card styles. Android cards use the native save/share chooser. You can also enter a quote manually.
 - Book tags and reading preferences for subjects, purposes, and languages; preferences reorder the starter collection. Focus mode hides reader controls.
 - Internal Wikisource chapter navigation. Open Library resolves language-matched Internet Archive editions and checks alternatives when needed. Publicly downloadable text, EPUB, and PDF files open in **MLibrary's own reader**. Large PDFs use page-range requests, up to 500 MB online; offline files are limited to 50 MB. Book opening never falls back to a provider website. Editions without an accessible file offer importing your copy or searching for another edition.
 - Saved shelves, device-local offline book files, daily goals, active reading time, streaks, and milestones.
