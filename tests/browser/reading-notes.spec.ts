@@ -167,6 +167,43 @@ test("PDF reading and highlights work without newer WebView JavaScript APIs", as
   await expect(page.locator(".textLayer mark")).toHaveCount(1);
 });
 
+test("scanned PDF image pixels render with bundled decoders and reopen offline", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .locator("input[type=file]")
+    .setInputFiles("tests/fixtures/scanned-reader.pdf");
+  await page
+    .getByRole("button", { name: "Start reading", exact: true })
+    .click();
+  const painted = () =>
+    page.locator(".pdf-reader canvas").evaluate((el) => {
+      const canvas = el as HTMLCanvasElement;
+      const pixel = canvas
+        .getContext("2d")!
+        .getImageData(
+          Math.floor(canvas.width / 3),
+          Math.floor(canvas.height / 2),
+          1,
+          1,
+        ).data;
+      return pixel[3] > 0 && pixel[0] < 100 && pixel[1] > pixel[0];
+    });
+  await expect.poll(painted).toBe(true);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.getByRole("button", { name: "Back to library" }).click();
+  await page.reload();
+  await page.getByRole("button", { name: /^My library/ }).click();
+  await page.locator(".book-open").click();
+  await page.context().setOffline(true);
+  await page
+    .getByRole("button", { name: "Continue reading", exact: true })
+    .click();
+  await expect.poll(painted).toBe(true);
+  await page.context().setOffline(false);
+});
+
 test("EPUB selections become CFI anchored quotes without enabling scripts", async ({
   page,
 }) => {

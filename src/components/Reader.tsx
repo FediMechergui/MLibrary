@@ -1478,7 +1478,14 @@ function PdfViewer({
                 disableStream: true,
                 rangeChunkSize: 262144,
               }),
-          useSystemFonts: true,
+          wasmUrl: new URL("/pdfjs/wasm/", window.location.href).href,
+          standardFontDataUrl: new URL(
+            "/pdfjs/standard_fonts/",
+            window.location.href,
+          ).href,
+          cMapUrl: new URL("/pdfjs/cmaps/", window.location.href).href,
+          cMapPacked: true,
+          useSystemFonts: false,
         });
         task = loading;
         const document = await loading.promise;

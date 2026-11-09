@@ -72,6 +72,12 @@ async function screenshot(name) {
   const { data } = await send("Page.captureScreenshot", { format: "png" });
   await writeFile(`artifacts/${name}.png`, Buffer.from(data, "base64"));
 }
+async function assertScanPixels() {
+  await until(
+    `(() => { const c=document.querySelector('.pdf-reader canvas'); if(!c) return false;const p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let ink=0;for(let i=0;i<p.length;i+=64) if(p[i+3]>0 && Math.min(p[i],p[i+1],p[i+2])<210) ink++;return ink>100; })()`,
+    "actual scanned page image pixels",
+  );
+}
 async function reload() {
   await evaluate("window.__androidSmokeReload = true");
   await send("Page.reload");
@@ -432,6 +438,7 @@ try {
       "downloaded PDF page turn",
     );
     await screenshot("android-auto-import-pdf");
+    await assertScanPixels();
     await send("Fetch.disable");
     socket.removeEventListener("message", selectPdf);
     await click("Back to library");
@@ -464,6 +471,7 @@ try {
       "offline imported PDF page turn",
     );
     await screenshot("android-auto-import-offline");
+    await assertScanPixels();
     await click("Back to library");
     await send("Network.emulateNetworkConditions", {
       offline: false,

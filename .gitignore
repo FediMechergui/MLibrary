@@ -1,5 +1,6 @@
 node_modules/
 dist/
+public/pdfjs/
 .env
 .env.*
 !.env.example
