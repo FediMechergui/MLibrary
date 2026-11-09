@@ -41,12 +41,13 @@ async function evaluate(expression) {
   const data = await send("Runtime.evaluate", {
     expression,
     returnByValue: true,
+    awaitPromise: true,
   });
   if (data.exceptionDetails) throw new Error(data.exceptionDetails.text);
   return data.result.value;
 }
-async function until(expression, label) {
-  const deadline = Date.now() + 60000;
+async function until(expression, label, timeout = 60000) {
+  const deadline = Date.now() + timeout;
   while (Date.now() < deadline) {
     if (await evaluate(`Boolean(${expression})`)) {
       console.log(`PASS: ${label}`);
@@ -81,6 +82,9 @@ try {
       "reader closed before reset",
     );
     await evaluate(`localStorage.removeItem('mlibrary:v1')`);
+    await evaluate(
+      `new Promise((resolve, reject) => { const request=indexedDB.open('keyval-store'); request.onerror=()=>reject(request.error); request.onsuccess=()=>{ const database=request.result; if(!database.objectStoreNames.contains('keyval')) { database.close(); resolve(); return; } const tx=database.transaction('keyval','readwrite');tx.objectStore('keyval').clear();tx.oncomplete=()=>{database.close();resolve();};tx.onerror=()=>reject(tx.error);};})`,
+    );
     await reload();
   }
   await until(
@@ -329,6 +333,118 @@ try {
     await click("Discover");
     console.log(
       "PASS: Real online books open in MLibrary's own reader; restricted books do not launch a website.",
+    );
+  }
+  if (process.argv.includes("--downloads")) {
+    // Choose the real public PDF variant of this edition for a download-only
+    // test. Only metadata is overridden; all file bytes come from production.
+    const identifier = "abroadcranethoma00craniala";
+    const id = `archive:${identifier}`;
+    const selectPdf = (event) => {
+      const message = JSON.parse(event.data);
+      if (message.method !== "Fetch.requestPaused") return;
+      void send("Fetch.fulfillRequest", {
+        requestId: message.params.requestId,
+        responseCode: 200,
+        responseHeaders: [
+          { name: "Content-Type", value: "application/json" },
+          { name: "Access-Control-Allow-Origin", value: "*" },
+        ],
+        body: Buffer.from(
+          JSON.stringify({
+            type: "remote",
+            format: "pdf",
+            url: `https://archive.org/download/${identifier}/${identifier}.pdf`,
+            attribution: "Internet Archive · Abroad, Thomas Crane",
+            sourceUrl: `https://archive.org/details/${identifier}`,
+          }),
+        ).toString("base64"),
+      }).catch(console.error);
+    };
+    socket.addEventListener("message", selectPdf);
+    await send("Fetch.enable", {
+      patterns: [{ urlPattern: `*/api/content?id=archive%3A${identifier}*` }],
+    });
+    await evaluate(
+      `(() => { const s=JSON.parse(localStorage.getItem('mlibrary:v1')); s.shelf[${JSON.stringify(id)}]={book:{id:${JSON.stringify(id)},title:'Abroad PDF',authors:['Thomas Crane'],source:'archive',language:'en',languages:['en'],cover:null,sourceUrl:'https://archive.org/details/${identifier}',subjects:[],description:'',access:'source',rights:'Public source file',formats:['PDF']},addedAt:Date.now(),status:'want',bookmarks:[],offline:false,tags:[]};localStorage.setItem('mlibrary:v1',JSON.stringify(s)); const db=indexedDB.open('keyval-store');db.onsuccess=()=>{const tx=db.result.transaction('keyval','readwrite');tx.objectStore('keyval').delete('book:${id}');tx.oncomplete=()=>{db.result.close();window.__downloadTestReady=true;};}; })()`,
+    );
+    await until(`window.__downloadTestReady`, "download fixture cache cleared");
+    await reload();
+    await until(`document.querySelector('.nav-item')`, "download shelf loaded");
+    await evaluate(
+      `Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.includes('My library')).click()`,
+    );
+    await until(
+      `document.querySelector('.book-open[aria-label="Abroad PDF"]')`,
+      "download-only book available",
+    );
+    await evaluate(
+      `document.querySelector('.book-open[aria-label="Abroad PDF"]').click()`,
+    );
+    await click("Open in reader");
+    await until(
+      `document.querySelector('.reader-message')?.textContent.includes('Downloading your book')`,
+      "automatic download begins",
+    );
+    await until(
+      `document.querySelector('.pdf-reader canvas')?.width > 0`,
+      "downloaded PDF opens automatically",
+      180000,
+    );
+    assert.equal(
+      await evaluate(
+        `JSON.parse(localStorage.getItem('mlibrary:v1')).shelf[${JSON.stringify(id)}].offline`,
+      ),
+      true,
+    );
+    await click("Next page");
+    await until(
+      `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
+      "downloaded PDF page turn",
+    );
+    await screenshot("android-auto-import-pdf");
+    await send("Fetch.disable");
+    socket.removeEventListener("message", selectPdf);
+    await click("Back to library");
+    await send("Network.emulateNetworkConditions", {
+      offline: true,
+      latency: 0,
+      downloadThroughput: 0,
+      uploadThroughput: 0,
+    });
+    await reload();
+    await until(`document.querySelector('.nav-item')`, "app reopens offline");
+    await evaluate(
+      `Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.includes('My library')).click()`,
+    );
+    await until(
+      `document.querySelector('.book-open[aria-label="Abroad PDF"]')`,
+      "imported book on offline shelf",
+    );
+    await evaluate(
+      `document.querySelector('.book-open[aria-label="Abroad PDF"]').click()`,
+    );
+    await click("Continue reading");
+    await until(
+      `document.querySelector('.pdf-reader canvas')?.width > 0`,
+      "saved PDF blob reopens offline",
+    );
+    await click("Next page");
+    await until(
+      `document.querySelector('.page-indicator')?.textContent.includes('Page 3')`,
+      "offline imported PDF page turn",
+    );
+    await screenshot("android-auto-import-offline");
+    await click("Back to library");
+    await send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1,
+    });
+    await click("Discover");
+    console.log(
+      "PASS: Actual source PDF downloads, imports automatically, and survives offline app reload.",
     );
   }
   await evaluate(

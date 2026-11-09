@@ -1,9 +1,22 @@
 import type { Book, BookContent, SearchResult, Source } from "../types";
-import { offlineBook } from "./state";
+import { offlineBook, saveOffline } from "./state";
 export const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+export type DownloadProgress = {
+  received: number;
+  total: number;
+  phase: "downloading" | "saving";
+};
+type DownloadOptions = {
+  signal?: AbortSignal;
+  onProgress?: (progress: DownloadProgress) => void;
+};
+function requestSignal(signal?: AbortSignal) {
+  const timeout = AbortSignal.timeout(45000);
+  return signal ? AbortSignal.any([signal, timeout]) : timeout;
+}
 async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API}/api${path}`, {
-    signal: signal || AbortSignal.timeout(45000),
+    signal: requestSignal(signal),
   });
   const body = await response.json();
   if (!response.ok)
@@ -26,16 +39,20 @@ export const getSyncStatus = () =>
 export async function loadBook(
   book: Book,
   chapter?: string,
-): Promise<BookContent> {
+  options: DownloadOptions = {},
+): Promise<{ content: BookContent; offline: boolean }> {
   const local = await offlineBook(book.id);
+  options.signal?.throwIfAborted();
   if (
     local &&
     (!chapter || (local.type === "text" && local.chapter === chapter))
   )
-    return local;
+    return { content: local, offline: true };
   if (["gutenberg:1342", "gutenberg:11"].includes(book.id)) {
-    const response = await fetch(`/data/${book.id.replace(":", "-")}.json`);
-    if (response.ok) return response.json();
+    const response = await fetch(`/data/${book.id.replace(":", "-")}.json`, {
+      signal: requestSignal(options.signal),
+    });
+    if (response.ok) return { content: await response.json(), offline: false };
   }
   if (book.source === "local")
     throw new Error(
@@ -52,17 +69,33 @@ export async function loadBook(
       }
   >(
     `/content?${new URLSearchParams({ id: book.id, language: book.language, reader: "2", ...(chapter ? { chapter } : {}) })}`,
+    options.signal,
   );
-  if (data.type !== "remote") return data;
-  const url = archiveFileUrl(data.url);
-  if (data.format === "pdf")
-    return {
-      type: "pdf-url",
-      url: url.href,
-      attribution: data.attribution,
-      sourceUrl: data.sourceUrl,
-    };
-  return downloadReaderFile(url.href, "epub");
+  const downloadedText =
+    data.type === "text" &&
+    ["archive", "openlibrary"].includes(book.source) &&
+    !data.chapters.length;
+  if (data.type !== "remote" && !downloadedText)
+    return { content: data, offline: false };
+  const content: BookContent =
+    data.type === "remote"
+      ? {
+          ...(await downloadReaderFile(data.url, data.format, options)),
+          attribution: data.attribution,
+          sourceUrl: data.sourceUrl,
+        }
+      : data;
+  options.signal?.throwIfAborted();
+  options.onProgress?.({ received: 1, total: 1, phase: "saving" });
+  try {
+    // Publish only a complete file. Interrupted downloads never become offline books.
+    await saveOffline(book.id, content);
+  } catch {
+    throw new Error(
+      "The downloaded book could not be saved. Free some device storage and try again.",
+    );
+  }
+  return { content, offline: true };
 }
 function archiveFileUrl(value: string) {
   const url = new URL(value);
@@ -80,12 +113,27 @@ function archiveFileUrl(value: string) {
 export async function downloadReaderFile(
   value: string,
   format: "epub" | "pdf",
+  options: DownloadOptions = {},
 ): Promise<Extract<BookContent, { type: "epub" | "pdf" }>> {
-  const first = await readerFileChunk(value, 0, 1024 * 1024);
-  if (first.size > 50 * 1024 * 1024)
-    throw new Error("This file exceeds the 50 MB offline download limit.");
-  const bytes = new Uint8Array(first.size);
-  bytes.set(first.bytes);
+  options.onProgress?.({ received: 0, total: 0, phase: "downloading" });
+  const first = await readerFileChunk(value, 0, 1024 * 1024, options.signal);
+  if (first.size > (format === "pdf" ? 500 : 50) * 1024 * 1024)
+    throw new Error(
+      `This file exceeds the ${format === "pdf" ? 500 : 50} MB download limit.`,
+    );
+  if (
+    format === "pdf"
+      ? new TextDecoder().decode(first.bytes.slice(0, 5)) !== "%PDF-"
+      : first.bytes[0] !== 80 || first.bytes[1] !== 75
+  )
+    throw new Error("The source did not return a valid book file");
+  // Blobs avoid allocating one enormous contiguous PDF buffer on a phone.
+  const parts: Blob[] = [new Blob([first.bytes])];
+  options.onProgress?.({
+    received: first.bytes.length,
+    total: first.size,
+    phase: "downloading",
+  });
   for (
     let cursor = first.bytes.length;
     cursor < first.size;
@@ -95,16 +143,26 @@ export async function downloadReaderFile(
       value,
       cursor,
       Math.min(cursor + 1024 * 1024, first.size),
+      options.signal,
     );
-    bytes.set(chunk.bytes, cursor);
+    if (chunk.size !== first.size)
+      throw new Error(
+        "The source file changed during download. Please try again.",
+      );
+    parts.push(new Blob([chunk.bytes]));
+    options.onProgress?.({
+      received: cursor + chunk.bytes.length,
+      total: first.size,
+      phase: "downloading",
+    });
   }
-  if (
-    format === "pdf"
-      ? new TextDecoder().decode(bytes.slice(0, 5)) !== "%PDF-"
-      : bytes[0] !== 80 || bytes[1] !== 75
-  )
-    throw new Error("The source did not return a valid book file");
-  return { type: format, data: bytes.buffer };
+  options.signal?.throwIfAborted();
+  const file = new Blob(parts, {
+    type: format === "pdf" ? "application/pdf" : "application/epub+zip",
+  });
+  return format === "pdf"
+    ? { type: "pdf", data: file }
+    : { type: "epub", data: await file.arrayBuffer() };
 }
 
 export async function readerFileChunk(
@@ -123,7 +181,7 @@ export async function readerFileChunk(
     end: String(end - 1),
   });
   const response = await fetch(`${API}/api/file?${query}`, {
-    signal: signal || AbortSignal.timeout(45000),
+    signal: requestSignal(signal),
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));

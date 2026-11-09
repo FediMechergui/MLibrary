@@ -35,6 +35,7 @@ import type {
 } from "../types";
 import { translator } from "../lib/i18n";
 import { downloadReaderFile, loadBook, readerFileChunk } from "../lib/api";
+import type { DownloadProgress } from "../lib/api";
 import { localDay, newEntry, saveOffline } from "../lib/state";
 import type { Book as EpubBook, Rendition } from "epubjs";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -87,6 +88,7 @@ export default function Reader({
   }, []);
   const [content, setContent] = useState<BookContent | null>(null);
   const [error, setError] = useState("");
+  const [transfer, setTransfer] = useState<DownloadProgress | null>(null);
   const [retry, setRetry] = useState(0);
   const [panel, setPanel] = useState<
     "settings" | "contents" | "highlights" | null
@@ -138,16 +140,35 @@ export default function Reader({
   );
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     setError("");
     setContent(null);
     setReady(false);
-    loadBook(book, chapter)
-      .then((data) => active && setContent(data))
+    setTransfer(null);
+    loadBook(book, chapter, {
+      signal: controller.signal,
+      onProgress: (progress) => {
+        if (active) setTransfer(progress);
+      },
+    })
+      .then(({ content: data, offline }) => {
+        if (!active) return;
+        update((s) => {
+          const entry = s.shelf[book.id] || newEntry(book);
+          return {
+            ...s,
+            shelf: { ...s.shelf, [book.id]: { ...entry, offline } },
+          };
+        });
+        setTransfer(null);
+        setContent(data);
+      })
       .catch((e) => active && setError(e.message));
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [book, retry, chapter]);
+  }, [book, retry, chapter, update]);
   useEffect(() => {
     if (!ready || error) return;
     let lastTick = Date.now(),
@@ -379,9 +400,38 @@ export default function Reader({
       </header>
       <div className="reader-workspace">
         {!content && !error && (
-          <div className="reader-message">
+          <div className="reader-message" role="status">
             <CircleNotch className="spin" size={30} />
-            <p>{t("readerLoading")}</p>
+            <p>
+              {transfer
+                ? r(
+                    transfer.phase === "saving"
+                      ? "savingBook"
+                      : "downloadingBook",
+                  )
+                : t("readerLoading")}
+            </p>
+            {transfer?.phase === "downloading" && transfer.total > 0 && (
+              <>
+                <progress
+                  className="book-download-progress"
+                  aria-label={r("downloadingBook")}
+                  max={transfer.total}
+                  value={transfer.received}
+                />
+                <small>
+                  {Math.round((transfer.received / transfer.total) * 100)}% ·{" "}
+                  {(transfer.received / 1048576).toFixed(1)} /{" "}
+                  {(transfer.total / 1048576).toFixed(1)} MB
+                </small>
+              </>
+            )}
+            {transfer && (
+              <p className="download-explanation">{r("downloadAutoOpen")}</p>
+            )}
+            <button className="button secondary" onClick={onClose}>
+              {t("cancel")}
+            </button>
           </div>
         )}
         {error && (
@@ -1347,7 +1397,7 @@ function PdfViewer({
   onSelect,
   onEdit,
 }: ViewerProps & {
-  data?: ArrayBuffer;
+  data?: ArrayBuffer | Blob;
   url?: string;
   onError: (s: string) => void;
 }) {
@@ -1372,13 +1422,19 @@ function PdfViewer({
         let transport:
           | InstanceType<typeof pdfjs.PDFDataRangeTransport>
           | undefined;
-        if (!data && url) {
-          const first = await readerFileChunk(
-            url,
-            0,
-            262144,
-            controller.signal,
-          );
+        if (data instanceof Blob || (!data && url)) {
+          const readRange = async (start: number, end: number) => {
+            controller.signal.throwIfAborted();
+            return data instanceof Blob
+              ? {
+                  bytes: new Uint8Array(
+                    await data.slice(start, end).arrayBuffer(),
+                  ),
+                  size: data.size,
+                }
+              : readerFileChunk(url!, start, end, controller.signal);
+          };
+          const first = await readRange(0, 262144);
           if (!active) return;
           class BookRanges extends pdfjs.PDFDataRangeTransport {
             requestDataRange(begin: number, end: number) {
@@ -1386,11 +1442,9 @@ function PdfViewer({
                 try {
                   const bytes = new Uint8Array(end - begin);
                   for (let at = begin; at < end; at += 1024 * 1024) {
-                    const chunk = await readerFileChunk(
-                      url!,
+                    const chunk = await readRange(
                       at,
                       Math.min(at + 1024 * 1024, end),
-                      controller.signal,
                     );
                     bytes.set(chunk.bytes, at - begin);
                   }
@@ -1416,7 +1470,7 @@ function PdfViewer({
           );
         }
         const loading = pdfjs.getDocument({
-          ...(data
+          ...(data instanceof ArrayBuffer
             ? { data: data.slice(0) }
             : {
                 range: transport,

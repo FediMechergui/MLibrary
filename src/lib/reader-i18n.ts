@@ -1,10 +1,14 @@
 import type { Language } from "../types";
 const en = {
+  downloadingBook: "Downloading your book…",
+  savingBook: "Adding to My Library…",
+  downloadAutoOpen:
+    "Your book will open automatically and stay available offline on this device.",
   unavailableCopy:
     "We could not find a publicly accessible book file for this edition. Import your EPUB, PDF, or text copy to read, highlight, and save quotes here.",
   findEdition: "Find another edition",
   offlineLimit:
-    "Large PDFs load page by page. Offline downloads are limited to 50 MB.",
+    "PDF downloads support files up to 500 MB, depending on available device storage.",
   quotes: "My Quotes",
   quotesTitle: "Keep the words that stay.",
   quotesCopy:
@@ -104,11 +108,15 @@ const en = {
 };
 type Key = keyof typeof en;
 const fr: Record<Key, string> = {
+  downloadingBook: "Téléchargement du livre…",
+  savingBook: "Ajout à Ma bibliothèque…",
+  downloadAutoOpen:
+    "Votre livre s’ouvrira automatiquement et restera disponible hors connexion sur cet appareil.",
   unavailableCopy:
     "Aucun fichier de livre accessible n’a été trouvé pour cette édition. Importez votre exemplaire EPUB, PDF ou texte pour lire, surligner et garder vos citations ici.",
   findEdition: "Trouver une autre édition",
   offlineLimit:
-    "Les grands PDF se chargent page par page. Le téléchargement hors ligne est limité à 50 Mo.",
+    "Les PDF peuvent atteindre 500 Mo, selon l’espace disponible sur votre appareil.",
   quotes: "Mes citations",
   quotesTitle: "Gardez les mots qui restent.",
   quotesCopy:
@@ -208,11 +216,15 @@ const fr: Record<Key, string> = {
   providerOpenError: "Le lecteur source n’a pas pu être ouvert.",
 };
 const ar: Record<Key, string> = {
+  downloadingBook: "جارٍ تنزيل كتابك…",
+  savingBook: "جارٍ الإضافة إلى مكتبتي…",
+  downloadAutoOpen:
+    "سيفتح كتابك تلقائيًا ويبقى متاحًا دون اتصال على هذا الجهاز.",
   unavailableCopy:
     "لم نجد ملف كتاب متاحًا للقراءة لهذه الطبعة. استورد نسختك بصيغة EPUB أو PDF أو نص للقراءة والتظليل وحفظ الاقتباسات هنا.",
   findEdition: "البحث عن طبعة أخرى",
   offlineLimit:
-    "تُحمّل ملفات PDF الكبيرة صفحة بصفحة. الحد الأقصى للتنزيل دون اتصال هو 50 ميغابايت.",
+    "يمكن تنزيل ملفات PDF حتى 500 ميغابايت حسب مساحة التخزين المتاحة على جهازك.",
   quotes: "اقتباساتي",
   quotesTitle: "احتفظ بالكلمات التي تبقى.",
   quotesCopy: "مقاطعك وملاحظاتك واكتشافاتك الصغيرة، تجمعها أثناء القراءة.",

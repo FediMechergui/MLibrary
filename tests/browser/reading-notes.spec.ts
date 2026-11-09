@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 function rangedPdf() {
-  const pages = 160;
+  const pages = 400;
   const objects = [
     "<< /Type /Catalog /Pages 2 0 R >>",
     `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, i) => `${4 + i * 2} 0 R`).join(" ")}] /Count ${pages} >>`,
@@ -314,7 +314,7 @@ test("unavailable editions never open a website and an imported copy opens in th
   expect(page.context().pages()).toHaveLength(1);
 });
 
-test("online scan PDFs render in our canvas reader and support passage selection without a provider page", async ({
+test("download-only PDFs import automatically, support quotes, and reopen offline without redownloading", async ({
   page,
 }) => {
   const book = {
@@ -375,14 +375,31 @@ test("online scan PDFs render in our canvas reader and support passage selection
   await expect(page.locator(".pdf-reader canvas")).toBeVisible();
   await expect(page.locator(".textLayer")).toContainText("MLibrary");
   await expect(page.locator(".reader iframe")).toHaveCount(0);
-  expect(pdf.length).toBeGreaterThan(262144);
+  expect(pdf.length).toBeGreaterThan(1048576);
   expect(ranges.some((start) => start > 0)).toBe(true);
   await selectText(page, ".textLayer");
   await page.getByRole("button", { name: "Save quote", exact: true }).click();
   await expect(page.locator(".textLayer mark")).toHaveCount(1);
   await page.getByRole("button", { name: "Reading settings" }).click();
-  await page.getByRole("button", { name: "Save offline", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Saved offline", exact: true }),
   ).toBeDisabled();
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "Back to library" }).click();
+  const downloads = ranges.length;
+  await page.reload();
+  await page.getByRole("button", { name: /^My library/ }).click();
+  await page
+    .locator('.book-open[aria-label="An online scanned edition"]')
+    .click();
+  await page.context().setOffline(true);
+  await page
+    .getByRole("button", { name: "Continue reading", exact: true })
+    .click();
+  await expect(page.locator(".textLayer")).toContainText("MLibrary");
+  await expect(page.locator(".textLayer mark")).toHaveCount(1);
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(page.locator(".textLayer")).toContainText("MLibrary page 2");
+  expect(ranges).toHaveLength(downloads);
+  await page.context().setOffline(false);
 });

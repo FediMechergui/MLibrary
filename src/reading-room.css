@@ -959,6 +959,14 @@ textarea:focus-visible {
   top: 45%;
   inset-inline-start: calc(50% - 15px);
 }
+.book-download-progress {
+  width: min(280px, 80vw);
+  accent-color: var(--reader-ink);
+}
+.reader-message .download-explanation {
+  max-width: 32ch;
+  font-size: 0.9rem;
+}
 .textLayer {
   position: absolute;
   text-align: initial;

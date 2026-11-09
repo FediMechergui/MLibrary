@@ -25,8 +25,18 @@ export type BookContent =
       attribution: string;
       chapter?: string;
     }
-  | { type: "epub"; data: ArrayBuffer }
-  | { type: "pdf"; data: ArrayBuffer }
+  | {
+      type: "epub";
+      data: ArrayBuffer;
+      attribution?: string;
+      sourceUrl?: string;
+    }
+  | {
+      type: "pdf";
+      data: ArrayBuffer | Blob;
+      attribution?: string;
+      sourceUrl?: string;
+    }
   | { type: "pdf-url"; url: string; attribution?: string; sourceUrl?: string }
   | {
       type: "source";

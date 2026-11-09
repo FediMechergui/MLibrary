@@ -21,7 +21,7 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "0.2.0", time: new Date().toISOString() },
+        { status: "ok", version: "0.2.1", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
