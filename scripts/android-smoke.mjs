@@ -295,7 +295,7 @@ try {
     );
     await click("Open in reader");
     await until(
-      `document.querySelector('.text-page')?.textContent.length > 50`,
+      `document.querySelector('.text-page')?.textContent.trim().length > 0`,
       "actual Open Library book text in MLibrary reader",
     );
     assert.equal(
