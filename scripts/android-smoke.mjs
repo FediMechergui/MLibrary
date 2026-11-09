@@ -198,74 +198,139 @@ try {
     console.log(
       "PASS: Native PNG generation, file provider, and Android share chooser.",
     );
-    await click("Our sources");
-    await until(`document.querySelector('.source-row')`, "source directory");
+    if (process.argv.includes("--sources")) {
+      await click("Our sources");
+      await until(`document.querySelector('.source-row')`, "source directory");
+      await evaluate(
+        `document.querySelector('.source-row .text-button').click()`,
+      );
+      await click("Open source reader");
+      let sourceOpen = false;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const activity =
+          device("shell", "dumpsys", "activity", "activities")
+            .split("\n")
+            .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
+          "";
+        if (/OSIABWebViewActivity/.test(activity)) {
+          sourceOpen = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+      assert.equal(
+        sourceOpen,
+        true,
+        "Source opens in the native in-app browser",
+      );
+      device("shell", "uiautomator", "dump", "/sdcard/mlibrary-source-ui.xml");
+      const sourceUI = device("shell", "cat", "/sdcard/mlibrary-source-ui.xml");
+      const closeNode = sourceUI.match(
+        /<node[^>]*resource-id="app\.mlibrary\.reader:id\/close_button"[^>]*>/,
+      )?.[0];
+      const bounds = closeNode?.match(
+        /bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/,
+      );
+      assert.ok(bounds, "Native source toolbar has the MLibrary return button");
+      device("shell", "screencap", "-p", "/sdcard/mlibrary-source-test.png");
+      device(
+        "pull",
+        "/sdcard/mlibrary-source-test.png",
+        "artifacts/android-native-source.png",
+      );
+      device(
+        "shell",
+        "input",
+        "tap",
+        String(Math.round((Number(bounds[1]) + Number(bounds[3])) / 2)),
+        String(Math.round((Number(bounds[2]) + Number(bounds[4])) / 2)),
+      );
+      let returned = false;
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const activity =
+          device("shell", "dumpsys", "activity", "activities")
+            .split("\n")
+            .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
+          "";
+        if (/app.mlibrary.reader\/\.MainActivity/.test(activity)) {
+          returned = true;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+      assert.equal(
+        returned,
+        true,
+        "MLibrary resumes after the source browser closes",
+      );
+      await until(
+        `document.querySelector('.source-panel')`,
+        "return from native source reader",
+      );
+      await click("Back");
+      await click("Discover");
+      console.log(
+        "PASS: Source reader stays inside the Android app and returns to MLibrary.",
+      );
+    } else await click("Discover");
+  } else await click("Back to library");
+  if (process.argv.includes("--books")) {
     await evaluate(
-      `document.querySelector('.source-row .text-button').click()`,
+      `(() => { const s=JSON.parse(localStorage.getItem('mlibrary:v1')); const books=[{id:'openlibrary:OL5040656W',title:'Abroad',authors:['Thomas Crane'],source:'openlibrary',sourceUrl:'https://openlibrary.org/works/OL5040656W'},{id:'archive:norwegianwood0000mura',title:'Norwegian Wood',authors:['Haruki Murakami'],source:'archive',sourceUrl:'https://archive.org/details/norwegianwood0000mura'}]; for(const b of books) s.shelf[b.id]={book:{...b,language:'en',languages:['en'],cover:null,subjects:[],description:'',access:'source',rights:'Source availability checked when opened',formats:[]},addedAt:Date.now(),status:'want',bookmarks:[],offline:false,tags:[]};localStorage.setItem('mlibrary:v1',JSON.stringify(s)); })()`,
     );
-    await click("Open source reader");
-    let sourceOpen = false;
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const activity =
-        device("shell", "dumpsys", "activity", "activities")
-          .split("\n")
-          .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
-        "";
-      if (/OSIABWebViewActivity/.test(activity)) {
-        sourceOpen = true;
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    assert.equal(sourceOpen, true, "Source opens in the native in-app browser");
-    device("shell", "uiautomator", "dump", "/sdcard/mlibrary-source-ui.xml");
-    const sourceUI = device("shell", "cat", "/sdcard/mlibrary-source-ui.xml");
-    const closeNode = sourceUI.match(
-      /<node[^>]*resource-id="app\.mlibrary\.reader:id\/close_button"[^>]*>/,
-    )?.[0];
-    const bounds = closeNode?.match(/bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"/);
-    assert.ok(bounds, "Native source toolbar has the MLibrary return button");
-    device("shell", "screencap", "-p", "/sdcard/mlibrary-source-test.png");
-    device(
-      "pull",
-      "/sdcard/mlibrary-source-test.png",
-      "artifacts/android-native-source.png",
+    await reload();
+    await until(
+      `document.querySelector('.nav-item')`,
+      "library ready for online book checks",
     );
-    device(
-      "shell",
-      "input",
-      "tap",
-      String(Math.round((Number(bounds[1]) + Number(bounds[3])) / 2)),
-      String(Math.round((Number(bounds[2]) + Number(bounds[4])) / 2)),
-    );
-    let returned = false;
-    for (let attempt = 0; attempt < 30; attempt++) {
-      const activity =
-        device("shell", "dumpsys", "activity", "activities")
-          .split("\n")
-          .find((line) => /topResumedActivity|mResumedActivity/.test(line)) ||
-        "";
-      if (/app.mlibrary.reader\/\.MainActivity/.test(activity)) {
-        returned = true;
-        break;
-      }
-      await new Promise((r) => setTimeout(r, 400));
-    }
-    assert.equal(
-      returned,
-      true,
-      "MLibrary resumes after the source browser closes",
+    await evaluate(
+      `Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.includes('My library')).click()`,
     );
     await until(
-      `document.querySelector('.source-panel')`,
-      "return from native source reader",
+      `document.querySelector('.book-open[aria-label="Abroad"]')`,
+      "Open Library edition on test shelf",
     );
-    await click("Back");
+    await evaluate(
+      `document.querySelector('.book-open[aria-label="Abroad"]').click()`,
+    );
+    await click("Open in reader");
+    await until(
+      `document.querySelector('.text-page')?.textContent.length > 50`,
+      "actual Open Library book text in MLibrary reader",
+    );
+    assert.equal(
+      await evaluate(
+        `Boolean(document.querySelector('.source-reader, .reader iframe'))`,
+      ),
+      false,
+    );
+    await click("Next page");
+    await until(
+      `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
+      "online edition uses our page controls",
+    );
+    await screenshot("android-online-book-native-reader");
+    await click("Back to library");
+    await evaluate(
+      `document.querySelector('.book-open[aria-label="Norwegian Wood"]').click()`,
+    );
+    await click("Open in reader");
+    await until(
+      `document.querySelector('.unavailable-edition')`,
+      "restricted edition is explicitly unavailable",
+    );
+    assert.equal(
+      await evaluate(
+        `Boolean(document.querySelector('.source-reader, .reader iframe'))`,
+      ),
+      false,
+    );
+    await click("Back to library");
     await click("Discover");
     console.log(
-      "PASS: Source reader stays inside the Android app and returns to MLibrary.",
+      "PASS: Real online books open in MLibrary's own reader; restricted books do not launch a website.",
     );
-  } else await click("Back to library");
+  }
   await evaluate(
     `(() => {const el = document.querySelector('select[aria-label="Language"]'); el.value='ar'; el.dispatchEvent(new Event('change',{bubbles:true}));})()`,
   );

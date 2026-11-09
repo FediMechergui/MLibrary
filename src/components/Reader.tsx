@@ -22,7 +22,6 @@ import {
   ArrowUpRight,
   Highlighter,
   CornersOut,
-  Quotes,
 } from "@phosphor-icons/react";
 import type {
   AppState,
@@ -35,7 +34,7 @@ import type {
   ReaderSelection,
 } from "../types";
 import { translator } from "../lib/i18n";
-import { loadBook } from "../lib/api";
+import { downloadReaderFile, loadBook, readerFileChunk } from "../lib/api";
 import { localDay, newEntry, saveOffline } from "../lib/state";
 import type { Book as EpubBook, Rendition } from "epubjs";
 import type { PDFDocumentProxy } from "pdfjs-dist";
@@ -43,7 +42,7 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { highlightColors, intersectMarks } from "../lib/annotations";
 import { readerText } from "../lib/reader-i18n";
 import { MarkEditor } from "./ReadingNotes";
-import { SourceReader, SourcePanel } from "./SourceReader";
+import { SourcePanel } from "./SourceReader";
 import { selectedOffsets, paintTextMarks } from "../lib/selection";
 type Props = {
   book: Book;
@@ -53,6 +52,7 @@ type Props = {
   notify: (message: string) => void;
   initialMark?: ReadingMark;
   onImport: (file: File) => void;
+  onFindEdition: () => void;
 };
 export default function Reader({
   book,
@@ -62,6 +62,7 @@ export default function Reader({
   notify,
   initialMark,
   onImport,
+  onFindEdition,
 }: Props) {
   const t = translator(state.language),
     settings = state.settings;
@@ -254,7 +255,11 @@ export default function Reader({
     if (!content || content.type === "source") return;
     setBusy(true);
     try {
-      await saveOffline(book.id, content);
+      const offline =
+        content.type === "pdf-url"
+          ? await downloadReaderFile(content.url, "pdf")
+          : content;
+      await saveOffline(book.id, offline);
       update((s) => ({
         ...s,
         shelf: {
@@ -390,15 +395,9 @@ export default function Reader({
             >
               {t("retry")}
             </button>
-            {book.sourceUrl && (
-              <button
-                className="text-button"
-                onClick={() => setSourceView(book.sourceUrl)}
-              >
-                {t("original")}
-                <ArrowUpRight size={16} />
-              </button>
-            )}
+            <button className="text-button" onClick={onFindEdition}>
+              {r("findEdition")}
+            </button>
           </div>
         )}
         {content && !error && (
@@ -431,12 +430,13 @@ export default function Reader({
                 jump={jump}
                 onError={setError}
               />
-            ) : content.type === "pdf" ? (
+            ) : content.type === "pdf" || content.type === "pdf-url" ? (
               <PdfViewer
                 marks={viewerMarks}
                 onSelect={select}
                 onEdit={editMark}
-                data={content.data}
+                data={content.type === "pdf" ? content.data : undefined}
+                url={content.type === "pdf-url" ? content.url : undefined}
                 settings={settings}
                 initial={initial.current}
                 onProgress={saveProgress}
@@ -445,13 +445,27 @@ export default function Reader({
                 onError={setError}
               />
             ) : (
-              <SourceReader
-                content={content}
-                language={state.language}
-                initial={initial.current}
-                onProgress={saveProgress}
-                onImport={onImport}
-              />
+              <div className="reader-message unavailable-edition">
+                <BookOpen size={40} weight="thin" />
+                <h2>{r("unreadable")}</h2>
+                <p>{r("unavailableCopy")}</p>
+                <label className="button primary">
+                  {r("importCopy")}
+                  <input
+                    className="sr-only"
+                    type="file"
+                    accept=".epub,.pdf,.txt"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) onImport(file);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                <button className="button secondary" onClick={onFindEdition}>
+                  {r("findEdition")}
+                </button>
+              </div>
             )}
           </>
         )}
@@ -486,13 +500,7 @@ export default function Reader({
               </div>
               {panel === "highlights" ? (
                 <div className="reader-marks">
-                  <p className="panel-note">
-                    {r(
-                      content?.type === "source"
-                        ? "sourceQuoteHint"
-                        : "selectText",
-                    )}
-                  </p>
+                  <p className="panel-note">{r("selectText")}</p>
                   {!marks.length && (
                     <p className="panel-note">{r("noHighlights")}</p>
                   )}
@@ -548,21 +556,6 @@ export default function Reader({
                       </div>
                     </article>
                   ))}
-                  {content?.type === "source" && (
-                    <button
-                      className="button primary"
-                      onClick={() => {
-                        select({
-                          text: "",
-                          anchor: { type: "source", page: position.position },
-                        });
-                        setPanel(null);
-                      }}
-                    >
-                      <Quotes size={18} />
-                      {r("manualQuote")}
-                    </button>
-                  )}
                 </div>
               ) : panel === "settings" ? (
                 <>
@@ -607,7 +600,7 @@ export default function Reader({
                         </button>
                       ))}
                   </div>
-                  {content?.type !== "pdf" && (
+                  {content?.type !== "pdf" && content?.type !== "pdf-url" && (
                     <>
                       <label className="setting-label" htmlFor="font-size">
                         {t("textSize")}
@@ -678,6 +671,9 @@ export default function Reader({
                     )}{" "}
                     {t(entry?.offline ? "downloaded" : "download")}
                   </button>
+                  {content?.type === "pdf-url" && (
+                    <p className="panel-note">{r("offlineLimit")}</p>
+                  )}
                 </>
               ) : (
                 <>
@@ -755,7 +751,7 @@ export default function Reader({
                   <div className="panel-divider" />
                   <label className="setting-label">{t("attribution")}</label>
                   <p className="panel-note">
-                    {content?.type === "text"
+                    {content && "attribution" in content
                       ? content.attribution
                       : book.rights}
                   </p>
@@ -794,12 +790,12 @@ export default function Reader({
         <div className="page-indicator">
           <span>
             {content?.type === "source"
-              ? r("sourceReader")
+              ? r("unreadable")
               : `${t("page")} ${position.position + 1} ${t("of")} ${position.total}`}
           </span>
           <small>
             {content?.type === "source"
-              ? r("sourceNote")
+              ? ""
               : `${Math.round(position.percent)}%`}
           </small>
         </div>
@@ -1340,6 +1336,7 @@ function EpubViewer({
 
 function PdfViewer({
   data,
+  url,
   settings,
   initial,
   onProgress,
@@ -1349,7 +1346,11 @@ function PdfViewer({
   marks,
   onSelect,
   onEdit,
-}: ViewerProps & { data: ArrayBuffer; onError: (s: string) => void }) {
+}: ViewerProps & {
+  data?: ArrayBuffer;
+  url?: string;
+  onError: (s: string) => void;
+}) {
   const root = useRef<HTMLDivElement>(null),
     canvas = useRef<HTMLCanvasElement>(null);
   const textLayer = useRef<HTMLDivElement>(null),
@@ -1362,13 +1363,67 @@ function PdfViewer({
     [width, setWidth] = useState(700);
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     let task: { destroy: () => Promise<void> } | undefined;
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+        let transport:
+          | InstanceType<typeof pdfjs.PDFDataRangeTransport>
+          | undefined;
+        if (!data && url) {
+          const first = await readerFileChunk(
+            url,
+            0,
+            262144,
+            controller.signal,
+          );
+          if (!active) return;
+          class BookRanges extends pdfjs.PDFDataRangeTransport {
+            requestDataRange(begin: number, end: number) {
+              void (async () => {
+                try {
+                  const bytes = new Uint8Array(end - begin);
+                  for (let at = begin; at < end; at += 1024 * 1024) {
+                    const chunk = await readerFileChunk(
+                      url!,
+                      at,
+                      Math.min(at + 1024 * 1024, end),
+                      controller.signal,
+                    );
+                    bytes.set(chunk.bytes, at - begin);
+                  }
+                  if (active) this.onDataRange(begin, bytes);
+                } catch (e) {
+                  if (active)
+                    onError(
+                      e instanceof Error
+                        ? e.message
+                        : "The PDF pages could not be loaded.",
+                    );
+                }
+              })();
+            }
+            abort() {
+              controller.abort();
+            }
+          }
+          transport = new BookRanges(
+            first.size,
+            first.bytes,
+            first.bytes.length === first.size,
+          );
+        }
         const loading = pdfjs.getDocument({
-          data: data.slice(0),
+          ...(data
+            ? { data: data.slice(0) }
+            : {
+                range: transport,
+                disableAutoFetch: true,
+                disableStream: true,
+                rangeChunkSize: 262144,
+              }),
           useSystemFonts: true,
         });
         task = loading;
@@ -1383,9 +1438,10 @@ function PdfViewer({
     })();
     return () => {
       active = false;
+      controller.abort();
       void task?.destroy();
     };
-  }, [data]);
+  }, [data, url]);
   useEffect(() => {
     if (!root.current) return;
     const observer = new ResizeObserver(() =>
@@ -1518,6 +1574,11 @@ function PdfViewer({
       onPointerUp={capture}
       onKeyUp={capture}
     >
+      {!pdf && (
+        <span className="pdf-loading" role="status" aria-label="Loading PDF">
+          <CircleNotch className="spin" size={30} />
+        </span>
+      )}
       <div className="pdf-page" ref={pageBox}>
         <canvas
           ref={canvas}

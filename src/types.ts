@@ -27,6 +27,7 @@ export type BookContent =
     }
   | { type: "epub"; data: ArrayBuffer }
   | { type: "pdf"; data: ArrayBuffer }
+  | { type: "pdf-url"; url: string; attribution?: string; sourceUrl?: string }
   | {
       type: "source";
       url: string;

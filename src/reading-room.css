@@ -950,6 +950,11 @@ textarea:focus-visible {
   margin: 0 auto;
   text-align: initial;
 }
+.pdf-loading {
+  position: absolute;
+  top: 45%;
+  inset-inline-start: calc(50% - 15px);
+}
 .textLayer {
   position: absolute;
   text-align: initial;

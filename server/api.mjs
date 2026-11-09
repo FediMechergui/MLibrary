@@ -1,6 +1,7 @@
 import { sourceDirectory, searchCatalog, validateSearch } from "./catalog.mjs";
 import { cachedSearch, store } from "./storage.mjs";
 import { getContent } from "./content.mjs";
+import { getReaderFileChunk } from "./reading.mjs";
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
   "Access-Control-Allow-Origin": "*",
@@ -61,9 +62,29 @@ export default async function handler(request) {
       });
     }
     if (path === "/content") {
-      const data = await getContent(url.searchParams.get("id") || "", { language: url.searchParams.get("language") || "en", chapter: url.searchParams.get("chapter") || undefined });
+      const data = await getContent(url.searchParams.get("id") || "", {
+        language: url.searchParams.get("language") || "en",
+        chapter: url.searchParams.get("chapter") || undefined,
+      });
       return Response.json(data, {
         headers: { ...headers, "Cache-Control": "public, max-age=300" },
+      });
+    }
+    if (path === "/file") {
+      const data = await getReaderFileChunk(
+        url.searchParams.get("id") || "",
+        url.searchParams.get("name") || "",
+        Number(url.searchParams.get("start")),
+        Number(url.searchParams.get("end")),
+      );
+      return new Response(data.bytes, {
+        headers: {
+          ...headers,
+          "Content-Type": "application/octet-stream",
+          "X-Book-Length": String(data.size),
+          "Access-Control-Expose-Headers": "X-Book-Length",
+          "Cache-Control": "public, max-age=60",
+        },
       });
     }
     return Response.json({ error: "Not found" }, { status: 404, headers });
@@ -72,15 +93,20 @@ export default async function handler(request) {
     return Response.json(
       {
         error:
-          path === "/content"
+          path === "/content" || path === "/file"
             ? error.message
             : "The catalogue is temporarily unavailable. Please try again.",
       },
       {
         status:
-          path === "/content" && error.message === "Unsupported book identifier"
+          (path === "/content" &&
+            error.message === "Unsupported book identifier") ||
+          (path === "/file" && error.message === "Invalid reader file range")
             ? 400
-            : 502,
+            : path === "/file" &&
+                error.message === "No publicly accessible reader file"
+              ? 404
+              : 502,
         headers,
       },
     );

@@ -1,18 +1,52 @@
 import { test, expect, type Page } from "@playwright/test";
+function rangedPdf() {
+  const pages = 160;
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    `<< /Type /Pages /Kids [${Array.from({ length: pages }, (_, i) => `${4 + i * 2} 0 R`).join(" ")}] /Count ${pages} >>`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  for (let page = 0; page < pages; page++) {
+    const stream =
+      "BT /F1 12 Tf 45 780 Td " +
+      Array.from(
+        { length: 36 },
+        (_, line) =>
+          `(MLibrary page ${page + 1}, line ${line + 1}. A real paragraph in a readable book.) Tj 0 -19 Td`,
+      ).join("\n") +
+      " ET";
+    objects.push(
+      `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + page * 2} 0 R >>`,
+      `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    );
+  }
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xref = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets
+    .slice(1)
+    .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
+    .join(
+      "",
+    )}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf);
+}
 
 async function importText(page: Page) {
   await page.goto("/");
-  await page
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "A room for reading.txt",
-      mimeType: "text/plain",
-      buffer: Buffer.from(
-        "Keep a little room for the words that stay with you. Every page opens a new window.\n\n".repeat(
-          200,
-        ),
+  await page.locator("input[type=file]").setInputFiles({
+    name: "A room for reading.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from(
+      "Keep a little room for the words that stay with you. Every page opens a new window.\n\n".repeat(
+        200,
       ),
-    });
+    ),
+  });
   await page
     .getByRole("button", { name: "Start reading", exact: true })
     .click();
@@ -211,7 +245,7 @@ test("old shelves migrate, tags filter the library, and preferences survive Arab
   await page.screenshot({ path: "artifacts/preferences-arabic.png" });
 });
 
-test("catalogue-only editions open inside the app and offer importing an available copy", async ({
+test("unavailable editions never open a website and an imported copy opens in the app reader", async ({
   page,
 }) => {
   const book = {
@@ -262,12 +296,93 @@ test("catalogue-only editions open inside the app and offer importing an availab
   await page
     .getByRole("button", { name: "Open in reader", exact: true })
     .click();
-  await expect(page.locator(".source-reader-info")).toContainText(
+  await expect(page.locator(".unavailable-edition")).toContainText(
     "A readable edition is needed",
   );
-  await expect(page.locator(".source-reader input[type=file]")).toBeAttached();
+  await expect(page.locator(".reader iframe")).toHaveCount(0);
   await expect(
-    page.frameLocator(".source-reader iframe").locator("h1"),
-  ).toHaveText("Source edition");
+    page.getByRole("button", { name: "Open source reader", exact: true }),
+  ).toHaveCount(0);
+  await page.locator(".unavailable-edition input[type=file]").setInputFiles({
+    name: "My copy.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("This is my own readable copy. ".repeat(100)),
+  });
+  await expect(page.locator(".text-page")).toContainText(
+    "This is my own readable copy.",
+  );
   expect(page.context().pages()).toHaveLength(1);
+});
+
+test("online scan PDFs render in our canvas reader and support passage selection without a provider page", async ({
+  page,
+}) => {
+  const book = {
+    id: "archive:reader-fixture",
+    title: "An online scanned edition",
+    authors: ["MLibrary"],
+    source: "archive",
+    language: "en",
+    languages: ["en"],
+    cover: null,
+    sourceUrl: "https://archive.org/details/reader-fixture",
+    subjects: [],
+    description: "",
+    access: "source",
+    rights: "Publicly available source file",
+    formats: ["SCAN"],
+  };
+  await page.route("**/api/search?**", (route) =>
+    route.fulfill({
+      json: { books: [book], sources: [], errors: [], hasMore: false, page: 1 },
+    }),
+  );
+  await page.route("**/api/content?**", (route) =>
+    route.fulfill({
+      json: {
+        type: "remote",
+        format: "pdf",
+        url: "https://archive.org/download/reader-fixture/reader.pdf",
+        attribution: "Source attribution",
+      },
+    }),
+  );
+  const pdf = rangedPdf();
+  const ranges: number[] = [];
+  await page.route("**/api/file?**", (route) => {
+    const query = new URL(route.request().url()).searchParams;
+    const start = Number(query.get("start")),
+      end = Math.min(Number(query.get("end")) + 1, pdf.length);
+    ranges.push(start);
+    return route.fulfill({
+      contentType: "application/octet-stream",
+      headers: {
+        "X-Book-Length": String(pdf.length),
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "X-Book-Length",
+      },
+      body: pdf.subarray(start, end),
+    });
+  });
+  await page.goto("/");
+  const search = page.getByRole("textbox", { name: "Search the catalogue" });
+  await search.fill("scan");
+  await search.press("Enter");
+  await page.locator(".book-open").click();
+  await page
+    .getByRole("button", { name: "Open in reader", exact: true })
+    .click();
+  await expect(page.locator(".pdf-reader canvas")).toBeVisible();
+  await expect(page.locator(".textLayer")).toContainText("MLibrary");
+  await expect(page.locator(".reader iframe")).toHaveCount(0);
+  expect(pdf.length).toBeGreaterThan(262144);
+  expect(ranges.some((start) => start > 0)).toBe(true);
+  await selectText(page, ".textLayer");
+  await page.getByRole("button", { name: "Save quote", exact: true }).click();
+  await expect(page.locator(".textLayer mark")).toHaveCount(1);
+  await page.getByRole("button", { name: "Reading settings" }).click();
+  await page.getByRole("button", { name: "Save offline", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Saved offline", exact: true }),
+  ).toBeDisabled();
 });

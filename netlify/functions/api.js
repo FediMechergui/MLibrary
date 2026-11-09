@@ -8,9 +8,14 @@ export const handler = async (event) => {
       headers: event.headers,
     }),
   );
+  const binary =
+    response.headers.get("content-type") === "application/octet-stream";
   return {
     statusCode: response.status,
     headers: Object.fromEntries(response.headers),
-    body: await response.text(),
+    body: binary
+      ? Buffer.from(await response.arrayBuffer()).toString("base64")
+      : await response.text(),
+    ...(binary ? { isBase64Encoded: true } : {}),
   };
 };

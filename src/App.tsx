@@ -409,6 +409,17 @@ export default function App() {
           book={reading}
           initialMark={initialMark}
           onImport={(file) => void handleImport(file, true)}
+          onFindEdition={() => {
+            setReading(null);
+            setQuery(reading.title);
+            changeFilter(() => {
+              setSearch(reading.title);
+              setBookLanguage(reading.language || "all");
+              setSource("all");
+              setGenre("allBooks");
+            });
+            goTab("discover");
+          }}
           state={state}
           update={update}
           onClose={() => setReading(null)}

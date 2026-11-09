@@ -25,7 +25,7 @@ export function publicFiles(data) {
       !/encrypt|lcp|drm/i.test(file.format || ""),
   );
 }
-export async function archiveResponse(url) {
+export async function archiveResponse(url, range) {
   let current = new URL(url);
   for (let redirects = 0; redirects < 5; redirects++) {
     if (
@@ -44,6 +44,7 @@ export async function archiveResponse(url) {
       credentials: "omit",
       signal: AbortSignal.timeout(15000),
       headers: {
+        ...(range ? { Range: range } : {}),
         "User-Agent":
           "MLibrary/0.2 (https://github.com/FediMechergui/MLibrary)",
       },
@@ -60,6 +61,78 @@ export async function archiveResponse(url) {
     return response;
   }
   throw new Error("Too many source redirects");
+}
+const fileMetadata = new Map();
+export async function getReaderFileChunk(id, name, start, end) {
+  if (
+    !archiveIdentifier.test(id) ||
+    id.includes("..") ||
+    typeof name !== "string" ||
+    !name ||
+    name.includes("..") ||
+    /[\/\\\x00-\x1f]/.test(name) ||
+    name.length > 250 ||
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(end) ||
+    start < 0 ||
+    end < start ||
+    end - start >= 1024 * 1024
+  )
+    throw new Error("Invalid reader file range");
+  let cached = fileMetadata.get(id);
+  if (!cached || cached.expires < Date.now()) {
+    const data = await (
+      await fetchUpstream(
+        `https://archive.org/metadata/${encodeURIComponent(id)}`,
+      )
+    ).json();
+    cached = { files: publicFiles(data), expires: Date.now() + 60000 };
+    if (fileMetadata.size >= 128)
+      fileMetadata.delete(fileMetadata.keys().next().value);
+    fileMetadata.set(id, cached);
+  }
+  const file = cached.files.find(
+    (f) =>
+      f.name === name &&
+      ["EPUB", "Text PDF", "Image Container PDF"].includes(f.format),
+  );
+  const size = Number(file?.size);
+  if (
+    !file ||
+    !Number.isSafeInteger(size) ||
+    size <= 0 ||
+    size > (file.format === "EPUB" ? 50 : 500) * 1024 * 1024 ||
+    start >= size
+  )
+    throw new Error("No publicly accessible reader file");
+  end = Math.min(end, size - 1);
+  const response = await archiveResponse(
+    `https://archive.org/download/${encodeURIComponent(id)}/${encodeURIComponent(name)}`,
+    `bytes=${start}-${end}`,
+  );
+  if (
+    response.status !== 206 ||
+    response.headers.get("content-range") !== `bytes ${start}-${end}/${size}`
+  ) {
+    await response.body?.cancel();
+    throw new Error("The source did not return the requested book pages");
+  }
+  const reader = response.body.getReader(),
+    chunks = [];
+  let length = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    length += value.byteLength;
+    if (length > end - start + 1) {
+      await reader.cancel();
+      throw new Error("Reader file range exceeds its limit");
+    }
+    chunks.push(value);
+  }
+  if (length !== end - start + 1)
+    throw new Error("The source returned an incomplete book page range");
+  return { bytes: Buffer.concat(chunks), size };
 }
 export async function resolveArchive(id, readText) {
   if (!archiveIdentifier.test(id) || id.includes(".."))
@@ -80,7 +153,9 @@ export async function resolveArchive(id, readText) {
     };
   const files = publicFiles(data);
   const attribution = `Internet Archive · ${data.metadata.title || id}. ${data.metadata.rights || data.metadata.licenseurl || "Availability is managed by the source library."}`;
-  if (hasOpenLicense(data.metadata) && files.length) {
+  // Reading uses the files the provider offers publicly, retaining its rights
+  // statement. Public availability does not relabel a work as public domain.
+  if (files.length) {
     const text = files.find(
       (f) =>
         ["DjVuTXT", "Text", "Plain Text"].includes(f.format) &&
@@ -100,7 +175,10 @@ export async function resolveArchive(id, readText) {
     }
     const file = ["EPUB", "Text PDF", "Image Container PDF"].flatMap((format) =>
       files.filter(
-        (f) => f.format === format && Number(f.size) <= 50 * 1024 * 1024,
+        (f) =>
+          f.format === format &&
+          Number(f.size) > 0 &&
+          Number(f.size) <= (format === "EPUB" ? 50 : 500) * 1024 * 1024,
       ),
     )[0];
     if (file)
@@ -112,23 +190,12 @@ export async function resolveArchive(id, readText) {
         sourceUrl: url,
       };
   }
-  const available = files.some((f) =>
-    [
-      "DjVuTXT",
-      "Text PDF",
-      "Image Container PDF",
-      "EPUB",
-      "Single Page Processed JP2 ZIP",
-    ].includes(f.format),
-  );
   return {
     type: "source",
     url,
-    embedUrl: `https://archive.org/embed/${encodeURIComponent(id)}`,
-    available,
-    message: available
-      ? "Read this edition with the source library’s page viewer. Use My Quotes to keep notes or quoted passages."
-      : "The source controls access to this edition. It may offer a preview or require an eligible account or loan. You can also import your own copy.",
+    available: false,
+    message:
+      "This edition has no publicly downloadable reader file. Import your own EPUB, PDF, or text copy to read it here.",
     attribution,
   };
 }
@@ -147,21 +214,59 @@ export async function resolveOpenLibrary(id, language, readText) {
   const data = await (await fetchUpstream(url)).json();
   const work = data.docs?.[0];
   const editions = work?.editions?.docs || [];
-  const edition = editions.find(
-    (e) => e.ia && (!e.language || e.language.includes(code)),
-  );
-  const candidates = edition
-    ? Array.isArray(edition.ia)
-      ? edition.ia
-      : [edition.ia]
-    : [];
-  const candidate = candidates.find(
-    (value) =>
-      typeof value === "string" &&
-      archiveIdentifier.test(value) &&
-      !value.includes(".."),
-  );
-  if (candidate) return resolveArchive(candidate, readText);
+  const valid = (value) =>
+    typeof value === "string" &&
+    archiveIdentifier.test(value) &&
+    !value.includes("..");
+  const candidates = [
+    ...new Set(
+      editions
+        .filter((e) => e.ia && (!e.language || e.language.includes(code)))
+        .flatMap((e) => (Array.isArray(e.ia) ? e.ia : [e.ia]))
+        .filter(valid),
+    ),
+  ];
+  const examined = new Set();
+  async function tryEditions(ids) {
+    for (const candidate of ids) {
+      if (examined.size >= 4 || examined.has(candidate)) continue;
+      examined.add(candidate);
+      try {
+        const content = await resolveArchive(candidate, readText);
+        if (content.type !== "source") return content;
+      } catch {
+        /* Try another matching edition when a provider file is missing. */
+      }
+    }
+    return null;
+  }
+  const primary = await tryEditions(candidates);
+  if (primary) return primary;
+  // Search commonly returns just one edition. Inspect the work's edition list
+  // for other files in the requested language before reporting unavailable.
+  if (examined.size < 4) {
+    try {
+      const list = await (
+        await fetchUpstream(
+          `https://openlibrary.org/works/${id}/editions.json?limit=50`,
+        )
+      ).json();
+      const alternatives = [
+        ...new Set(
+          (list.entries || [])
+            .filter((e) =>
+              e.languages?.some((l) => l.key === `/languages/${code}`),
+            )
+            .map((e) => e.ocaid)
+            .filter(valid),
+        ),
+      ];
+      const alternate = await tryEditions(alternatives);
+      if (alternate) return alternate;
+    } catch {
+      /* Keep an explicit unavailable result when no file resolves. */
+    }
+  }
   return {
     type: "source",
     url: `https://openlibrary.org/works/${id}`,
