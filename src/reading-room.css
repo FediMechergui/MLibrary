@@ -3,6 +3,9 @@
   display: none;
 }
 @media (max-width: 700px) {
+  .topbar::before {
+    display: none;
+  }
   .breadcrumb {
     display: flex;
     align-items: center;
@@ -721,7 +724,11 @@ textarea:focus-visible {
   --reader-ink: #e6e7dc;
   --reader-line: #3a443a;
 }
-.reader.theme-sepia { --reader-bg:#f1e7d3; --reader-ink:#493c2b; --reader-line:#daceb5; }
+.reader.theme-sepia {
+  --reader-bg: #f1e7d3;
+  --reader-ink: #493c2b;
+  --reader-line: #daceb5;
+}
 .reader-topbar {
   background: var(--reader-bg);
   height: 76px;
