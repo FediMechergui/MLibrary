@@ -210,7 +210,7 @@ test("phone layouts keep books visible, navigation reachable and reader controls
   await page.locator(".language-select select").selectOption("en");
   await page.locator('.book-open[aria-label="Pride and Prejudice"]').click();
   await page
-    .getByRole("button", { name: "Open in reader", exact: true })
+    .getByRole("button", { name: "Start reading", exact: true })
     .click();
   await expect(page.locator(".text-page")).toBeVisible();
   for (const control of await page

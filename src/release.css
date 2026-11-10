@@ -161,6 +161,7 @@ summary {
 }
 .source-actions .text-button {
   font-size: 12px;
+  white-space: normal;
   text-align: end;
   line-height: 1.5;
 }
@@ -252,7 +253,10 @@ summary {
 }
 .source-settings .button {
   text-align: center;
+  white-space: normal;
+  line-height: 1.5;
 }
+.source-settings .button svg { flex-shrink: 0; }
 .publisher-import {
   padding: 18px;
   border: 1px solid var(--line);
