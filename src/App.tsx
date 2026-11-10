@@ -67,6 +67,8 @@ const sourceNames: Record<string, string> = {
   openlibrary: "Open Library",
   archive: "Internet Archive",
   standardebooks: "Standard Ebooks",
+  oapen: "OAPEN Library",
+  doab: "Directory of Open Access Books",
   local: "MLibrary",
 };
 const genreKeys: MessageKey[] = [

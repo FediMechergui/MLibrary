@@ -13,12 +13,14 @@ import type {
 } from "../types";
 import { sourceText } from "../lib/source-i18n";
 import { translator } from "../lib/i18n";
-import { importStandardBook } from "../lib/api";
+import { importStandardBook, importOpenAccessBook } from "../lib/api";
 const names: Record<string, string> = {
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
   openlibrary: "Open Library",
   archive: "Internet Archive",
+  oapen: "OAPEN Library",
+  doab: "Directory of Open Access Books",
 };
 export function FormatChoice({
   language,
@@ -115,6 +117,13 @@ export function SourceSettings({
                 {source.id === "standardebooks" && (
                   <StandardImport language={state.language} onRead={onRead} />
                 )}
+                {["oapen", "doab"].includes(source.id) && (
+                  <StandardImport
+                    language={state.language}
+                    onRead={onRead}
+                    repository={source.id}
+                  />
+                )}
                 {source.audit && (
                   <div className="source-diagnosis">
                     <small>
@@ -142,7 +151,9 @@ export function SourceSettings({
                   </label>
                 )}
                 <div className="source-controls">
-                  {["archive", "openlibrary"].includes(source.id) && (
+                  {["archive", "openlibrary", "oapen", "doab"].includes(
+                    source.id,
+                  ) && (
                     <FormatChoice
                       language={state.language}
                       value={config.format || "auto"}
@@ -183,9 +194,9 @@ export function SourceSettings({
                     </select>
                   </label>
                 </div>
-                {["archive", "openlibrary"].includes(source.id) && (
-                  <p className="source-hint">{t("saved")}</p>
-                )}
+                {["archive", "openlibrary", "oapen", "doab"].includes(
+                  source.id,
+                ) && <p className="source-hint">{t("saved")}</p>}
                 <div className="source-recovery">
                   <button
                     className="button secondary"
@@ -243,9 +254,11 @@ export function SourceSettings({
 function StandardImport({
   language,
   onRead,
+  repository,
 }: {
   language: AppState["language"];
   onRead: (book: Book) => void;
+  repository?: string;
 }) {
   const t = sourceText(language);
   const [url, setUrl] = useState("");
@@ -264,7 +277,9 @@ function StandardImport({
         const request = new AbortController();
         controller.current = request;
         try {
-          const data = await importStandardBook(url.trim(), request.signal);
+          const data = await (
+            repository ? importOpenAccessBook : importStandardBook
+          )(url.trim(), request.signal);
           if (!request.signal.aborted) onRead(data.book);
         } catch (e) {
           if (!request.signal.aborted)
@@ -275,18 +290,24 @@ function StandardImport({
       }}
     >
       <label className="source-field">
-        <span>{t("bookLink")}</span>
+        <span>{t(repository ? "repositoryLink" : "bookLink")}</span>
         <input
           type="url"
           required
           value={url}
-          placeholder="https://standardebooks.org/ebooks/…"
+          placeholder={
+            repository
+              ? `https://${repository === "oapen" ? "library.oapen.org" : "directory.doabooks.org"}/handle/…`
+              : "https://standardebooks.org/ebooks/…"
+          }
           onChange={(e) => setUrl(e.target.value)}
         />
       </label>
-      <p className="source-hint">{t("linkHint")}</p>
+      <p className="source-hint">
+        {t(repository ? "repositoryHint" : "linkHint")}
+      </p>
       <button className="button primary" disabled={busy}>
-        {t(busy ? "opening" : "downloadRead")}
+        {t(busy ? (repository ? "findingBook" : "opening") : "downloadRead")}
       </button>
       {error && <p role="alert">{error}</p>}
     </form>

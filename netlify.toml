@@ -9,6 +9,8 @@
   included_files = ["server/data/*.gz"]
 [functions.catalog-sync]
   schedule = "17 * * * *"
+[functions.openaccess-sync]
+  schedule = "43 3 * * *"
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"

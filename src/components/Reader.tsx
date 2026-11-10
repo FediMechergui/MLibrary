@@ -75,7 +75,9 @@ export default function Reader({
   const [format, setFormat] = useState<ReaderFormat>(
     state.sources[book.source]?.format || "auto",
   );
-  const canChooseFormat = ["archive", "openlibrary"].includes(book.source);
+  const canChooseFormat = ["archive", "openlibrary", "oapen", "doab"].includes(
+    book.source,
+  );
   const [chapter, setChapter] = useState(
     initialMark?.anchor.chapter || state.shelf[book.id]?.progress?.chapter,
   );
@@ -1373,8 +1375,10 @@ function EpubViewer({
               )
                 continue;
               for (const [property, value] of Object.entries({
-                left: contents.window.getComputedStyle(contents.document.body).paddingLeft,
-                top: contents.window.getComputedStyle(contents.document.body).paddingTop,
+                left: contents.window.getComputedStyle(contents.document.body)
+                  .paddingLeft,
+                top: contents.window.getComputedStyle(contents.document.body)
+                  .paddingTop,
                 width: "1px",
                 height: "1px",
                 "font-size": "0",

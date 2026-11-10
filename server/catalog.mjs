@@ -1,7 +1,15 @@
 import { searchGutenberg } from "./gutenberg.mjs";
+import { searchOpenAccess } from "./openaccess-catalog.mjs";
 import { diagnose, sourceFromUrl, sourcePolicy } from "./source-policy.mjs";
 export const LANGUAGES = ["en", "fr", "ar"];
-export const SOURCES = ["gutenberg", "wikisource", "openlibrary", "archive"];
+export const SOURCES = [
+  "gutenberg",
+  "wikisource",
+  "openlibrary",
+  "archive",
+  "doab",
+  "oapen",
+];
 const codes = { en: "eng", fr: "fre", ar: "ara" };
 export const sourceDirectory = [
   {
@@ -80,7 +88,7 @@ export const sourceDirectory = [
     name: "Directory of Open Access Books",
     languages: ["en", "fr", "ar"],
     url: "https://www.doabooks.org",
-    kind: "directory",
+    kind: "discovery",
     description: "Peer-reviewed academic books from open-access publishers.",
     rights: "License and permitted uses vary by book.",
   },
@@ -89,7 +97,7 @@ export const sourceDirectory = [
     name: "OAPEN Library",
     languages: ["en", "fr", "ar"],
     url: "https://library.oapen.org",
-    kind: "directory",
+    kind: "discovery",
     description: "Open-access scholarly books and research monographs.",
     rights: "Respect each publication’s Creative Commons or publisher license.",
   },
@@ -381,7 +389,10 @@ export async function searchCatalog(options) {
       : [
           {
             source,
-            run: () => ({ gutenberg, openlibrary, archive })[source](options),
+            run: () =>
+              ["doab", "oapen"].includes(source)
+                ? searchOpenAccess({ ...options, source })
+                : { gutenberg, openlibrary, archive }[source](options),
           },
         ],
   );

@@ -23,7 +23,9 @@ export function store() {
   };
 }
 export function cacheKey(options) {
-  return createHash("sha256").update(JSON.stringify(options)).digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify({ revision: 2, ...options }))
+    .digest("hex");
 }
 export async function cachedSearch(options, fetcher) {
   const s = store(),

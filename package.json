@@ -1,7 +1,7 @@
 {
   "name": "mlibrary",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "icons": "node scripts/generate-icons.mjs",
@@ -14,7 +14,8 @@
     "android:sync": "npm run build && cap sync android",
     "android:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
     "catalog:seed": "node scripts/bulk-seed.mjs",
-    "deploy": "netlify deploy --build --prod"
+    "deploy": "netlify deploy --build --prod",
+    "catalog:openaccess": "node scripts/seed-openaccess.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

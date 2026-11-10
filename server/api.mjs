@@ -1,4 +1,14 @@
-import { sourceDirectory, searchCatalog, validateSearch } from "./catalog.mjs";
+import {
+  sourceDirectory,
+  searchCatalog,
+  validateSearch,
+  SOURCES,
+} from "./catalog.mjs";
+import {
+  openAccessLink,
+  openAccessEdition,
+  openAccessFileChunk,
+} from "./openaccess.mjs";
 import { cachedSearch, store } from "./storage.mjs";
 import { getContent } from "./content.mjs";
 import { getReaderFileChunk } from "./reading.mjs";
@@ -28,7 +38,7 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "1.0.0", time: new Date().toISOString() },
+        { status: "ok", version: "1.1.0", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
@@ -46,6 +56,13 @@ export default async function handler(request) {
         standardUrlPath(url.searchParams.get("url") || ""),
       );
       return Response.json({ book }, { headers });
+    }
+    if (path === "/import-openaccess") {
+      const { source, id } = openAccessLink(url.searchParams.get("url") || "");
+      return Response.json(
+        { book: (await openAccessEdition(source, id)).book },
+        { headers },
+      );
     }
     if (path === "/sync-status") {
       let state;
@@ -67,7 +84,10 @@ export default async function handler(request) {
         return Response.json({ error: e.message }, { status: 400, headers });
       }
       const data = await cachedSearch(options, searchCatalog);
-      if (options.source === "all" && options.excluded?.length === 4)
+      if (
+        options.source === "all" &&
+        options.excluded?.length === SOURCES.length
+      )
         return Response.json(
           {
             error:
@@ -105,8 +125,15 @@ export default async function handler(request) {
       });
     }
     if (path === "/file") {
-      const data =
-        url.searchParams.get("source") === "standardebooks"
+      const data = ["oapen", "doab"].includes(url.searchParams.get("source"))
+        ? await openAccessFileChunk(
+            url.searchParams.get("source"),
+            url.searchParams.get("id") || "",
+            url.searchParams.get("format") || "pdf",
+            Number(url.searchParams.get("start")),
+            Number(url.searchParams.get("end")),
+          )
+        : url.searchParams.get("source") === "standardebooks"
           ? await standardFileChunk(
               url.searchParams.get("id") || "",
               Number(url.searchParams.get("start")),
@@ -135,30 +162,41 @@ export default async function handler(request) {
       {
         code: diagnose(error).code,
         error:
-          path === "/content" || path === "/file" || path === "/import-standard"
+          path === "/content" ||
+          path === "/file" ||
+          path === "/import-standard" ||
+          path === "/import-openaccess"
             ? diagnose(error).message
             : "The catalogue is temporarily unavailable. Please try again.",
       },
       {
         status:
-          (path === "/content" &&
-            [
-              "Unsupported book identifier",
-              "Invalid reader format",
-              "Invalid Standard Ebooks edition",
-            ].includes(error.message)) ||
-          (path === "/import-standard" &&
-            [
-              "Invalid URL",
-              "Invalid Standard Ebooks edition",
-              "Paste an individual Standard Ebooks book page URL.",
-            ].includes(error.message)) ||
-          (path === "/file" && error.message === "Invalid reader file range")
-            ? 400
-            : path === "/file" &&
-                error.message === "No publicly accessible reader file"
-              ? 404
-              : 502,
+          error.status === 429
+            ? 429
+            : (path === "/import-openaccess" &&
+                  error.message === "Invalid open-access book link") ||
+                (path === "/content" &&
+                  [
+                    "Unsupported book identifier",
+                    "Invalid reader format",
+                    "Invalid Standard Ebooks edition",
+                  ].includes(error.message)) ||
+                (path === "/import-standard" &&
+                  [
+                    "Invalid URL",
+                    "Invalid Standard Ebooks edition",
+                    "Paste an individual Standard Ebooks book page URL.",
+                  ].includes(error.message)) ||
+                (path === "/file" &&
+                  [
+                    "Invalid reader file range",
+                    "Invalid open-access edition",
+                  ].includes(error.message))
+              ? 400
+              : path === "/file" &&
+                  error.message === "No publicly accessible reader file"
+                ? 404
+                : 502,
         headers: { ...headers, "Cache-Control": "no-store" },
       },
     );

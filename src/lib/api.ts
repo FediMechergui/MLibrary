@@ -13,6 +13,7 @@ export type DownloadProgress = {
   phase: "downloading" | "saving";
 };
 type DownloadOptions = {
+  file?: { source: "oapen" | "doab"; id: string; format: "pdf" | "epub" };
   signal?: AbortSignal;
   format?: ReaderFormat;
   bypassOffline?: boolean;
@@ -51,6 +52,11 @@ export const importStandardBook = (url: string, signal?: AbortSignal) =>
     `/import-standard?${new URLSearchParams({ url })}`,
     signal,
   );
+export const importOpenAccessBook = (url: string, signal?: AbortSignal) =>
+  request<{ book: Book }>(
+    `/import-openaccess?${new URLSearchParams({ url })}`,
+    signal,
+  );
 export const getSyncStatus = () =>
   request<{ status: string; records: number; lastSuccess?: string }>(
     "/sync-status",
@@ -85,6 +91,7 @@ export async function loadBook(
         url: string;
         attribution?: string;
         sourceUrl?: string;
+        file?: DownloadOptions["file"];
       }
   >(
     `/content?${new URLSearchParams({ id: book.id, language: book.language, reader: "3", format: options.format || "auto", ...(chapter ? { chapter } : {}) })}`,
@@ -92,14 +99,17 @@ export async function loadBook(
   );
   const downloadedText =
     data.type === "text" &&
-    ["archive", "openlibrary"].includes(book.source) &&
+    ["archive", "openlibrary", "oapen", "doab"].includes(book.source) &&
     !data.chapters.length;
   if (data.type !== "remote" && !downloadedText)
     return { content: data, offline: false };
   const content: BookContent =
     data.type === "remote"
       ? {
-          ...(await downloadReaderFile(data.url, data.format, options)),
+          ...(await downloadReaderFile(data.url, data.format, {
+            ...options,
+            file: data.file,
+          })),
           attribution: data.attribution,
           sourceUrl: data.sourceUrl,
         }
@@ -135,7 +145,13 @@ export async function downloadReaderFile(
   options: DownloadOptions = {},
 ): Promise<Extract<BookContent, { type: "epub" | "pdf" }>> {
   options.onProgress?.({ received: 0, total: 0, phase: "downloading" });
-  const first = await readerFileChunk(value, 0, 1024 * 1024, options.signal);
+  const first = await readerFileChunk(
+    value,
+    0,
+    1024 * 1024,
+    options.signal,
+    options.file,
+  );
   if (first.size > (format === "pdf" ? 500 : 50) * 1024 * 1024)
     throw new Error(
       `This file exceeds the ${format === "pdf" ? 500 : 50} MB download limit.`,
@@ -163,6 +179,7 @@ export async function downloadReaderFile(
       cursor,
       Math.min(cursor + 1024 * 1024, first.size),
       options.signal,
+      options.file,
     );
     if (chunk.size !== first.size)
       throw new Error(
@@ -189,9 +206,28 @@ export async function readerFileChunk(
   start: number,
   end: number,
   signal?: AbortSignal,
+  file?: DownloadOptions["file"],
 ) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
+      if (file) {
+        if (
+          !["oapen", "doab"].includes(file.source) ||
+          !/^\d{1,10}$/.test(file.id) ||
+          !["epub", "pdf"].includes(file.format)
+        )
+          throw new Error("Unsupported repository file");
+        return await fetchFileRange(
+          new URLSearchParams({
+            ...file,
+            start: String(start),
+            end: String(end - 1),
+          }),
+          start,
+          end,
+          signal,
+        );
+      }
       return await fetchReaderFileChunk(value, start, end, signal);
     } catch (error) {
       if (

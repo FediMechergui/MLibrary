@@ -60,7 +60,7 @@ test("disabled providers are never requested by federated search", async (t) => 
     throw new Error("Excluded providers must not run");
   });
   const options = validateSearch(
-    new URLSearchParams("q=Alice&exclude=wikisource,archive,openlibrary"),
+    new URLSearchParams("q=Alice&exclude=wikisource,archive,openlibrary,doab,oapen"),
   );
   const result = await searchCatalog(options);
   assert.ok(result.books.length);

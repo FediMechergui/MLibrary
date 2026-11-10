@@ -37,14 +37,14 @@ const findings = {
     "Paste an individual Standard Ebooks book page below. MLibrary follows its public download action, saves the EPUB and opens it automatically. The authenticated OPDS feed remains separate; use Gutenberg as your searchable fallback.",
   ],
   doab: [
-    "directory",
-    "The directory and OAI metadata service responded. DOAB points to publishers; metadata harvesting does not itself return a readable book.",
-    "Follow the publisher's licensed edition, then import its EPUB/PDF. Choose a fallback library for in-app search. There is no DOAB book-download adapter in this release.",
+    "limited",
+    "The public metadata export added 38,614 English, French and Arabic book records. A linked Ledizioni PDF returned verified bytes. Other publishers may require separate adapters; catalogue inclusion does not guarantee a downloadable file.",
+    "Search DOAB here or paste a book link. Public OAPEN and supported Ledizioni editions download into the reader with their license. Unsupported publisher links offer another edition or local import. Metadata refresh runs daily.",
   ],
   oapen: [
     "limited",
-    "The repository home page responded, but its documented REST search endpoint returned HTTP 403 from this environment.",
-    "Obtain the licensed PDF through the repository's normal download flow and import it. The REST adapter needs working service access before it can be connected.",
+    "The REST API denies access, but the supported OAI metadata and public book files work. The tested book returned complete text. The repository also enforces request limits; rate-limited requests stop and show an explanation.",
+    "Search the OAPEN editions indexed through DOAB, or paste a repository book link. Automatic prefers text; choose PDF for original pages. Whole-file downloads without range support are limited to 32 MB and cached briefly. Request pacing and caching reduce repeated downloads.",
   ],
   qdl: [
     "blocked",
@@ -54,5 +54,12 @@ const findings = {
 };
 export function sourceAudit(id) {
   const [status, finding, solution] = findings[id];
-  return { status, finding, solution, checkedAt: "2026-11-10T08:48:20.420Z" };
+  return {
+    status,
+    finding,
+    solution,
+    checkedAt: ["doab", "oapen"].includes(id)
+      ? "2026-11-10T10:22:43.462Z"
+      : "2026-11-10T08:48:20.420Z",
+  };
 }

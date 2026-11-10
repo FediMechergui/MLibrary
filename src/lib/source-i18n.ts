@@ -1,5 +1,9 @@
 import type { Language } from "../types";
 const en = {
+  repositoryLink: "Repository book link",
+  repositoryHint:
+    "Paste an OAPEN or DOAB book page. Supported public editions download and open in your reader.",
+  findingBook: "Finding the book…",
   bookLink: "Standard Ebooks book link",
   linkHint:
     "Paste an individual book page. Its EPUB downloads into My Library and opens automatically.",
@@ -47,6 +51,10 @@ const en = {
 };
 type Key = keyof typeof en;
 const fr: Record<Key, string> = {
+  repositoryLink: "Lien du livre du dépôt",
+  repositoryHint:
+    "Collez la page d’un livre OAPEN ou DOAB. Les éditions publiques compatibles sont téléchargées et ouvertes dans le lecteur.",
+  findingBook: "Recherche du livre…",
   bookLink: "Lien du livre Standard Ebooks",
   linkHint:
     "Collez la page d’un livre. Son EPUB est téléchargé dans Ma bibliothèque et s’ouvre automatiquement.",
@@ -94,6 +102,10 @@ const fr: Record<Key, string> = {
     "Toutes les bibliothèques sont désactivées. Activez-en une dans Sources ou sélectionnez une bibliothèque précise.",
 };
 const ar: Record<Key, string> = {
+  repositoryLink: "رابط كتاب المستودع",
+  repositoryHint:
+    "الصق صفحة كتاب من OAPEN أو DOAB. تُنزّل النسخ العامة المدعومة وتُفتح داخل القارئ.",
+  findingBook: "جارٍ البحث عن الكتاب…",
   bookLink: "رابط كتاب Standard Ebooks",
   linkHint: "الصق صفحة كتاب. يُنزّل ملف EPUB إلى مكتبتي ويُفتح تلقائياً.",
   opening: "البحث عن ملف EPUB…",

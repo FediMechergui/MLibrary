@@ -6,6 +6,8 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 
 **Repository:** https://github.com/FediMechergui/MLibrary
 
+**Version 1.1.0:** DOAB adds 38,614 searchable English/French/Arabic book records, an OAPEN subset, and public-repository downloads into the reader. [Integration evidence and remaining limits](docs/OPENACCESS-1.1.md). Supported publisher hosts are OAPEN and Ledizioni; other provider restrictions remain explicit. The open-access metadata snapshot has a daily Netlify refresh with a bundled fallback.
+
 **Version 1.0.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.0.0) · [all-source audit](docs/SOURCE-AUDIT-1.0.md).
 
 This release adds saved source controls, actionable availability reasons, format selection and fallback recovery, an individual Standard Ebooks link importer, and a burgundy/porcelain interface with compact mobile layouts and 44px reader controls. Existing shelves, offline books and quote cards migrate automatically.
