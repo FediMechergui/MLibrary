@@ -82,7 +82,7 @@ for (const source of ["oapen", "doab", "hindawi"])
     await page.context().setOffline(true);
     await page.locator(".book-open").first().click();
     await page
-      .getByRole("button", { name: "Continue reading", exact: true })
+      .getByRole("button", { name: /^(Continue reading|Open in reader)$/ })
       .click();
     await expect(page.locator(".pdf-reader canvas")).toBeVisible();
     await page.context().setOffline(false);

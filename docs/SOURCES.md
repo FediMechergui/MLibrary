@@ -90,3 +90,5 @@ No working catalogue or book download source was obtained. The app advertises a 
 
 
 See [Safahat, Gallica and QDL findings for 1.2.0](COLLECTIONS-1.2.md) for the latest supported routes and remaining access blocker.
+
+Android 1.3 adds a [QDL browser and download-to-reader handoff](QDL-BROWSER-1.3.md). It also accepts PDF/EPUB/TXT files through Android Open with / Share. This is a user-assisted download route, not an automated QDL catalogue connection.

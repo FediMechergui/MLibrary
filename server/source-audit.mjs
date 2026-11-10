@@ -49,7 +49,7 @@ const findings = {
   qdl: [
     "blocked",
     "The collection, search, documented IIIF image/manifest and advertised PDF download all returned HTTP 403 verification pages. A British Library OCR training dataset contains sample pages, not complete QDL books.",
-    "Use Arabic Wikisource or Archive for another edition, or import a PDF obtained through QDL's normal download process. A direct automated integration requires provider-approved API access; no working QDL download is currently connected.",
+    "On Android, use Browse & import PDF: complete any verification in the on-device browser, then choose QDL's PDF download. A successful download imports into the offline reader. If the embedded browser is refused, use Chrome, download, then Open with / Share to MLibrary. This user-assisted route does not unlock automated catalogue access; live QDL verification remains provider-dependent.",
   ],
 };
 export function sourceAudit(id) {

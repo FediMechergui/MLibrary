@@ -26,9 +26,14 @@ export function trustedSourceUrl(value: string) {
     return null;
   }
 }
-export async function openNativeSource(url: string) {
+export async function openNativeSource(url: string, language = "en") {
   const safe = trustedSourceUrl(url);
   if (!safe) throw new Error("Unsupported source address");
+  if (["www.qdl.qa", "qdl.qa"].includes(new URL(safe).hostname)) {
+    const { BookImport } = await import("./book-import");
+    await BookImport.openQdl({ url: safe, language });
+    return;
+  }
   const { InAppBrowser, DefaultWebViewOptions } = await import(
     "@capacitor/inappbrowser"
   );

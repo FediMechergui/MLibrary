@@ -7,6 +7,8 @@ import {
   Suspense,
 } from "react";
 import type { ReactNode } from "react";
+import { flushSync } from "react-dom";
+import { useIncomingBooks } from "./components/IncomingBooks";
 import {
   Books,
   Compass,
@@ -122,6 +124,32 @@ export default function App() {
   const input = useRef<HTMLInputElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const notify = useCallback((text: string) => setToast(text), []);
+  const adoptIncoming = useCallback(
+    (book: Book) => {
+      flushSync(() => {
+        update((s) => ({
+          ...s,
+          shelf: {
+            ...s.shelf,
+            [book.id]: {
+              ...(s.shelf[book.id] || newEntry(book)),
+              offline: true,
+              status:
+                s.shelf[book.id]?.status === "finished"
+                  ? "finished"
+                  : "reading",
+            },
+          },
+        }));
+        setSourceView("");
+        setDetail(null);
+        setInitialMark(undefined);
+        setReading(book);
+      });
+    },
+    [update],
+  );
+  const incomingBooks = useIncomingBooks(state.language, adoptIncoming);
   const isBrowse =
     !search &&
     bookLanguage === "all" &&
@@ -432,44 +460,48 @@ export default function App() {
 
   if (reading)
     return (
-      <Suspense
-        fallback={
-          <div className="full-loading">
-            <CircleNotch className="spin" size={30} />
-            {t("readerLoading")}
-          </div>
-        }
-      >
-        <Reader
-          key={reading.id}
-          book={reading}
-          initialMark={initialMark}
-          onImport={(file) => void handleImport(file, true)}
-          onFindEdition={() => {
-            setReading(null);
-            setQuery(reading.title);
-            changeFilter(() => {
-              setSearch(reading.title);
-              setBookLanguage(reading.language || "all");
-              setSource(state.sources[reading.source]?.fallback || "all");
-              setGenre("allBooks");
-            });
-            goTab("discover");
-          }}
-          state={state}
-          update={update}
-          onClose={() => setReading(null)}
-          notify={notify}
-        />
-        {toast && (
-          <div className="toast" role="status">
-            {toast}
-          </div>
-        )}
-      </Suspense>
+      <>
+        {incomingBooks}
+        <Suspense
+          fallback={
+            <div className="full-loading">
+              <CircleNotch className="spin" size={30} />
+              {t("readerLoading")}
+            </div>
+          }
+        >
+          <Reader
+            key={reading.id}
+            book={reading}
+            initialMark={initialMark}
+            onImport={(file) => void handleImport(file, true)}
+            onFindEdition={() => {
+              setReading(null);
+              setQuery(reading.title);
+              changeFilter(() => {
+                setSearch(reading.title);
+                setBookLanguage(reading.language || "all");
+                setSource(state.sources[reading.source]?.fallback || "all");
+                setGenre("allBooks");
+              });
+              goTab("discover");
+            }}
+            state={state}
+            update={update}
+            onClose={() => setReading(null)}
+            notify={notify}
+          />
+          {toast && (
+            <div className="toast" role="status">
+              {toast}
+            </div>
+          )}
+        </Suspense>
+      </>
     );
   return (
     <div className="app-shell">
+      {incomingBooks}
       <aside className="sidebar">
         <a
           className="brand"

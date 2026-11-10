@@ -81,7 +81,11 @@ export const newEntry = (book: Book) => ({
   offline: false,
   tags: [] as string[],
 });
-export async function importBook(file: File, language: string): Promise<Book> {
+export async function importBook(
+  file: File,
+  language: string,
+  origin?: { title?: string; sourceUrl: string },
+): Promise<Book> {
   const extension = file.name.split(".").pop()?.toLowerCase();
   if (
     !extension ||
@@ -104,12 +108,13 @@ export async function importBook(file: File, language: string): Promise<Book> {
   ).join("");
   const book: Book = {
     id: `local:${hash}`,
-    title: file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
+    title:
+      origin?.title || file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
     authors: [],
     language,
     languages: [language],
     source: "local",
-    sourceUrl: "",
+    sourceUrl: origin?.sourceUrl || "",
     cover: null,
     subjects: [],
     description: "",

@@ -4,6 +4,8 @@ import { BookOpen, ArrowLeft, UploadSimple } from "@phosphor-icons/react";
 import type { BookContent, Language, Progress } from "../types";
 import { openNativeSource, trustedSourceUrl } from "../lib/source-view";
 import { readerText } from "../lib/reader-i18n";
+import { QdlImport } from "./QdlImport";
+import { qdlUrl } from "../lib/book-import";
 
 export function SourceReader({
   content,
@@ -23,7 +25,8 @@ export function SourceReader({
   const [error, setError] = useState(false);
   const native = Capacitor.isNativePlatform();
   const url = trustedSourceUrl(content.embedUrl || content.url);
-  const open = () => openNativeSource(content.url).catch(() => setError(true));
+  const open = () =>
+    openNativeSource(content.url, language).catch(() => setError(true));
   useEffect(() => {
     const listener = (event: MessageEvent) => {
       if (
@@ -84,7 +87,9 @@ export function SourceReader({
           </label>
         )}
       </div>
-      {native ? (
+      {qdlUrl(content.url) ? (
+        <QdlImport language={language} initialUrl={content.url} />
+      ) : native ? (
         <div className="source-native-open">
           <button className="button primary" onClick={open}>
             {r("openSource")}

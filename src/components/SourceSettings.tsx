@@ -13,6 +13,7 @@ import type {
 } from "../types";
 import { sourceText } from "../lib/source-i18n";
 import { translator } from "../lib/i18n";
+import { QdlImport } from "./QdlImport";
 import {
   importStandardBook,
   importOpenAccessBook,
@@ -117,6 +118,7 @@ export function SourceSettings({
               </span>
               <h3>{source.name}</h3>
               <p>{source.description}</p>
+              {source.id === "qdl" && <QdlImport language={state.language} />}
               <details className="source-settings">
                 <summary>{t("settings")}</summary>
                 {source.id === "standardebooks" && (
