@@ -45,7 +45,7 @@ test("offscreen accessible EPUB captions do not create blank pages before the ch
   await expect(
     page.frameLocator(".epub-reader iframe").locator("h1"),
   ).toHaveText("Accessible book title");
-  expect(
+  await expect.poll(async () =>
     (await page.locator(".epub-reader iframe").boundingBox())!.width,
   ).toBeLessThan(500);
   await page.getByRole("button", { name: "Next page", exact: true }).click();

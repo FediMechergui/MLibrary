@@ -1373,8 +1373,8 @@ function EpubViewer({
               )
                 continue;
               for (const [property, value] of Object.entries({
-                left: "0",
-                top: "0",
+                left: contents.window.getComputedStyle(contents.document.body).paddingLeft,
+                top: contents.window.getComputedStyle(contents.document.body).paddingTop,
                 width: "1px",
                 height: "1px",
                 "font-size": "0",
