@@ -62,7 +62,7 @@ async function until(expression, label, timeout = 60000) {
   throw new Error(`Android assertion failed: ${label}`);
 }
 async function click(label) {
-  const expression = `Array.from(document.querySelectorAll('button')).find(b => !b.disabled && (b.getAttribute('aria-label') || b.textContent.trim()) === ${JSON.stringify(label)})`;
+  const expression = `Array.from(document.querySelectorAll('button')).find(b => !b.disabled && (b.getAttribute('aria-label') || (b.matches('.nav-item') ? b.querySelector('span')?.textContent.trim() : b.textContent.trim())) === ${JSON.stringify(label)})`;
   await until(`Boolean(${expression})`, `${label} enabled`);
   await evaluate(
     `(() => { const button = ${expression}; button.click(); return true; })()`,

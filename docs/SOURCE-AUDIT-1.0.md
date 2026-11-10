@@ -19,6 +19,8 @@ The repeat audit contains 44 checks plus two focused rechecks. Eleven probes fai
 
 ## Customization and recovery
 
+The Android visual check found that Standard Ebooks accessibility captions positioned at `left: -999em` inflated epub.js measurements into dozens of blank pages. The reader now clips these captions within the page while retaining their text for accessibility. A regression fixture checks visible title/chapter content, bounded page width, page turning, and disabled EPUB scripts. The real publisher EPUB was downloaded and opened on Android, then reopened with the network disabled and verified for visible text and changed reading position.
+
 Source settings are stored per device under the existing `mlibrary:v1` state. Connected libraries can be excluded from combined search; selecting a source explicitly still queries it. Each listed source has its own search language and fallback library. Archive/Open Library have an Automatic, Text, EPUB or PDF download preference. A reader error or missing format offers another format without leaving the app. Changing formats starts at the beginning; existing quote cards remain saved. Existing offline copies keep their format until a new download is explicitly requested.
 
 Operators can set `SOURCE_POLICIES` in Netlify's function environment, for example `{"archive":{"timeoutMs":12000,"retries":1}}`. Timeouts are bounded to 2–15 seconds and network retries to 0–1 per upstream request. Archive range handling additionally retries interrupted bodies; the client retries transient failed chunks. This is not a global outage monitor: the source page displays the date of the audit, and individual requests surface current errors.
@@ -26,6 +28,8 @@ Operators can set `SOURCE_POLICIES` in Netlify's function environment, for examp
 Source files remain restricted to validated provider hosts and paths. The Standard Ebooks importer rejects arbitrary hosts, authenticated URLs, queries, redirects and traversal; file requests resolve approved downloads from the book page. Content retains publisher attribution. No private, encrypted, dark or borrowing-only Archive file is downloaded.
 
 ## Primary references
+
+Release validation: [29 backend and 23 browser checks](https://github.com/FediMechergui/MLibrary/actions/runs/42795523025) passed, and the [Android build](https://github.com/FediMechergui/MLibrary/actions/runs/42795656306) succeeded. Mobile checks cover English, French, Arabic RTL, reader touch controls, and expansion of every source settings panel without overlapping actions. Native checks on Android API 35 / WebView 124 cover automatic real EPUB/PDF downloads, visible scan pixels, offline reopening, and an update preserving an existing offline PDF. These checks supplement the representative source probes; they do not certify every book in the catalogue.
 
 - [Open Library Search API](https://openlibrary.org/dev/docs/api/search): search returns one preferred edition; work-level links need separate availability and language checks.
 - [Internet Archive metadata API](https://archive.org/developers/md-read.html): item metadata and file records.
