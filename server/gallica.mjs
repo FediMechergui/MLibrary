@@ -3,9 +3,7 @@ import { gunzipSync } from "node:zlib";
 let snapshot;
 function records() {
   snapshot ||= JSON.parse(
-    gunzipSync(
-      readFileSync(new URL("./data/gallica.json.gz", import.meta.url)),
-    ),
+    gunzipSync(readFileSync("server/data/gallica.json.gz")),
   ).records;
   return snapshot;
 }
