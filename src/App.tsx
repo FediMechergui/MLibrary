@@ -67,7 +67,9 @@ const sourceNames: Record<string, string> = {
   openlibrary: "Open Library",
   archive: "Internet Archive",
   standardebooks: "Standard Ebooks",
+  hindawi: "Hindawi / Safahat",
   oapen: "OAPEN Library",
+  gallica: "Gallica · BnF",
   doab: "Directory of Open Access Books",
   local: "MLibrary",
 };
@@ -787,7 +789,9 @@ export default function App() {
                         {Object.entries(sourceNames)
                           .filter(
                             ([key]) =>
-                              !["local", "standardebooks"].includes(key),
+                              !["local", "standardebooks", "hindawi"].includes(
+                                key,
+                              ),
                           )
                           .map(([key, name]) => (
                             <option key={key} value={key}>

@@ -37,6 +37,12 @@ export function sourceFromUrl(value) {
           : "directory";
 }
 export function diagnose(error) {
+  if (error.code === "not-imported")
+    return {
+      code: "not-imported",
+      message:
+        "This Gallica edition is not in the imported collection. Search the available Gallica texts here, or import your downloaded copy.",
+    };
   const status =
     error.status || Number(/Source returned (\d+)/.exec(error.message)?.[1]);
   if (status === 401 || status === 403)

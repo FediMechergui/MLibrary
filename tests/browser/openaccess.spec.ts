@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
-for (const source of ["oapen", "doab"])
+for (const source of ["oapen", "doab", "hindawi"])
   test(`${source} book links download into the PDF reader and reopen offline`, async ({
     page,
   }) => {
@@ -9,7 +9,9 @@ for (const source of ["oapen", "doab"])
     const sourceUrl =
       source === "oapen"
         ? "https://library.oapen.org/handle/20.500.12657/123"
-        : "https://directory.doabooks.org/handle/20.500.12854/123";
+        : source === "doab"
+          ? "https://directory.doabooks.org/handle/20.500.12854/123"
+          : "https://www.safahat.org/books/86869064/";
     const book = {
       id: `${source}:123`,
       source,
@@ -25,8 +27,11 @@ for (const source of ["oapen", "doab"])
       formats: ["PDF"],
       access: "source",
     };
-    await page.route("**/api/import-openaccess?**", (route) =>
-      route.fulfill({ json: { book } }),
+    await page.route(
+      source === "hindawi"
+        ? "**/api/import-collection?**"
+        : "**/api/import-openaccess?**",
+      (route) => route.fulfill({ json: { book } }),
     );
     await page.route("**/api/content?**", (route) =>
       route.fulfill({
@@ -56,7 +61,11 @@ for (const source of ["oapen", "doab"])
       .click();
     const panel = page.locator(`[data-source="${source}"]`);
     await panel.locator("summary").click();
-    await panel.getByLabel("Repository book link").fill(sourceUrl);
+    await panel
+      .getByLabel(
+        source === "hindawi" ? "Library book link" : "Repository book link",
+      )
+      .fill(sourceUrl);
     await panel.getByRole("button", { name: "Download & read" }).click();
     await expect(page.locator(".pdf-reader canvas")).toBeVisible();
     await expect

@@ -138,6 +138,10 @@ test("mobile Arabic layout, imported text, scroll mode, and reading milestones",
   await expect(page.locator(".text-page")).toContainText(
     "A library is a place",
   );
+  // Reading time starts after font loading and pagination make the book ready.
+  await expect(
+    page.getByRole("button", { name: "Next page", exact: true }),
+  ).toBeEnabled();
   await page.clock.runFor(65000);
   await page.getByRole("button", { name: "Reading settings" }).click();
   await page.getByRole("button", { name: "Scroll", exact: true }).click();
@@ -201,5 +205,11 @@ test("source directory distinguishes integrated books from external collections"
   await expect(page.locator(".source-summary")).toContainText(
     "A catalogue record is not a free copy",
   );
-  await expect(page.locator(".source-tag.integrated")).toHaveCount(2);
+  await expect(page.locator(".source-tag.integrated")).toHaveCount(3);
+  await expect(page.locator('[data-source="gallica"] .source-tag')).toHaveClass(
+    /integrated/,
+  );
+  await expect(
+    page.locator('[data-source="qdl"] .source-status'),
+  ).toContainText("Access challenge");
 });

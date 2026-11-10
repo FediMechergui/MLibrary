@@ -141,7 +141,8 @@ try {
   if (
     !process.argv.includes("--downloads-only") &&
     !process.argv.includes("--publisher-only") &&
-    !process.argv.includes("--openaccess-only")
+    !process.argv.includes("--openaccess-only") &&
+    !process.argv.includes("--collections-only")
   ) {
     await evaluate(`document.querySelector('.book-grid .book-open').click()`);
     await click("Start reading");
@@ -556,17 +557,44 @@ try {
       "PASS: Real Standard Ebooks link downloads, imports, opens book text and reopens offline.",
     );
   }
-  if (process.argv.includes("--openaccess-only")) {
-    for (const [source, handle, id, title, format] of [
-      [
-        "oapen",
-        "20.500.12657/25287",
-        "25287",
-        "The deliverance of open access books",
-        "text",
-      ],
-      ["doab", "20.500.12854/62823", "62823", "A World of Nourishment", "pdf"],
-    ]) {
+  if (
+    process.argv.includes("--openaccess-only") ||
+    process.argv.includes("--collections-only")
+  ) {
+    const samples = process.argv.includes("--collections-only")
+      ? [
+          [
+            "gallica",
+            "https://gallica.bnf.fr/ark:/12148/bpt6k5493777b",
+            "bpt6k5493777b",
+            "Germinal",
+            "text",
+          ],
+          [
+            "hindawi",
+            "https://www.safahat.org/books/86869064/",
+            "86869064",
+            "الشهاب الراصد",
+            "pdf",
+          ],
+        ]
+      : [
+          [
+            "oapen",
+            "https://library.oapen.org/handle/20.500.12657/25287",
+            "25287",
+            "The deliverance of open access books",
+            "text",
+          ],
+          [
+            "doab",
+            "https://directory.doabooks.org/handle/20.500.12854/62823",
+            "62823",
+            "A World of Nourishment",
+            "pdf",
+          ],
+        ];
+    for (const [source, link, id, title, format] of samples) {
       await click("Our sources");
       const panel = `[data-source="${source}"]`;
       await until(
@@ -578,10 +606,10 @@ try {
         `document.querySelector('${panel} input[type="url"]').focus()`,
       );
       await send("Input.insertText", {
-        text: `https://${source === "oapen" ? "library.oapen.org" : "directory.doabooks.org"}/handle/${handle}`,
+        text: link,
       });
       await until(
-        `document.querySelector('${panel} input[type="url"]').value.endsWith('${handle}')`,
+        `document.querySelector('${panel} input[type="url"]').value === ${JSON.stringify(link)}`,
         `${source} link entered`,
       );
       await evaluate(
@@ -658,7 +686,7 @@ try {
       await click("Discover");
     }
     console.log(
-      "PASS: Real OAPEN text and DOAB publisher PDF download, render and turn pages offline on Android.",
+      `PASS: Real ${samples.map((s) => s[0]).join(" and ")} books download, render and turn pages offline on Android.`,
     );
   }
   await evaluate(
@@ -671,7 +699,8 @@ try {
       ? "PASS: Android native runtime, automatic download/import, offline PDF reading, and Arabic RTL."
       : process.argv.includes("--publisher-only")
         ? "PASS: Android native runtime, publisher EPUB download/import, offline reading, and Arabic RTL."
-        : process.argv.includes("--openaccess-only")
+        : process.argv.includes("--openaccess-only") ||
+            process.argv.includes("--collections-only")
           ? "PASS: Android native runtime, public repository downloads, offline reading, and Arabic RTL."
           : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
   );

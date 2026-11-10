@@ -2,6 +2,8 @@ import { fetchUpstream } from "./catalog.mjs";
 import { parseHTML } from "linkedom";
 import { standardBook, standardPath } from "./standardebooks.mjs";
 import { openAccessContent } from "./openaccess.mjs";
+import { hindawiEdition } from "./hindawi.mjs";
+import { gallicaBook } from "./gallica.mjs";
 import {
   archiveIdentifier,
   resolveArchive,
@@ -31,6 +33,8 @@ export async function readLimited(response, maxBytes = LIMIT) {
   return Buffer.concat(chunks).toString("utf8");
 }
 export function parseBookId(id) {
+  const collection = /^(hindawi:\d{8}|gallica:bpt6k\d+[a-z0-9])$/.exec(id);
+  if (collection) return { source: id.split(":")[0], id: id.split(":")[1] };
   const openAccess = /^(oapen|doab):(\d{1,10})$/.exec(id);
   if (openAccess) return { source: openAccess[1], id: openAccess[2] };
   if (id.startsWith("standardebooks:"))
@@ -56,6 +60,8 @@ export async function getContent(
   if (!["auto", "text", "epub", "pdf"].includes(format))
     throw new Error("Invalid reader format");
   const book = parseBookId(bookId);
+  if (book.source === "hindawi") return (await hindawiEdition(book.id)).content;
+  if (book.source === "gallica") return gallicaBook(book.id).content;
   if (["oapen", "doab"].includes(book.source))
     return openAccessContent(book.source, book.id, format);
   if (book.source === "standardebooks")

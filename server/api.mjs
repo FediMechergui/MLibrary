@@ -11,6 +11,8 @@ import {
 } from "./openaccess.mjs";
 import { cachedSearch, store } from "./storage.mjs";
 import { getContent } from "./content.mjs";
+import { hindawiLink, hindawiEdition, hindawiFileChunk } from "./hindawi.mjs";
+import { gallicaLink, gallicaBook } from "./gallica.mjs";
 import { getReaderFileChunk } from "./reading.mjs";
 import { diagnose } from "./source-policy.mjs";
 import { sourceAudit } from "./source-audit.mjs";
@@ -38,7 +40,7 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "1.1.0", time: new Date().toISOString() },
+        { status: "ok", version: "1.2.0", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
@@ -51,6 +53,17 @@ export default async function handler(request) {
         },
         { headers },
       );
+    if (path === "/import-collection") {
+      const link = url.searchParams.get("url") || "";
+      const source = url.searchParams.get("source");
+      if (!["hindawi", "gallica"].includes(source))
+        throw new Error("Invalid collection source");
+      const edition =
+        source === "hindawi"
+          ? await hindawiEdition(hindawiLink(link))
+          : gallicaBook(gallicaLink(link));
+      return Response.json({ book: edition.book }, { headers });
+    }
     if (path === "/import-standard") {
       const { book } = await standardBook(
         standardUrlPath(url.searchParams.get("url") || ""),
@@ -125,26 +138,33 @@ export default async function handler(request) {
       });
     }
     if (path === "/file") {
-      const data = ["oapen", "doab"].includes(url.searchParams.get("source"))
-        ? await openAccessFileChunk(
-            url.searchParams.get("source"),
-            url.searchParams.get("id") || "",
-            url.searchParams.get("format") || "pdf",
-            Number(url.searchParams.get("start")),
-            Number(url.searchParams.get("end")),
-          )
-        : url.searchParams.get("source") === "standardebooks"
-          ? await standardFileChunk(
+      const data =
+        url.searchParams.get("source") === "hindawi"
+          ? await hindawiFileChunk(
               url.searchParams.get("id") || "",
               Number(url.searchParams.get("start")),
               Number(url.searchParams.get("end")),
             )
-          : await getReaderFileChunk(
-              url.searchParams.get("id") || "",
-              url.searchParams.get("name") || "",
-              Number(url.searchParams.get("start")),
-              Number(url.searchParams.get("end")),
-            );
+          : ["oapen", "doab"].includes(url.searchParams.get("source"))
+            ? await openAccessFileChunk(
+                url.searchParams.get("source"),
+                url.searchParams.get("id") || "",
+                url.searchParams.get("format") || "pdf",
+                Number(url.searchParams.get("start")),
+                Number(url.searchParams.get("end")),
+              )
+            : url.searchParams.get("source") === "standardebooks"
+              ? await standardFileChunk(
+                  url.searchParams.get("id") || "",
+                  Number(url.searchParams.get("start")),
+                  Number(url.searchParams.get("end")),
+                )
+              : await getReaderFileChunk(
+                  url.searchParams.get("id") || "",
+                  url.searchParams.get("name") || "",
+                  Number(url.searchParams.get("start")),
+                  Number(url.searchParams.get("end")),
+                );
       return new Response(data.bytes, {
         headers: {
           ...headers,
@@ -164,37 +184,41 @@ export default async function handler(request) {
         error:
           path === "/content" ||
           path === "/file" ||
+          path === "/import-collection" ||
           path === "/import-standard" ||
           path === "/import-openaccess"
             ? diagnose(error).message
             : "The catalogue is temporarily unavailable. Please try again.",
       },
       {
-        status:
-          error.status === 429
-            ? 429
-            : (path === "/import-openaccess" &&
-                  error.message === "Invalid open-access book link") ||
-                (path === "/content" &&
-                  [
-                    "Unsupported book identifier",
-                    "Invalid reader format",
-                    "Invalid Standard Ebooks edition",
-                  ].includes(error.message)) ||
-                (path === "/import-standard" &&
-                  [
-                    "Invalid URL",
-                    "Invalid Standard Ebooks edition",
-                    "Paste an individual Standard Ebooks book page URL.",
-                  ].includes(error.message)) ||
-                (path === "/file" &&
-                  [
-                    "Invalid reader file range",
-                    "Invalid open-access edition",
-                  ].includes(error.message))
-              ? 400
-              : path === "/file" &&
-                  error.message === "No publicly accessible reader file"
+        status: [401, 403, 429].includes(error.status)
+          ? error.status
+          : (path === "/import-collection" &&
+                error.message.startsWith("Invalid ")) ||
+              (path === "/import-openaccess" &&
+                error.message === "Invalid open-access book link") ||
+              (path === "/content" &&
+                [
+                  "Unsupported book identifier",
+                  "Invalid reader format",
+                  "Invalid Standard Ebooks edition",
+                ].includes(error.message)) ||
+              (path === "/import-standard" &&
+                [
+                  "Invalid URL",
+                  "Invalid Standard Ebooks edition",
+                  "Paste an individual Standard Ebooks book page URL.",
+                ].includes(error.message)) ||
+              (path === "/file" &&
+                [
+                  "Invalid reader file range",
+                  "Invalid open-access edition",
+                ].includes(error.message))
+            ? 400
+            : path === "/file" &&
+                error.message === "No publicly accessible reader file"
+              ? 404
+              : error.status === 404
                 ? 404
                 : 502,
         headers: { ...headers, "Cache-Control": "no-store" },

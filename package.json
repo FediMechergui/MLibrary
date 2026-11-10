@@ -1,7 +1,7 @@
 {
   "name": "mlibrary",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "icons": "node scripts/generate-icons.mjs",
@@ -33,6 +33,7 @@
     "epubjs": "^0.3.93",
     "idb-keyval": "^6.2.2",
     "linkedom": "^0.18.15",
+    "pdf-lib": "1.17.1",
     "pdfjs-dist": "^6.2.108",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

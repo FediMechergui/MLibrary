@@ -13,7 +13,11 @@ export type DownloadProgress = {
   phase: "downloading" | "saving";
 };
 type DownloadOptions = {
-  file?: { source: "oapen" | "doab"; id: string; format: "pdf" | "epub" };
+  file?: {
+    source: "oapen" | "doab" | "hindawi";
+    id: string;
+    format: "pdf" | "epub";
+  };
   signal?: AbortSignal;
   format?: ReaderFormat;
   bypassOffline?: boolean;
@@ -61,6 +65,15 @@ export const getSyncStatus = () =>
   request<{ status: string; records: number; lastSuccess?: string }>(
     "/sync-status",
   );
+export const importCollectionBook = (
+  url: string,
+  source: string,
+  signal?: AbortSignal,
+) =>
+  request<{ book: Book }>(
+    `/import-collection?${new URLSearchParams({ url, source })}`,
+    signal,
+  );
 export async function loadBook(
   book: Book,
   chapter?: string,
@@ -99,7 +112,9 @@ export async function loadBook(
   );
   const downloadedText =
     data.type === "text" &&
-    ["archive", "openlibrary", "oapen", "doab"].includes(book.source) &&
+    ["archive", "openlibrary", "oapen", "doab", "gallica"].includes(
+      book.source,
+    ) &&
     !data.chapters.length;
   if (data.type !== "remote" && !downloadedText)
     return { content: data, offline: false };
@@ -212,7 +227,7 @@ export async function readerFileChunk(
     try {
       if (file) {
         if (
-          !["oapen", "doab"].includes(file.source) ||
+          !["oapen", "doab", "hindawi"].includes(file.source) ||
           !/^\d{1,10}$/.test(file.id) ||
           !["epub", "pdf"].includes(file.format)
         )

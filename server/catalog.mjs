@@ -1,5 +1,6 @@
 import { searchGutenberg } from "./gutenberg.mjs";
 import { searchOpenAccess } from "./openaccess-catalog.mjs";
+import { searchGallica } from "./gallica.mjs";
 import { diagnose, sourceFromUrl, sourcePolicy } from "./source-policy.mjs";
 export const LANGUAGES = ["en", "fr", "ar"];
 export const SOURCES = [
@@ -9,6 +10,7 @@ export const SOURCES = [
   "archive",
   "doab",
   "oapen",
+  "gallica",
 ];
 const codes = { en: "eng", fr: "fre", ar: "ara" };
 export const sourceDirectory = [
@@ -69,9 +71,9 @@ export const sourceDirectory = [
     name: "Gallica · BnF",
     languages: ["fr", "ar", "en"],
     url: "https://gallica.bnf.fr",
-    kind: "directory",
+    kind: "integrated",
     description:
-      "French national-library scans, manuscripts, and historic editions.",
+      "An imported French text collection from BnF–OBVIL. Live Gallica scans and other editions are not connected.",
     rights: "Consult the item rights and Gallica reuse conditions.",
   },
   {
@@ -392,7 +394,9 @@ export async function searchCatalog(options) {
             run: () =>
               ["doab", "oapen"].includes(source)
                 ? searchOpenAccess({ ...options, source })
-                : { gutenberg, openlibrary, archive }[source](options),
+                : { gutenberg, openlibrary, archive, gallica: searchGallica }[
+                    source
+                  ](options),
           },
         ],
   );

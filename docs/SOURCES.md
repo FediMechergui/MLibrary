@@ -87,3 +87,6 @@ No working catalogue or book download source was obtained. The app advertises a 
 4. Deduplicate identical provider IDs. Match cross-source works only with sufficient author, edition, identifier, and translation evidence.
 5. Do not bypass DRM, authentication, borrowing limits, or provider rate controls.
 6. Use official bulk dumps for bulk ingestion. Use live APIs for user-triggered discovery and fresh availability checks.
+
+
+See [Safahat, Gallica and QDL findings for 1.2.0](COLLECTIONS-1.2.md) for the latest supported routes and remaining access blocker.

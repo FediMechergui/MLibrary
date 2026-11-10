@@ -6,6 +6,8 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 
 **Repository:** https://github.com/FediMechergui/MLibrary
 
+**Version 1.2.0:** Safahat public PDF link imports and 232 searchable French Gallica texts from BnF?s official bulk collection. [Evidence and QDL access limits](docs/COLLECTIONS-1.2.md). QDL remains blocked; no access controls are bypassed.
+
 **Version 1.1.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.1.0). DOAB adds 38,614 searchable English/French/Arabic book records, an OAPEN subset, and public-repository downloads into the reader. [Integration evidence and remaining limits](docs/OPENACCESS-1.1.md). Supported publisher hosts are OAPEN and Ledizioni; other provider restrictions remain explicit. The open-access metadata snapshot has a daily Netlify refresh with a bundled fallback.
 
 **Version 1.0.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.0.0) · [all-source audit](docs/SOURCE-AUDIT-1.0.md).

@@ -13,7 +13,11 @@ import type {
 } from "../types";
 import { sourceText } from "../lib/source-i18n";
 import { translator } from "../lib/i18n";
-import { importStandardBook, importOpenAccessBook } from "../lib/api";
+import {
+  importStandardBook,
+  importOpenAccessBook,
+  importCollectionBook,
+} from "../lib/api";
 const names: Record<string, string> = {
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
@@ -21,6 +25,7 @@ const names: Record<string, string> = {
   archive: "Internet Archive",
   oapen: "OAPEN Library",
   doab: "Directory of Open Access Books",
+  gallica: "Gallica · BnF",
 };
 export function FormatChoice({
   language,
@@ -117,7 +122,9 @@ export function SourceSettings({
                 {source.id === "standardebooks" && (
                   <StandardImport language={state.language} onRead={onRead} />
                 )}
-                {["oapen", "doab"].includes(source.id) && (
+                {["oapen", "doab", "hindawi", "gallica"].includes(
+                  source.id,
+                ) && (
                   <StandardImport
                     language={state.language}
                     onRead={onRead}
@@ -264,6 +271,7 @@ function StandardImport({
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const collection = repository === "hindawi" || repository === "gallica";
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   return (
@@ -277,9 +285,16 @@ function StandardImport({
         const request = new AbortController();
         controller.current = request;
         try {
-          const data = await (
-            repository ? importOpenAccessBook : importStandardBook
-          )(url.trim(), request.signal);
+          const data = collection
+            ? await importCollectionBook(
+                url.trim(),
+                repository!,
+                request.signal,
+              )
+            : await (repository ? importOpenAccessBook : importStandardBook)(
+                url.trim(),
+                request.signal,
+              );
           if (!request.signal.aborted) onRead(data.book);
         } catch (e) {
           if (!request.signal.aborted)
@@ -290,21 +305,41 @@ function StandardImport({
       }}
     >
       <label className="source-field">
-        <span>{t(repository ? "repositoryLink" : "bookLink")}</span>
+        <span>
+          {t(
+            collection
+              ? "collectionLink"
+              : repository
+                ? "repositoryLink"
+                : "bookLink",
+          )}
+        </span>
         <input
           type="url"
           required
           value={url}
           placeholder={
-            repository
-              ? `https://${repository === "oapen" ? "library.oapen.org" : "directory.doabooks.org"}/handle/…`
-              : "https://standardebooks.org/ebooks/…"
+            repository === "hindawi"
+              ? "https://www.safahat.org/books/86869064/"
+              : repository === "gallica"
+                ? "https://gallica.bnf.fr/ark:/12148/…"
+                : repository
+                  ? `https://${repository === "oapen" ? "library.oapen.org" : "directory.doabooks.org"}/handle/…`
+                  : "https://standardebooks.org/ebooks/…"
           }
           onChange={(e) => setUrl(e.target.value)}
         />
       </label>
       <p className="source-hint">
-        {t(repository ? "repositoryHint" : "linkHint")}
+        {t(
+          repository === "hindawi"
+            ? "safahatHint"
+            : repository === "gallica"
+              ? "gallicaHint"
+              : repository
+                ? "repositoryHint"
+                : "linkHint",
+        )}
       </p>
       <button className="button primary" disabled={busy}>
         {t(busy ? (repository ? "findingBook" : "opening") : "downloadRead")}

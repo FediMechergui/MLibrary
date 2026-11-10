@@ -1,0 +1,131 @@
+{
+  "books": 232,
+  "bytes": 29572347,
+  "archives": [
+    {
+      "archive": "x.tar",
+      "sha256": "be07d0f7f04f4d8d9b13ee3fb6e1f3ef7c4732df38e883e83341a14a76f95182"
+    },
+    {
+      "archive": "z.tar",
+      "sha256": "ebd04f1ff6cc3e294cc798818f91cf167d8cb3d2a3fb1ca066c15e690feeb86f"
+    }
+  ],
+  "excluded": [
+    {
+      "archive": "x.tar",
+      "file": "6544738.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "x.tar",
+      "file": "6459294.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "x.tar",
+      "file": "5602079.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "x.tar",
+      "file": "6490757.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "x.tar",
+      "file": "5602080.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "x.tar",
+      "file": "5452100.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5452927.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6282037.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5426157.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5431680.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5482324.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6209584.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5839089.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5482319.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5839122.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6543877.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6495084.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6489036.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6502390.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6479596.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "5804559.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6543867.xml",
+      "reason": "malformed XML"
+    },
+    {
+      "archive": "z.tar",
+      "file": "6537379.xml",
+      "reason": "malformed XML"
+    }
+  ]
+}

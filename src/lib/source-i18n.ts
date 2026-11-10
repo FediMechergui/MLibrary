@@ -1,5 +1,10 @@
 import type { Language } from "../types";
 const en = {
+  collectionLink: "Library book link",
+  safahatHint:
+    "Paste a Safahat or Hindawi book page. Its public PDF downloads and opens here (up to 32 MB). Some files remain unavailable.",
+  gallicaHint:
+    "Paste a Gallica book link from the imported French collection, or use Search this library. Other Gallica editions are not yet available here.",
   repositoryLink: "Repository book link",
   repositoryHint:
     "Paste an OAPEN or DOAB book page. Supported public editions download and open in your reader.",
@@ -51,6 +56,11 @@ const en = {
 };
 type Key = keyof typeof en;
 const fr: Record<Key, string> = {
+  collectionLink: "Lien du livre",
+  safahatHint:
+    "Collez la page d’un livre Safahat ou Hindawi. Son PDF public est téléchargé et ouvert ici (32 Mo maximum). Certains fichiers restent indisponibles.",
+  gallicaHint:
+    "Collez le lien d’un livre du corpus français importé ou cherchez dans cette bibliothèque. Les autres éditions Gallica ne sont pas encore disponibles ici.",
   repositoryLink: "Lien du livre du dépôt",
   repositoryHint:
     "Collez la page d’un livre OAPEN ou DOAB. Les éditions publiques compatibles sont téléchargées et ouvertes dans le lecteur.",
@@ -102,6 +112,11 @@ const fr: Record<Key, string> = {
     "Toutes les bibliothèques sont désactivées. Activez-en une dans Sources ou sélectionnez une bibliothèque précise.",
 };
 const ar: Record<Key, string> = {
+  collectionLink: "رابط الكتاب",
+  safahatHint:
+    "ألصق صفحة كتاب من صفحات أو هنداوي لتنزيل ملف PDF العام وفتحه هنا (حتى ٣٢ ميغابايت). بعض الملفات غير متاحة.",
+  gallicaHint:
+    "ألصق رابط كتاب من مجموعة غاليكا الفرنسية المستوردة أو ابحث في هذه المكتبة. الطبعات الأخرى غير متاحة هنا بعد.",
   repositoryLink: "رابط كتاب المستودع",
   repositoryHint:
     "الصق صفحة كتاب من OAPEN أو DOAB. تُنزّل النسخ العامة المدعومة وتُفتح داخل القارئ.",

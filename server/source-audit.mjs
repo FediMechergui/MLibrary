@@ -22,14 +22,14 @@ const findings = {
     "Automatic tries text, then EPUB/PDF when text fails. Choose PDF for scans or EPUB for reflowable text. Downloads retry interrupted chunks and save only complete files.",
   ],
   hindawi: [
-    "blocked",
-    "Hindawi redirects to Safahat. The book collection returned HTTP 403 with a browser verification challenge from this environment.",
-    "Use Arabic Wikisource as a fallback. If you obtain an EPUB/PDF from the publisher through its normal access process, import it here. An automated adapter is not connected.",
+    "limited",
+    "The website and tested EPUB are challenged, but the publisher's advertised PDF server returned a complete 366-page Arabic book with its title and author. Search is not connected.",
+    "Paste a Safahat or Hindawi book link below. Available public PDFs up to 32 MB download into the reader and remain offline. Copyright notices stay in the file. Unavailable PDFs stop with an explanation; EPUB challenges are not bypassed.",
   ],
   gallica: [
-    "blocked",
-    "The collection, document metadata and IIIF sample returned HTTP 403 access challenges from this environment.",
-    "Use French Wikisource for transcriptions or Archive for other scans. Import a downloaded PDF; image-only pages need OCR for passage selection. Gallica search is not connected.",
+    "limited",
+    "Live Gallica metadata, text and IIIF services are challenged. BnF's official bulk-download service works; a validated French BnF–OBVIL text subset is imported and searchable here. Malformed XML files were excluded.",
+    "Search this library or paste a link to an imported edition. Its OCR text opens and saves offline, with BnF–OBVIL attribution. This is a limited text collection, not all Gallica scans; original OCR errors may remain. Gallica reuse conditions apply.",
   ],
   standardebooks: [
     "limited",
@@ -48,8 +48,8 @@ const findings = {
   ],
   qdl: [
     "blocked",
-    "The Arabic/English collection and English search returned HTTP 403 browser verification challenges from this environment.",
-    "Use Arabic Wikisource or Archive as a fallback. Import an offered PDF; some records are archive objects, not books. The image API is not connected.",
+    "The collection, search, documented IIIF image/manifest and advertised PDF download all returned HTTP 403 verification pages. A British Library OCR training dataset contains sample pages, not complete QDL books.",
+    "Use Arabic Wikisource or Archive for another edition, or import a PDF obtained through QDL's normal download process. A direct automated integration requires provider-approved API access; no working QDL download is currently connected.",
   ],
 };
 export function sourceAudit(id) {
@@ -58,8 +58,10 @@ export function sourceAudit(id) {
     status,
     finding,
     solution,
-    checkedAt: ["doab", "oapen"].includes(id)
-      ? "2026-11-10T10:22:43.462Z"
-      : "2026-11-10T08:48:20.420Z",
+    checkedAt: ["hindawi", "gallica", "qdl"].includes(id)
+      ? "2026-11-10T12:00:00.000Z"
+      : ["doab", "oapen"].includes(id)
+        ? "2026-11-10T10:22:43.462Z"
+        : "2026-11-10T08:48:20.420Z",
   };
 }
