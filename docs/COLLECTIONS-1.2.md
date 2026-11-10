@@ -1,5 +1,7 @@
 # Safahat, Gallica and QDL investigation — 10 November 2026
 
+The [bounded public-route probes](public-source-routes-1.2.json) record actual response types and file signatures. A successful search-engine page view is not treated as evidence that the app's download backend can access the same resource.
+
 ## Safahat / Hindawi
 
 The ordinary book page for [الشهاب الراصد](https://www.safahat.org/books/86869064/) advertises separate EPUB and PDF files on Hindawi's download server. The EPUB request returned a verification page. The [advertised public PDF](https://downloads.hindawi.org/books/86869064.pdf) returned HTTP 200, 3,553,001 bytes, a PDF signature, Arabic title/author metadata, and 366 pages. The implemented adapter uses that public PDF service.
@@ -29,3 +31,11 @@ The remaining direct-integration route is provider-approved machine access or a 
 > We operate MLibrary, a free multilingual reading app at https://mlibrary-fedimechergui.netlify.app. We would like to integrate permitted QDL records and public full-book downloads with original attribution. Ordinary requests to the documented IIIF APIs and advertised PDFs currently receive HTTP 403 verification pages. Do you offer a machine-access endpoint, bulk export, registration, or allowlisting process? Please specify permitted reuse, caching/offline-download terms, quotas, and the appropriate identification/contact requirements. We will implement those limits and will not circumvent verification or authenticated access.
 
 Until that access is available, QDL editions can be read through local PDF import after obtaining a copy normally, or readers can search another library. The app continues to mark QDL as blocked rather than claiming it works.
+
+## Release verification
+
+[CI passed 41 backend and 27 browser tests](https://github.com/FediMechergui/MLibrary/actions/runs/42806669023), including missing editions, denied requests, throttling, encrypted/truncated PDFs, source identity validation, offline saving, mobile layout, and existing reader features. The [Android build](https://github.com/FediMechergui/MLibrary/actions/runs/42806372916) is version 1.2.0 / code 6, with Android 8 as its minimum.
+
+Netlify preview checks returned *Germinal* with 1,015,916 text characters and verified Safahat PDF bytes. That preview was promoted to production as deployment `6af2fe6feff5627e5ebb12d2`. On Android API 35, the signed APK installed over 1.1.0 and retained the existing OAPEN/DOAB shelf. A subsequent disposable test reset downloaded *Germinal* and *الشهاب الراصد* from production, reopened each after an offline app reload, and turned pages. Actual device screenshots confirmed visible French text and the printed Arabic title page. Arabic RTL also passed. The repeat command is `node scripts/android-smoke.mjs --reset --collections-only` with the emulator WebView forwarded to port 9223.
+
+The APK uses the existing development signing key for sideload updates; it is not a Play Store release. Its SHA-256 is `7db43b2005d33bdd38967531822f8754790a9e6a31d1743fc2b0d8b6c96271d5`. App source: `1c6621926e9a601cad558fbdae59acce56f106a3`; deployed backend: `ebe305c8a92c220a6d8ac260c072fbcfc18fb871`. The final release tag adds documentation and probe evidence only.

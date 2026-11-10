@@ -1,0 +1,66 @@
+{
+  "date": "2026-11-10T10:56:34.250Z",
+  "results": [
+    {
+      "name": "hindawi-epub",
+      "url": "https://downloads.hindawi.org/books/86869064.epub",
+      "status": 403,
+      "finalUrl": "https://downloads.hindawi.org/books/86869064.epub",
+      "type": "text/html; charset=UTF-8",
+      "range": null,
+      "length": "5628",
+      "signature": "3c21444f43545950452068746d6c3e3c",
+      "preview": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content"
+    },
+    {
+      "name": "gallica-metadata",
+      "url": "https://gallica.bnf.fr/services/OAIRecord?ark=bpt6k5619759j",
+      "status": 403,
+      "finalUrl": "https://gallica.bnf.fr/services/OAIRecord?ark=bpt6k5619759j",
+      "type": "text/html; charset=UTF-8",
+      "range": null,
+      "length": null,
+      "signature": "3c21444f43545950452068746d6c3e0a",
+      "preview": "<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <"
+    },
+    {
+      "name": "gallica-text",
+      "url": "https://gallica.bnf.fr/ark:/12148/bpt6k5619759j.texteBrut",
+      "status": 403,
+      "finalUrl": "https://gallica.bnf.fr/ark:/12148/bpt6k5619759j.texteBrut",
+      "type": "text/html; charset=UTF-8",
+      "range": null,
+      "length": null,
+      "signature": "3c21444f43545950452068746d6c3e0a",
+      "preview": "<!DOCTYPE html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <"
+    },
+    {
+      "name": "qdl-image",
+      "url": "https://iiif.qdl.qa/iiif/images/81055/vdc_100022582060.0x000001/Add%20MS%2023570_0183.jp2/full/!800,400/0/default.jpg",
+      "status": 403,
+      "finalUrl": "https://iiif.qdl.qa/iiif/images/81055/vdc_100022582060.0x000001/Add%20MS%2023570_0183.jp2/full/!800,400/0/default.jpg",
+      "type": "text/html; charset=UTF-8",
+      "range": null,
+      "length": "5980",
+      "signature": "3c21444f43545950452068746d6c3e3c",
+      "preview": "<!DOCTYPE html><html lang=\"en-US\"><head><title>Just a moment...</title><meta http-equiv=\"Content-Type\" content"
+    },
+    {
+      "name": "qdl-pdf",
+      "url": "https://www.qdl.qa/download/pdf/81055_vdc_100023807156.0x000001_en.pdf",
+      "status": 403,
+      "type": "text/html; charset=UTF-8",
+      "length": null,
+      "location": null,
+      "signature": "3c21444f43545950"
+    },
+    {
+      "name": "hindawi-pdf",
+      "url": "https://downloads.hindawi.org/books/86869064.pdf",
+      "status": 200,
+      "bytes": 3553001,
+      "pages": 366,
+      "signature": "%PDF-1.4"
+    }
+  ]
+}
