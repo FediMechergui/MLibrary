@@ -147,6 +147,7 @@ summary {
 }
 .source-row > .source-body {
   max-width: none;
+  width: auto;
 }
 .source-row p,
 .source-row small {
@@ -460,6 +461,7 @@ summary {
     font-size: 21px;
   }
   .source-actions {
+    position: static;
     grid-column: 2;
     max-width: none;
     width: 100%;

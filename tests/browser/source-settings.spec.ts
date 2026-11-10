@@ -221,4 +221,19 @@ test("phone layouts keep books visible, navigation reachable and reader controls
     expect(box.height).toBeGreaterThanOrEqual(44);
   }
   await page.screenshot({ path: "artifacts/v1-mobile-reader.png" });
+  await page.getByRole("button", { name: "Back to library" }).click();
+  await page.getByRole("button", { name: "Our sources", exact: true }).click();
+  for (const source of await page.locator(".source-row").all()) {
+    const summary = source.locator("summary");
+    await summary.scrollIntoViewIfNeeded();
+    await summary.click();
+    await expect(source.locator("details")).toHaveAttribute("open", "");
+    const body = (await source.locator(".source-body").boundingBox())!;
+    const actions = (await source.locator(".source-actions").boundingBox())!;
+    expect(actions.y).toBeGreaterThanOrEqual(body.y + body.height - 1);
+    await summary.click();
+  }
+  await page.locator('[data-source="standardebooks"] summary').click();
+  await page.getByLabel("Standard Ebooks book link").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/v1-mobile-sources.png" });
 });
