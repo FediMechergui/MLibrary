@@ -22,6 +22,12 @@ The repository also returned HTTP 429 during consecutive OAPEN probes, with a no
 
 Inputs are limited to official handle links. Book files come from live repository metadata, an explicit open-license/access statement, and a narrow host/path allowlist. Redirects are checked at every hop and must stay on the same approved host. Wrong identifiers, deleted records, oversized responses, malformed ranges, incomplete files, and HTML returned instead of book bytes fail visibly.
 
+## Release validation
+
+The [final CI run](https://github.com/FediMechergui/MLibrary/actions/runs/42800939850) passed 36 backend and 25 browser tests. The Android APK is version 1.1.0, version code 5, and installed successfully over 1.0.0 using the same development signing key. On Android API 35, both real sample books downloaded from the production API, saved completely, reopened after an offline app reload, and turned pages. The DOAB PDF's third leaf showed printed content; its second leaf is intentionally blank. Arabic RTL also passed. Repeat the native flow with `node scripts/android-smoke.mjs --reset --openaccess-only` on a disposable emulator with its WebView forwarded to port 9223.
+
+The production web/backend deployment is `6af2f55dd104f42f979f4021`. The daily open-access refresh is configured; this validation does not assert that its first scheduled execution has occurred.
+
 ## Provider references
 
 - [DOAB metadata and public exports](https://doabooks.org/en/librarians/doab-metadata)

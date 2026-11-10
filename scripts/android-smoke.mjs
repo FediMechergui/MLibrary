@@ -86,8 +86,12 @@ async function turnPublisherPage() {
   await until(savedCfi, "publisher reading position available");
   const before = await evaluate(savedCfi);
   await click("Next page");
-  await until(`${savedCfi} !== ${JSON.stringify(before)}`, "publisher page actually changes");
-  await until(`(() => {
+  await until(
+    `${savedCfi} !== ${JSON.stringify(before)}`,
+    "publisher page actually changes",
+  );
+  await until(
+    `(() => {
     const frame=document.querySelector('.epub-reader iframe');
     if(!frame?.contentDocument?.body) return false;
     const bounds=frame.getBoundingClientRect();
@@ -101,7 +105,9 @@ async function turnPublisherPage() {
       if([...range.getClientRects()].some(r=>r.width>0 && r.height>0 && r.right+bounds.left>clip.left && r.left+bounds.left<clip.right && r.bottom+bounds.top>clip.top && r.top+bounds.top<clip.bottom)) letters+=node.textContent.trim().length;
     }
     return letters>40;
-  })()`, "publisher text is visible inside the reader viewport");
+  })()`,
+    "publisher text is visible inside the reader viewport",
+  );
 }
 async function reload() {
   await evaluate("window.__androidSmokeReload = true");
@@ -134,7 +140,8 @@ try {
   await screenshot("android-home-webview");
   if (
     !process.argv.includes("--downloads-only") &&
-    !process.argv.includes("--publisher-only")
+    !process.argv.includes("--publisher-only") &&
+    !process.argv.includes("--openaccess-only")
   ) {
     await evaluate(`document.querySelector('.book-grid .book-open').click()`);
     await click("Start reading");
@@ -510,7 +517,10 @@ try {
       ),
       true,
     );
-    await until(`document.querySelector('.page-indicator')?.textContent.includes('Page 1 of 1')`, "publisher title fits one page");
+    await until(
+      `document.querySelector('.page-indicator')?.textContent.includes('Page 1 of 1')`,
+      "publisher title fits one page",
+    );
     await turnPublisherPage();
     await screenshot("android-publisher-reader");
     await click("Back to library");
@@ -546,6 +556,111 @@ try {
       "PASS: Real Standard Ebooks link downloads, imports, opens book text and reopens offline.",
     );
   }
+  if (process.argv.includes("--openaccess-only")) {
+    for (const [source, handle, id, title, format] of [
+      [
+        "oapen",
+        "20.500.12657/25287",
+        "25287",
+        "The deliverance of open access books",
+        "text",
+      ],
+      ["doab", "20.500.12854/62823", "62823", "A World of Nourishment", "pdf"],
+    ]) {
+      await click("Our sources");
+      const panel = `[data-source="${source}"]`;
+      await until(
+        `document.querySelector('${panel} summary')`,
+        `${source} settings`,
+      );
+      await evaluate(`document.querySelector('${panel} summary').click()`);
+      await evaluate(
+        `document.querySelector('${panel} input[type="url"]').focus()`,
+      );
+      await send("Input.insertText", {
+        text: `https://${source === "oapen" ? "library.oapen.org" : "directory.doabooks.org"}/handle/${handle}`,
+      });
+      await until(
+        `document.querySelector('${panel} input[type="url"]').value.endsWith('${handle}')`,
+        `${source} link entered`,
+      );
+      await evaluate(
+        `document.querySelector('${panel} .publisher-import button').click()`,
+      );
+      const ready =
+        format === "text"
+          ? `document.querySelector('.text-page')?.textContent.length > 20`
+          : `document.querySelector('.pdf-reader canvas')`;
+      await until(ready, `${source} real book opens inside the reader`, 180000);
+      await until(
+        `JSON.parse(localStorage.getItem('mlibrary:v1')).shelf['${source}:${id}']?.offline`,
+        `${source} complete download saved`,
+      );
+      if (format === "pdf") await assertScanPixels();
+      await screenshot(`android-${source}-reader`);
+      await click("Back to library");
+      await send("Network.enable");
+      await send("Network.emulateNetworkConditions", {
+        offline: true,
+        latency: 0,
+        downloadThroughput: 0,
+        uploadThroughput: 0,
+      });
+      await reload();
+      await until(`document.querySelector('.nav-item')`, "offline app loaded");
+      await click("My library");
+      const selector = `.book-grid .book-open[aria-label=${JSON.stringify(title)}]`;
+      await until(
+        `document.querySelector(${JSON.stringify(selector)})`,
+        `${source} offline shelf`,
+      );
+      await evaluate(
+        `document.querySelector(${JSON.stringify(selector)}).click()`,
+      );
+      await click("Continue reading");
+      await until(ready, `${source} reopens offline`);
+      await click("Next page");
+      await until(
+        `document.querySelector('.page-indicator')?.textContent.includes('Page 2')`,
+        `${source} offline page turn`,
+      );
+      if (format === "pdf") {
+        // This publisher edition deliberately leaves its second leaf blank.
+        await click("Next page");
+        await until(
+          `document.querySelector('.page-indicator')?.textContent.includes('Page 3')`,
+          `${source} printed page reached`,
+        );
+        await assertScanPixels();
+      }
+      await writeFile(
+        `artifacts/android-${source}-offline.png`,
+        execFileSync(
+          process.env.ADB_PATH ||
+            "C:/Users/fedim/AppData/Local/Android/Sdk/platform-tools/adb.exe",
+          [
+            "-s",
+            process.env.ANDROID_SERIAL || "emulator-5564",
+            "exec-out",
+            "screencap",
+            "-p",
+          ],
+          { maxBuffer: 12 * 1024 * 1024 },
+        ),
+      );
+      await click("Back to library");
+      await send("Network.emulateNetworkConditions", {
+        offline: false,
+        latency: 0,
+        downloadThroughput: -1,
+        uploadThroughput: -1,
+      });
+      await click("Discover");
+    }
+    console.log(
+      "PASS: Real OAPEN text and DOAB publisher PDF download, render and turn pages offline on Android.",
+    );
+  }
   await evaluate(
     `(() => {const el = document.querySelector('select[aria-label="Language"]'); el.value='ar'; el.dispatchEvent(new Event('change',{bubbles:true}));})()`,
   );
@@ -556,7 +671,9 @@ try {
       ? "PASS: Android native runtime, automatic download/import, offline PDF reading, and Arabic RTL."
       : process.argv.includes("--publisher-only")
         ? "PASS: Android native runtime, publisher EPUB download/import, offline reading, and Arabic RTL."
-        : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
+        : process.argv.includes("--openaccess-only")
+          ? "PASS: Android native runtime, public repository downloads, offline reading, and Arabic RTL."
+          : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
   );
 } catch (error) {
   console.error(error);
