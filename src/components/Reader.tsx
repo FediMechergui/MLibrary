@@ -1351,6 +1351,44 @@ function EpubViewer({
           allowScriptedContent: false,
         });
         rendition.current = view;
+        view.hooks.render.register(
+          (frame: {
+            contents?: { document: Document; window: Window };
+            expand: () => void;
+          }) => {
+            const contents = frame.contents;
+            if (!contents) return;
+            let changed = false;
+            // Some editions place accessible image captions at left:-999em.
+            // epub.js measures their text range as hundreds of blank columns.
+            // Keep those captions in the accessibility tree, clipped in place.
+            for (const element of contents.document.body.querySelectorAll<HTMLElement>(
+              "*",
+            )) {
+              const css = contents.window.getComputedStyle(element);
+              if (
+                css.position !== "absolute" ||
+                parseFloat(css.left) >= -1000 ||
+                !Number.isFinite(parseFloat(css.left))
+              )
+                continue;
+              for (const [property, value] of Object.entries({
+                left: "0",
+                top: "0",
+                width: "1px",
+                height: "1px",
+                "font-size": "0",
+                "line-height": "0",
+                margin: "0",
+                overflow: "hidden",
+                "clip-path": "inset(50%)",
+              }))
+                element.style.setProperty(property, value, "important");
+              changed = true;
+            }
+            if (changed) frame.expand();
+          },
+        );
         view.on("selected", (cfi: string, contents: { window: Window }) => {
           const text = contents.window.getSelection()?.toString() || "";
           if (text.trim() && text.length <= 5000)

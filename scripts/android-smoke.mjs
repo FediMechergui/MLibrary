@@ -81,6 +81,28 @@ async function assertScanPixels() {
     "actual scanned page image pixels",
   );
 }
+async function turnPublisherPage() {
+  const savedCfi = `JSON.parse(localStorage.getItem('mlibrary:v1')).shelf['standardebooks:jane-austen/pride-and-prejudice']?.progress?.cfi`;
+  await until(savedCfi, "publisher reading position available");
+  const before = await evaluate(savedCfi);
+  await click("Next page");
+  await until(`${savedCfi} !== ${JSON.stringify(before)}`, "publisher page actually changes");
+  await until(`(() => {
+    const frame=document.querySelector('.epub-reader iframe');
+    if(!frame?.contentDocument?.body) return false;
+    const bounds=frame.getBoundingClientRect();
+    const clip=document.querySelector('.epub-reader').getBoundingClientRect();
+    const d=frame.contentDocument, w=d.defaultView;
+    const walker=d.createTreeWalker(d.body,NodeFilter.SHOW_TEXT);
+    let node, letters=0;
+    while(node=walker.nextNode()) {
+      if(!node.textContent.trim() || parseFloat(w.getComputedStyle(node.parentElement).fontSize)<1) continue;
+      const range=d.createRange(); range.selectNodeContents(node);
+      if([...range.getClientRects()].some(r=>r.width>0 && r.height>0 && r.right+bounds.left>clip.left && r.left+bounds.left<clip.right && r.bottom+bounds.top>clip.top && r.top+bounds.top<clip.bottom)) letters+=node.textContent.trim().length;
+    }
+    return letters>40;
+  })()`, "publisher text is visible inside the reader viewport");
+}
 async function reload() {
   await evaluate("window.__androidSmokeReload = true");
   await send("Page.reload");
@@ -374,40 +396,15 @@ try {
     process.argv.includes("--downloads") ||
     process.argv.includes("--downloads-only")
   ) {
-    // Choose the real public PDF variant of this edition for a download-only
-    // test. Only metadata is overridden; all file bytes come from production.
+    // Select PDF through the real per-source preference. Both edition metadata
+    // and file bytes come from the deployed production backend.
     const identifier = "abroadcranethoma00craniala";
     const id = `archive:${identifier}`;
     await evaluate(
       `if (!localStorage.getItem('mlibrary:v1')) localStorage.setItem('mlibrary:v1',JSON.stringify({version:1,shelf:{}}));`,
     );
-    const selectPdf = (event) => {
-      const message = JSON.parse(event.data);
-      if (message.method !== "Fetch.requestPaused") return;
-      void send("Fetch.fulfillRequest", {
-        requestId: message.params.requestId,
-        responseCode: 200,
-        responseHeaders: [
-          { name: "Content-Type", value: "application/json" },
-          { name: "Access-Control-Allow-Origin", value: "*" },
-        ],
-        body: Buffer.from(
-          JSON.stringify({
-            type: "remote",
-            format: "pdf",
-            url: `https://archive.org/download/${identifier}/${identifier}.pdf`,
-            attribution: "Internet Archive · Abroad, Thomas Crane",
-            sourceUrl: `https://archive.org/details/${identifier}`,
-          }),
-        ).toString("base64"),
-      }).catch(console.error);
-    };
-    socket.addEventListener("message", selectPdf);
-    await send("Fetch.enable", {
-      patterns: [{ urlPattern: `*/api/content?id=archive%3A${identifier}*` }],
-    });
     await evaluate(
-      `(() => { const s=JSON.parse(localStorage.getItem('mlibrary:v1')); s.shelf[${JSON.stringify(id)}]={book:{id:${JSON.stringify(id)},title:'Abroad PDF',authors:['Thomas Crane'],source:'archive',language:'en',languages:['en'],cover:null,sourceUrl:'https://archive.org/details/${identifier}',subjects:[],description:'',access:'source',rights:'Public source file',formats:['PDF']},addedAt:Date.now(),status:'want',bookmarks:[],offline:false,tags:[]};localStorage.setItem('mlibrary:v1',JSON.stringify(s)); const db=indexedDB.open('keyval-store');db.onsuccess=()=>{const tx=db.result.transaction('keyval','readwrite');tx.objectStore('keyval').delete('book:${id}');tx.oncomplete=()=>{db.result.close();window.__downloadTestReady=true;};}; })()`,
+      `(() => { const s=JSON.parse(localStorage.getItem('mlibrary:v1')); s.sources={...s.sources,archive:{format:'pdf'}}; s.shelf[${JSON.stringify(id)}]={book:{id:${JSON.stringify(id)},title:'Abroad PDF',authors:['Thomas Crane'],source:'archive',language:'en',languages:['en'],cover:null,sourceUrl:'https://archive.org/details/${identifier}',subjects:[],description:'',access:'source',rights:'Public source file',formats:['PDF']},addedAt:Date.now(),status:'want',bookmarks:[],offline:false,tags:[]};localStorage.setItem('mlibrary:v1',JSON.stringify(s)); const db=indexedDB.open('keyval-store');db.onsuccess=()=>{const tx=db.result.transaction('keyval','readwrite');tx.objectStore('keyval').delete('book:${id}');tx.oncomplete=()=>{db.result.close();window.__downloadTestReady=true;};}; })()`,
     );
     await until(`window.__downloadTestReady`, "download fixture cache cleared");
     await reload();
@@ -445,8 +442,6 @@ try {
     );
     await assertScanPixels();
     await screenshot("android-auto-import-pdf");
-    await send("Fetch.disable");
-    socket.removeEventListener("message", selectPdf);
     await click("Back to library");
     await send("Network.emulateNetworkConditions", {
       offline: true,
@@ -515,11 +510,8 @@ try {
       ),
       true,
     );
-    await click("Next page");
-    await until(
-      `Array.from(document.querySelectorAll('.epub-reader iframe')).some(f => f.contentDocument?.body?.textContent.trim().length > 20)`,
-      "actual publisher book text",
-    );
+    await until(`document.querySelector('.page-indicator')?.textContent.includes('Page 1 of 1')`, "publisher title fits one page");
+    await turnPublisherPage();
     await screenshot("android-publisher-reader");
     await click("Back to library");
     await send("Network.emulateNetworkConditions", {
@@ -540,7 +532,7 @@ try {
       `document.querySelector('.epub-reader iframe') && document.querySelector('button[aria-label="Next page"]:not([disabled])')`,
       "publisher EPUB reopens offline",
     );
-    await click("Next page");
+    await turnPublisherPage();
     await screenshot("android-publisher-offline");
     await click("Back to library");
     await send("Network.emulateNetworkConditions", {
@@ -562,7 +554,9 @@ try {
   console.log(
     process.argv.includes("--downloads-only")
       ? "PASS: Android native runtime, automatic download/import, offline PDF reading, and Arabic RTL."
-      : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
+      : process.argv.includes("--publisher-only")
+        ? "PASS: Android native runtime, publisher EPUB download/import, offline reading, and Arabic RTL."
+        : "PASS: Android native runtime, home, no overflow, text reader, page turn, night theme, offline saving, and Arabic RTL.",
   );
 } catch (error) {
   console.error(error);
