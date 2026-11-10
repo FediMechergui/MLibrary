@@ -110,7 +110,10 @@ try {
     false,
   );
   await screenshot("android-home-webview");
-  if (!process.argv.includes("--downloads-only")) {
+  if (
+    !process.argv.includes("--downloads-only") &&
+    !process.argv.includes("--publisher-only")
+  ) {
     await evaluate(`document.querySelector('.book-grid .book-open').click()`);
     await click("Start reading");
     await until(
@@ -485,6 +488,70 @@ try {
     await click("Discover");
     console.log(
       "PASS: Actual source PDF downloads, imports automatically, and survives offline app reload.",
+    );
+  }
+  if (process.argv.includes("--publisher-only")) {
+    await click("Our sources");
+    await until(
+      `document.querySelector('[data-source="standardebooks"] summary')`,
+      "publisher source settings",
+    );
+    await evaluate(
+      `document.querySelector('[data-source="standardebooks"] summary').click()`,
+    );
+    await evaluate(`document.querySelector('.publisher-import input').focus()`);
+    await send("Input.insertText", {
+      text: "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice",
+    });
+    await click("Download & read");
+    await until(
+      `document.querySelector('.epub-reader iframe') && document.querySelector('button[aria-label="Next page"]:not([disabled])')`,
+      "real publisher EPUB opens automatically",
+      180000,
+    );
+    assert.equal(
+      await evaluate(
+        `JSON.parse(localStorage.getItem('mlibrary:v1')).shelf['standardebooks:jane-austen/pride-and-prejudice'].offline`,
+      ),
+      true,
+    );
+    await click("Next page");
+    await until(
+      `Array.from(document.querySelectorAll('.epub-reader iframe')).some(f => f.contentDocument?.body?.textContent.trim().length > 20)`,
+      "actual publisher book text",
+    );
+    await screenshot("android-publisher-reader");
+    await click("Back to library");
+    await send("Network.emulateNetworkConditions", {
+      offline: true,
+      latency: 0,
+      downloadThroughput: 0,
+      uploadThroughput: 0,
+    });
+    await reload();
+    await until(
+      `document.querySelector('.nav-item')`,
+      "offline publisher app reload",
+    );
+    await click("My library");
+    await evaluate(`document.querySelector('.book-grid .book-open').click()`);
+    await click("Continue reading");
+    await until(
+      `document.querySelector('.epub-reader iframe') && document.querySelector('button[aria-label="Next page"]:not([disabled])')`,
+      "publisher EPUB reopens offline",
+    );
+    await click("Next page");
+    await screenshot("android-publisher-offline");
+    await click("Back to library");
+    await send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      downloadThroughput: -1,
+      uploadThroughput: -1,
+    });
+    await click("Discover");
+    console.log(
+      "PASS: Real Standard Ebooks link downloads, imports, opens book text and reopens offline.",
     );
   }
   await evaluate(

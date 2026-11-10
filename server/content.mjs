@@ -1,5 +1,6 @@
 import { fetchUpstream } from "./catalog.mjs";
 import { parseHTML } from "linkedom";
+import { standardBook, standardPath } from "./standardebooks.mjs";
 import {
   archiveIdentifier,
   resolveArchive,
@@ -29,6 +30,8 @@ export async function readLimited(response, maxBytes = LIMIT) {
   return Buffer.concat(chunks).toString("utf8");
 }
 export function parseBookId(id) {
+  if (id.startsWith("standardebooks:"))
+    return { source: "standardebooks", id: standardPath(id.slice(15)) };
   if (/^gutenberg:[1-9]\d{0,6}$/.test(id))
     return { source: "gutenberg", id: id.split(":")[1] };
   const wiki = /^wikisource:(en|fr|ar):([1-9]\d{0,9})$/.exec(id);
@@ -43,11 +46,19 @@ export function parseBookId(id) {
     return { source: "archive", id: id.slice(8) };
   throw new Error("Unsupported book identifier");
 }
-export async function getContent(bookId, { language = "en", chapter } = {}) {
+export async function getContent(
+  bookId,
+  { language = "en", chapter, format = "auto" } = {},
+) {
+  if (!["auto", "text", "epub", "pdf"].includes(format))
+    throw new Error("Invalid reader format");
   const book = parseBookId(bookId);
-  if (book.source === "archive") return resolveArchive(book.id, readLimited);
+  if (book.source === "standardebooks")
+    return (await standardBook(book.id)).content;
+  if (book.source === "archive")
+    return resolveArchive(book.id, readLimited, format);
   if (book.source === "openlibrary")
-    return resolveOpenLibrary(book.id, language, readLimited);
+    return resolveOpenLibrary(book.id, language, readLimited, format);
   if (book.source === "gutenberg") {
     const metadata = await (
       await fetchUpstream(`https://www.gutenberg.org/ebooks/${book.id}.rdf`, {

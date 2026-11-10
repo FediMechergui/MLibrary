@@ -1,4 +1,10 @@
-import type { Book, BookContent, SearchResult, Source } from "../types";
+import type {
+  Book,
+  BookContent,
+  SearchResult,
+  Source,
+  ReaderFormat,
+} from "../types";
 import { offlineBook, saveOffline } from "./state";
 export const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 export type DownloadProgress = {
@@ -8,6 +14,8 @@ export type DownloadProgress = {
 };
 type DownloadOptions = {
   signal?: AbortSignal;
+  format?: ReaderFormat;
+  bypassOffline?: boolean;
   onProgress?: (progress: DownloadProgress) => void;
 };
 function requestSignal(signal?: AbortSignal) {
@@ -24,7 +32,13 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
   return body;
 }
 export const searchBooks = (
-  filters: { q: string; language: string; source: string; page: number },
+  filters: {
+    q: string;
+    language: string;
+    source: string;
+    page: number;
+    exclude?: string;
+  },
   signal?: AbortSignal,
 ) =>
   request<SearchResult>(
@@ -32,6 +46,11 @@ export const searchBooks = (
     signal,
   );
 export const getSources = () => request<{ sources: Source[] }>("/sources");
+export const importStandardBook = (url: string, signal?: AbortSignal) =>
+  request<{ book: Book }>(
+    `/import-standard?${new URLSearchParams({ url })}`,
+    signal,
+  );
 export const getSyncStatus = () =>
   request<{ status: string; records: number; lastSuccess?: string }>(
     "/sync-status",
@@ -41,7 +60,7 @@ export async function loadBook(
   chapter?: string,
   options: DownloadOptions = {},
 ): Promise<{ content: BookContent; offline: boolean }> {
-  const local = await offlineBook(book.id);
+  const local = options.bypassOffline ? undefined : await offlineBook(book.id);
   options.signal?.throwIfAborted();
   if (
     local &&
@@ -68,7 +87,7 @@ export async function loadBook(
         sourceUrl?: string;
       }
   >(
-    `/content?${new URLSearchParams({ id: book.id, language: book.language, reader: "2", ...(chapter ? { chapter } : {}) })}`,
+    `/content?${new URLSearchParams({ id: book.id, language: book.language, reader: "3", format: options.format || "auto", ...(chapter ? { chapter } : {}) })}`,
     options.signal,
   );
   const downloadedText =
@@ -196,6 +215,29 @@ async function fetchReaderFileChunk(
   end: number,
   signal?: AbortSignal,
 ) {
+  const candidate = new URL(value);
+  if (
+    candidate.origin === "https://standardebooks.org" &&
+    !candidate.username &&
+    !candidate.password
+  ) {
+    const match =
+      /^\/ebooks\/([a-z0-9-]+\/[a-z0-9-]+(?:\/[a-z0-9-]+){0,4})\/downloads\/[-a-z0-9_]+\.epub$/.exec(
+        candidate.pathname,
+      );
+    if (!match) throw new Error("Unsupported publisher file");
+    return fetchFileRange(
+      new URLSearchParams({
+        source: "standardebooks",
+        id: match[1],
+        start: String(start),
+        end: String(end - 1),
+      }),
+      start,
+      end,
+      signal,
+    );
+  }
   const url = archiveFileUrl(value);
   const parts = url.pathname.split("/");
   if (parts.length !== 4) throw new Error("Unsupported source file");
@@ -205,6 +247,14 @@ async function fetchReaderFileChunk(
     start: String(start),
     end: String(end - 1),
   });
+  return fetchFileRange(query, start, end, signal);
+}
+async function fetchFileRange(
+  query: URLSearchParams,
+  start: number,
+  end: number,
+  signal?: AbortSignal,
+) {
   const response = await fetch(`${API}/api/file?${query}`, {
     signal: requestSignal(signal),
   });

@@ -21,7 +21,7 @@ try {
         img.src = "data:image/svg+xml," + encodeURIComponent(svg);
         await img.decode();
         if (splash) {
-          context.fillStyle = "#f5f2ea";
+          context.fillStyle = "#f8f5f2";
           context.fillRect(0, 0, width, height);
         }
         const size = splash ? Math.min(width, height) * 0.24 : width;

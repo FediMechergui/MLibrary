@@ -20,10 +20,10 @@
 :root {
   --canvas: #f5f2ea;
   --surface: #fffcf6;
-  --ink: #243b33;
-  --muted: #74776c;
-  --green: #244c3f;
-  --line: #dddcd0;
+  --ink: #3b2429;
+  --muted: #776c6e;
+  --green: #4c242d;
+  --line: #ddd0d3;
   background: var(--canvas);
   color: var(--ink);
 }
@@ -33,7 +33,7 @@ textarea {
   resize: vertical;
 }
 textarea:focus-visible {
-  outline: 2px solid #738d54;
+  outline: 2px solid #8d5460;
   outline-offset: 3px;
 }
 .button {
@@ -42,21 +42,21 @@ textarea:focus-visible {
   font-size: 13px;
 }
 .button.primary {
-  background: #244c3f;
+  background: #4c242d;
   color: #fffdf5;
 }
 .button.primary:hover {
-  background: #163a2e;
+  background: #37191f;
 }
 .icon-button {
   min-width: 38px;
   min-height: 38px;
 }
 .sidebar {
-  background: #eaece2;
+  background: #ece2e4;
   width: 232px;
   padding: 34px 20px 24px;
-  border-color: #daddcf;
+  border-color: #ddcfd2;
 }
 .brand {
   font-family: var(--serif);
@@ -83,7 +83,7 @@ textarea:focus-visible {
   gap: 13px;
 }
 .nav-item.active {
-  background: #244c3f;
+  background: #4c242d;
   color: #fffdf5;
 }
 .nav-item.active small {
@@ -102,7 +102,7 @@ textarea:focus-visible {
   background: transparent;
   height: 43px;
   border-radius: 25px;
-  border-color: #d2d5c7;
+  border-color: #d5c7ca;
 }
 .header-search input {
   font-size: 12px;
@@ -131,7 +131,7 @@ textarea:focus-visible {
   font-size: 13px;
   max-width: 380px;
   line-height: 1.8;
-  color: #6d776c;
+  color: #776c6e;
 }
 .hero-copy > .button {
   margin-top: 24px;
@@ -141,16 +141,16 @@ textarea:focus-visible {
   gap: 13px;
 }
 .hero-art {
-  background: #e1e6d8;
+  background: #e6d8db;
   border-radius: 100px 100px 10px 10px;
-  border: 1px solid #d9dfce;
+  border: 1px solid #dfced2;
   min-height: 330px;
   padding: 26px 25px 20px;
   overflow: hidden;
 }
 .hero-art-caption {
   font-size: 10px;
-  color: #4b624e;
+  color: #624b50;
   padding-inline: 12px;
 }
 .hero-art-caption svg {
@@ -162,7 +162,7 @@ textarea:focus-visible {
 .hero-book {
   width: 125px;
   height: 193px;
-  box-shadow: 7px 12px 15px #21342920;
+  box-shadow: 7px 12px 15px #34212520;
   border-radius: 2px 5px 5px 2px;
   overflow: hidden;
 }
@@ -180,7 +180,7 @@ textarea:focus-visible {
 }
 .hero-art-footer {
   font-size: 9px;
-  color: #63745c;
+  color: #745c61;
 }
 .preference-link {
   margin-top: 16px;
@@ -189,14 +189,14 @@ textarea:focus-visible {
 }
 .reading-strip {
   background: #fffaf1;
-  border: 1px solid #deded0;
+  border: 1px solid #ded0d3;
   border-radius: 10px;
   padding: 20px 24px;
   margin-bottom: 44px;
 }
 .strip-icon {
-  background: #e8ecdf;
-  color: #345440;
+  background: #ecdfe2;
+  color: #54343b;
   border-radius: 50%;
 }
 .section-heading h2 {
@@ -204,15 +204,15 @@ textarea:focus-visible {
   letter-spacing: -1px;
 }
 .genre-tabs {
-  border-color: #d9dccf;
+  border-color: #dccfd2;
   margin-bottom: 27px;
 }
 .genre-tabs button {
   font-size: 12px;
 }
 .genre-tabs button.selected {
-  color: #315840;
-  border-color: #315840;
+  color: #583139;
+  border-color: #583139;
 }
 .book-grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -220,8 +220,8 @@ textarea:focus-visible {
 }
 .book-open {
   border-radius: 3px 7px 7px 3px;
-  background: #e5e7dc;
-  box-shadow: 3px 5px 10px #2235280d;
+  background: #e7dcde;
+  box-shadow: 3px 5px 10px #3522260d;
 }
 .book-cover {
   aspect-ratio: 2/3;
@@ -332,7 +332,7 @@ textarea:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border: 1px solid #d8dccd;
+  border: 1px solid #dccdd0;
   border-radius: 22px;
   padding: 10px 15px;
   min-height: 40px;
@@ -341,8 +341,8 @@ textarea:focus-visible {
   line-height: 1.3;
 }
 .chip.active {
-  background: #244c3f;
-  border-color: #244c3f;
+  background: #4c242d;
+  border-color: #4c242d;
   color: #fffdf6;
 }
 .tag-filters {
@@ -353,8 +353,8 @@ textarea:focus-visible {
 }
 .preferences-panel {
   padding: 32px;
-  background: #e9eddf;
-  border: 1px solid #dce1d2;
+  background: #eddfe2;
+  border: 1px solid #e1d2d5;
   border-radius: 12px;
   margin-top: 38px;
 }
@@ -539,7 +539,7 @@ textarea:focus-visible {
   background: #fffaf0;
 }
 .swatch-forest {
-  background: #244c3f;
+  background: #4c242d;
 }
 .swatch-clay {
   background: #edd5c5;
@@ -547,7 +547,7 @@ textarea:focus-visible {
 .quote-actions {
   display: flex;
   justify-content: space-between;
-  border-top: 1px solid #8e9c7645;
+  border-top: 1px solid #9c767e45;
   margin: 0 -28px;
   padding: 8px 20px;
   background: #ffffff0b;
@@ -560,7 +560,7 @@ textarea:focus-visible {
   border-radius: 5px;
 }
 .quote-actions button:hover {
-  background: #8e9c7620;
+  background: #9c767e20;
 }
 .quotes-empty {
   text-align: center;
@@ -569,7 +569,7 @@ textarea:focus-visible {
   margin-top: 40px;
 }
 .quotes-empty > svg {
-  color: #849b72;
+  color: #9b727b;
 }
 .quotes-empty h2 {
   font: 400 31px var(--serif);
@@ -590,7 +590,7 @@ textarea:focus-visible {
 }
 .empty-quote-lines i {
   height: 5px;
-  background: #e0e5d6;
+  background: #e5d6d9;
   border-radius: 5px;
 }
 .empty-quote-lines i:last-child {
@@ -601,7 +601,7 @@ textarea:focus-visible {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #1d322955;
+  background: #321d2255;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -616,8 +616,8 @@ textarea:focus-visible {
   max-width: calc(100vw - 32px);
   z-index: 80;
   background: #fffaf1;
-  color: #293e32;
-  border: 1px solid #d6d9c9;
+  color: #3e292e;
+  border: 1px solid #d9c9cc;
   border-radius: 12px;
   box-shadow: 0 12px 65px #172d302b;
   padding: 22px;
@@ -655,7 +655,7 @@ textarea:focus-visible {
   display: block;
   width: 100%;
   margin-top: 8px;
-  border: 1px solid #d6d9c9;
+  border: 1px solid #d9c9cc;
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 13px;
@@ -673,7 +673,7 @@ textarea:focus-visible {
   border: 3px solid #fffaf1;
 }
 .highlight-colors button[aria-pressed="true"] {
-  outline: 1px solid #456046;
+  outline: 1px solid #60454b;
 }
 .editor-actions {
   display: flex;
@@ -716,13 +716,13 @@ textarea:focus-visible {
 }
 .reader {
   --reader-bg: #faf7ef;
-  --reader-ink: #303d32;
-  --reader-line: #e2e3d7;
+  --reader-ink: #3d3033;
+  --reader-line: #e3d7da;
 }
 .reader.theme-night {
-  --reader-bg: #202922;
-  --reader-ink: #e6e7dc;
-  --reader-line: #3a443a;
+  --reader-bg: #292022;
+  --reader-ink: #e7dcde;
+  --reader-line: #443a3c;
 }
 .reader.theme-sepia {
   --reader-bg: #f1e7d3;
@@ -1011,7 +1011,7 @@ textarea:focus-visible {
   cursor: pointer;
 }
 .textLayer ::selection {
-  background: #b1c8a480;
+  background: #c8a4ac80;
   color: transparent;
 }
 [dir="rtl"] .collection-heading h1 {
@@ -1117,7 +1117,7 @@ textarea:focus-visible {
     inset-inline: 0;
     padding: 0 6px env(safe-area-inset-bottom);
     border: 0;
-    border-top: 1px solid #dce0d1;
+    border-top: 1px solid #e0d1d4;
     background: #f8f7f0f5;
     backdrop-filter: blur(15px);
   }
@@ -1137,11 +1137,11 @@ textarea:focus-visible {
     gap: 5px;
     border-radius: 0;
     font-size: 9px;
-    color: #798174;
+    color: #817477;
     position: relative;
   }
   .nav-item.active {
-    color: #244c3f;
+    color: #4c242d;
     background: transparent;
   }
   .nav-item.active::before {
@@ -1150,7 +1150,7 @@ textarea:focus-visible {
     top: 0;
     width: 25px;
     height: 3px;
-    background: #244c3f;
+    background: #4c242d;
     border-radius: 0 0 3px 3px;
   }
   .nav-item svg {

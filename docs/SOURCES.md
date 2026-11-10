@@ -1,5 +1,7 @@
 # Source research and integration status
 
+**Version 1.0.0:** See the [complete ten-source audit, verified failures, fixes and per-source recovery options](SOURCE-AUDIT-1.0.md), checked 10 November 2026. Standard Ebooks now supports individual-book link import into the reader; its full catalogue feed is not integrated. The historical tables below describe the initial adapters.
+
 Reviewed 9 November 2026. The objective is a very large multilingual discovery catalogue with explicitly identified reading availability. A digitized or searchable record is not automatically a freely redistributable book. Counts from different providers must not be added and advertised as unique books.
 
 ## Connected sources

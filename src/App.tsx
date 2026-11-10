@@ -55,6 +55,8 @@ import { getSources, getSyncStatus, searchBooks } from "./lib/api";
 import { BookCover } from "./components/BookCover";
 import { MyQuotes, ReadingPreferences } from "./components/ReadingNotes";
 import { SourcePanel } from "./components/SourceReader";
+import { SourceSettings } from "./components/SourceSettings";
+import { sourceText } from "./lib/source-i18n";
 import { readerText } from "./lib/reader-i18n";
 import { normalizeTags } from "./lib/annotations";
 const Reader = lazy(() => import("./components/Reader"));
@@ -64,6 +66,7 @@ const sourceNames: Record<string, string> = {
   wikisource: "Wikisource",
   openlibrary: "Open Library",
   archive: "Internet Archive",
+  standardebooks: "Standard Ebooks",
   local: "MLibrary",
 };
 const genreKeys: MessageKey[] = [
@@ -78,6 +81,12 @@ export default function App() {
   const [state, update] = useLibraryState();
   const t = translator(state.language);
   const r = readerText(state.language);
+  const st = sourceText(state.language);
+  const excludedSources = Object.entries(state.sources)
+    .filter(([, p]) => p.enabled === false)
+    .map(([id]) => id)
+    .sort()
+    .join(",");
   const [initialMark, setInitialMark] = useState<ReadingMark>();
   const [sourceView, setSourceView] = useState("");
   const [preferencesOpen, setPreferencesOpen] = useState(false);
@@ -125,10 +134,21 @@ export default function App() {
   }, [state.language]);
   useEffect(() => {
     fetch("/data/featured.json")
-      .then((r) => r.json())
-      .then((data) => setFeatured(data.books))
-      .catch(() => {});
-  }, []);
+      .then((r) => {
+        if (!r.ok) throw new Error("Starter collection unavailable");
+        return r.json();
+      })
+      .then((data) => {
+        if (!Array.isArray(data.books))
+          throw new Error("Invalid starter collection");
+        setFeatured(data.books);
+      })
+      .catch(() =>
+        setError(
+          "The starter collection could not load. Check your connection and retry.",
+        ),
+      );
+  }, [refresh]);
   useEffect(() => {
     const on = () => setOnline(navigator.onLine);
     const storage = () => notify(t("storageError"));
@@ -164,6 +184,9 @@ export default function App() {
             language: bookLanguage,
             source,
             page,
+            ...(source === "all" && excludedSources
+              ? { exclude: excludedSources }
+              : {}),
           },
           controller.signal,
         )
@@ -197,7 +220,16 @@ export default function App() {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [search, bookLanguage, source, genre, page, refresh, isBrowse]);
+  }, [
+    search,
+    bookLanguage,
+    source,
+    genre,
+    page,
+    refresh,
+    isBrowse,
+    excludedSources,
+  ]);
   useEffect(() => {
     if (tab !== "sources") return;
     let active = true;
@@ -415,7 +447,7 @@ export default function App() {
             changeFilter(() => {
               setSearch(reading.title);
               setBookLanguage(reading.language || "all");
-              setSource("all");
+              setSource(state.sources[reading.source]?.fallback || "all");
               setGenre("allBooks");
             });
             goTab("discover");
@@ -650,7 +682,9 @@ export default function App() {
                 </section>
               )}
               {isBrowse && (
-                <section className="reading-strip">
+                <section
+                  className={`reading-strip ${continueBook ? "" : "empty-strip"}`}
+                >
                   {continueBook ? (
                     <>
                       <div className="strip-icon">
@@ -749,7 +783,10 @@ export default function App() {
                       >
                         <option value="all">{t("allSources")}</option>
                         {Object.entries(sourceNames)
-                          .filter(([key]) => key !== "local")
+                          .filter(
+                            ([key]) =>
+                              !["local", "standardebooks"].includes(key),
+                          )
                           .map(([key, name]) => (
                             <option key={key} value={key}>
                               {name}
@@ -793,6 +830,12 @@ export default function App() {
                         ),
                       ].join(", ")}
                     </span>
+                    <button
+                      className="text-button"
+                      onClick={() => goTab("sources")}
+                    >
+                      {st("searchHelp")}
+                    </button>
                   </div>
                 ) : null}
                 {error && (
@@ -959,41 +1002,24 @@ export default function App() {
                   </button>
                 </div>
               )}
-              <div className="source-list">
-                {sourceList.map((s, i) => (
-                  <article key={s.id} className="source-row">
-                    <span className="source-number">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div>
-                      <span className={`source-tag ${s.kind}`}>
-                        {t(
-                          s.kind === "integrated"
-                            ? "integrated"
-                            : s.kind === "discovery"
-                              ? "discovery"
-                              : "directory",
-                        )}
-                      </span>
-                      <h3>{s.name}</h3>
-                      <p>{s.description}</p>
-                      <small>{s.rights}</small>
-                    </div>
-                    <div className="source-actions">
-                      <span>
-                        {s.languages.map((l) => languageNames[l]).join(" · ")}
-                      </span>
-                      <button
-                        className="text-button"
-                        onClick={() => setSourceView(s.url)}
-                      >
-                        {t("visit")}
-                        <ArrowUpRight size={19} />
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <SourceSettings
+                sources={sourceList}
+                state={state}
+                update={update}
+                onVisit={setSourceView}
+                onRead={openBook}
+                onImport={(file) => void handleImport(file, true)}
+                onSearch={(selectedSource, language) => {
+                  changeFilter(() => {
+                    setSource(selectedSource);
+                    setBookLanguage(language);
+                    setSearch("");
+                    setQuery("");
+                    setGenre("allBooks");
+                  });
+                  goTab("discover");
+                }}
+              />
               <div className="sync-panel">
                 <div>
                   <h3>{t("sync")}</h3>

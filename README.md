@@ -6,6 +6,10 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 
 **Repository:** https://github.com/FediMechergui/MLibrary
 
+**Version 1.0.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.0.0) · [all-source audit](docs/SOURCE-AUDIT-1.0.md).
+
+This release adds saved source controls, actionable availability reasons, format selection and fallback recovery, an individual Standard Ebooks link importer, and a burgundy/porcelain interface with compact mobile layouts and 44px reader controls. Existing shelves, offline books and quote cards migrate automatically.
+
 ## Working features
 
 - A locally searchable snapshot of **66,386 Gutenberg text records** as imported on 9 November 2026: 62,161 English, 4,252 French, and 1 Arabic. Language counts overlap because some records are multilingual. These are catalogue records, not a claim that every edition is available in every country.
@@ -67,6 +71,9 @@ The Gutenberg CSV has no copyright field. Before serving an online Gutenberg tex
 | `GET /api/sources`                                  | Integrated, discovery, and directory sources                 |
 | `GET /api/sync-status`                              | Last scheduled update                                        |
 | `GET /api/health`                                   | Backend health                                               |
+| `GET /api/import-standard?url=BOOK_PAGE` | Resolve one public Standard Ebooks edition for automatic EPUB import |
+
+`/content` accepts `format=auto|text|epub|pdf` for Archive and Open Library, and `standardebooks:author/title` IDs for individual publisher EPUBs. `/search` accepts `exclude=wikisource,archive` for combined searches. `/sources` includes dated audit findings and tailored recovery instructions. `SOURCE_POLICIES` configures bounded per-provider network timeouts/retries; see `.env.example`.
 
 Languages: `en`, `fr`, `ar`, `all`. Sources: `gutenberg`, `wikisource`, `openlibrary`, `archive`, `all`. Pages are bounded at 100 per query; refine the query to reach more editions. No endpoint accepts an arbitrary content URL. Search caches use 512 bounded slots. Upstream requests have timeouts; readable text downloads are limited to 4 MiB.
 

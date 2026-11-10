@@ -1,4 +1,5 @@
 import { searchGutenberg } from "./gutenberg.mjs";
+import { diagnose, sourceFromUrl, sourcePolicy } from "./source-policy.mjs";
 export const LANGUAGES = ["en", "fr", "ar"];
 export const SOURCES = ["gutenberg", "wikisource", "openlibrary", "archive"];
 const codes = { en: "eng", fr: "fre", ar: "ara" };
@@ -108,19 +109,27 @@ export async function fetchUpstream(url, options = {}) {
   const response = await fetchWithRetry(url, {
     ...options,
     headers: {
-      "User-Agent": `MLibrary/0.1 (${process.env.CATALOG_CONTACT || "https://github.com/FediMechergui/MLibrary"})`,
+      "User-Agent": `MLibrary/1.0 (${process.env.CATALOG_CONTACT || "https://github.com/FediMechergui/MLibrary"})`,
       Accept: "application/json",
       ...options.headers,
     },
   });
-  if (!response.ok) throw new Error(`Source returned ${response.status}`);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw Object.assign(new Error(`Source returned ${response.status}`), {
+      status: response.status,
+    });
+  }
   return response;
 }
 export async function fetchWithRetry(
   url,
-  { timeoutMs = 8000, ...options } = {},
+  { timeoutMs, retries, ...options } = {},
 ) {
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const policy = sourcePolicy(sourceFromUrl(url));
+  timeoutMs ??= policy.timeoutMs;
+  retries ??= policy.retries;
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await fetch(url, {
         ...options,
@@ -128,7 +137,7 @@ export async function fetchWithRetry(
       });
     } catch (error) {
       if (
-        attempt ||
+        attempt >= retries ||
         options.signal?.aborted ||
         !(error instanceof TypeError || error.name === "TimeoutError")
       )
@@ -168,15 +177,23 @@ export function validateSearch(params) {
   const language = params.get("language") || "all";
   const source = params.get("source") || "all";
   const page = Number(params.get("page") || 1);
+  const excluded = (params.get("exclude") || "").split(",").filter(Boolean);
   if (
     ![...LANGUAGES, "all"].includes(language) ||
     ![...SOURCES, "all"].includes(source) ||
     !Number.isInteger(page) ||
     page < 1 ||
-    page > 100
+    page > 100 ||
+    excluded.some((s) => !SOURCES.includes(s))
   )
     throw new Error("Invalid search filters");
-  return { q, language, source, page };
+  return {
+    q,
+    language,
+    source,
+    page,
+    ...(excluded.length ? { excluded: [...new Set(excluded)].sort() } : {}),
+  };
 }
 export function normalizeTitle(value) {
   return value
@@ -349,12 +366,13 @@ async function archive({ q, language, page }) {
   };
 }
 export async function searchCatalog(options) {
-  const selected =
+  const selected = (
     options.source === "all"
       ? options.q
         ? SOURCES
         : ["gutenberg", "wikisource"]
-      : [options.source];
+      : [options.source]
+  ).filter((s) => !options.excluded?.includes(s));
   const tasks = selected.flatMap((source) =>
     source === "wikisource"
       ? (options.language === "all" ? LANGUAGES : [options.language]).map(
@@ -379,7 +397,7 @@ export async function searchCatalog(options) {
     } else
       errors.push({
         source: tasks[i].source,
-        message: "Temporarily unavailable. Try again shortly.",
+        ...diagnose(r.reason),
       });
   });
   // Keep source editions distinct: similar titles are not proof of the same work.

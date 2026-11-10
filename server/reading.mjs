@@ -46,7 +46,7 @@ export async function archiveResponse(url, range) {
       headers: {
         ...(range ? { Range: range } : {}),
         "User-Agent":
-          "MLibrary/0.2 (https://github.com/FediMechergui/MLibrary)",
+          "MLibrary/1.0 (https://github.com/FediMechergui/MLibrary)",
       },
     });
     if ([301, 302, 303, 307, 308].includes(response.status)) {
@@ -153,7 +153,12 @@ async function readFileRange(id, name, start, end, size) {
     throw new Error("The source returned an incomplete book page range");
   return { bytes: Buffer.concat(chunks), size };
 }
-export async function resolveArchive(id, readText) {
+export async function resolveArchive(
+  id,
+  readText,
+  format = "auto",
+  requiredLanguage,
+) {
   if (!archiveIdentifier.test(id) || id.includes(".."))
     throw new Error("Unsupported book identifier");
   const data = await (
@@ -165,34 +170,83 @@ export async function resolveArchive(id, readText) {
   if (!data.metadata || data.is_dark || data.error)
     return {
       type: "source",
+      reason: "missing",
       url,
       available: false,
       message: "This source has not provided a readable edition.",
       attribution: "Internet Archive",
     };
   const files = publicFiles(data);
+  if (requiredLanguage) {
+    const aliases =
+      {
+        en: ["en", "eng", "english"],
+        fr: ["fr", "fre", "fra", "french", "français"],
+        ar: ["ar", "ara", "arabic", "العربية"],
+      }[requiredLanguage] || [];
+    const languages = (
+      Array.isArray(data.metadata.language)
+        ? data.metadata.language
+        : [data.metadata.language]
+    )
+      .flatMap((l) =>
+        String(l || "")
+          .toLowerCase()
+          .split(/[;,|]/),
+      )
+      .map((l) => l.trim());
+    if (!languages.some((l) => aliases.includes(l)))
+      return {
+        type: "source",
+        reason: "language",
+        url,
+        available: false,
+        message: "This edition does not match the requested language.",
+        attribution: "Internet Archive",
+      };
+  }
   const attribution = `Internet Archive · ${data.metadata.title || id}. ${data.metadata.rights || data.metadata.licenseurl || "Availability is managed by the source library."}`;
   // Reading uses the files the provider offers publicly, retaining its rights
   // statement. Public availability does not relabel a work as public domain.
   if (files.length) {
-    const text = files.find(
-      (f) =>
-        ["DjVuTXT", "Text", "Plain Text"].includes(f.format) &&
-        Number(f.size) <= 4 * 1024 * 1024,
-    );
-    if (text) {
-      const response = await archiveResponse(
-        `https://archive.org/download/${encodeURIComponent(id)}/${encodeURIComponent(text.name)}`,
+    const text =
+      ["auto", "text"].includes(format) &&
+      files.find(
+        (f) =>
+          ["DjVuTXT", "Text", "Plain Text"].includes(f.format) &&
+          Number(f.size) > 0 &&
+          Number(f.size) <= 4 * 1024 * 1024,
       );
-      return {
-        type: "text",
-        text: await readText(response),
-        chapters: [],
-        sourceUrl: url,
-        attribution,
-      };
+    let textError;
+    if (text) {
+      try {
+        const response = await archiveResponse(
+          `https://archive.org/download/${encodeURIComponent(id)}/${encodeURIComponent(text.name)}`,
+        );
+        const value = await readText(response);
+        if (!value.trim() || /^\s*(?:<!doctype html|<html)/i.test(value))
+          throw new Error("The source did not return readable book text");
+        return {
+          type: "text",
+          text: value,
+          chapters: [],
+          sourceUrl: url,
+          attribution,
+        };
+      } catch (error) {
+        if (format === "text") throw error;
+        textError = error;
+      }
     }
-    const file = ["EPUB", "Text PDF", "Image Container PDF"].flatMap((format) =>
+    const formats =
+      format === "text"
+        ? []
+        : format === "epub"
+          ? ["EPUB"]
+          : format === "pdf"
+            ? ["Text PDF", "Image Container PDF"]
+            : ["EPUB", "Text PDF", "Image Container PDF"];
+    const file = formats.flatMap((format) =>
       files.filter(
         (f) =>
           f.format === format &&
@@ -208,23 +262,38 @@ export async function resolveArchive(id, readText) {
         attribution,
         sourceUrl: url,
       };
+    if (textError) throw textError;
   }
+  const restricted = isTrue(data.metadata["access-restricted-item"]);
   return {
     type: "source",
+    reason: restricted
+      ? "restricted"
+      : format !== "auto"
+        ? "format"
+        : "no-file",
     url,
     available: false,
-    message:
-      "This edition has no publicly downloadable reader file. Import your own EPUB, PDF, or text copy to read it here.",
+    message: restricted
+      ? "This edition requires borrowing or source authorization; a public reader file is not offered."
+      : format !== "auto"
+        ? `This edition does not offer a public ${format.toUpperCase()} file within the download limit. Choose Automatic to try its other formats.`
+        : "This edition has no publicly downloadable reader file. Import your own EPUB, PDF, or text copy to read it here.",
     attribution,
   };
 }
-export async function resolveOpenLibrary(id, language, readText) {
+export async function resolveOpenLibrary(
+  id,
+  language,
+  readText,
+  format = "auto",
+) {
   if (!/^OL[1-9]\d{0,12}W$/.test(id))
     throw new Error("Unsupported book identifier");
   const code = { en: "eng", fr: "fre", ar: "ara" }[language] || "eng";
   const url = new URL("https://openlibrary.org/search.json");
   url.search = new URLSearchParams({
-    q: `key:/works/${id} language:${code}`,
+    q: `key:/works/${id} language:${code} ebook_access:public`,
     lang: language || "en",
     fields:
       "key,title,ia,ebook_access,editions,editions.key,editions.language,editions.ia,editions.ebook_access,availability",
@@ -246,12 +315,17 @@ export async function resolveOpenLibrary(id, language, readText) {
     ),
   ];
   const examined = new Set();
-  async function tryEditions(ids) {
+  async function tryEditions(ids, verifyLanguage = false) {
     for (const candidate of ids) {
       if (examined.size >= 4 || examined.has(candidate)) continue;
       examined.add(candidate);
       try {
-        const content = await resolveArchive(candidate, readText);
+        const content = await resolveArchive(
+          candidate,
+          readText,
+          format,
+          verifyLanguage ? language : undefined,
+        );
         if (content.type !== "source") return content;
       } catch (error) {
         if (error.message !== "Source returned 404") throw error;
@@ -261,6 +335,13 @@ export async function resolveOpenLibrary(id, language, readText) {
   }
   const primary = await tryEditions(candidates);
   if (primary) return primary;
+  // The search API returns only one edition. Its work-level Archive IDs can
+  // expose an older public scan, but must pass an item-level language check.
+  const linked = await tryEditions(
+    (work?.ia || []).filter(valid).slice(0, 6),
+    true,
+  );
+  if (linked) return linked;
   // Search commonly returns just one edition. Inspect the work's edition list
   // for other files in the requested language before reporting unavailable.
   if (examined.size < 4) {
@@ -288,6 +369,7 @@ export async function resolveOpenLibrary(id, language, readText) {
   }
   return {
     type: "source",
+    reason: "no-edition",
     url: `https://openlibrary.org/works/${id}`,
     available: false,
     message:

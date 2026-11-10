@@ -40,6 +40,7 @@ export type BookContent =
   | { type: "pdf-url"; url: string; attribution?: string; sourceUrl?: string }
   | {
       type: "source";
+      reason?: string;
       url: string;
       embedUrl?: string;
       available: boolean;
@@ -116,6 +117,14 @@ export type AppState = {
   settings: ReaderSettings;
   marks: Record<string, ReadingMark>;
   preferences: { genres: string[]; purposes: string[]; languages: Language[] };
+  sources: Record<string, SourcePreference>;
+};
+export type ReaderFormat = "auto" | "text" | "epub" | "pdf";
+export type SourcePreference = {
+  enabled?: boolean;
+  format?: ReaderFormat;
+  fallback?: string;
+  language?: string;
 };
 export type SearchResult = {
   books: Book[];
@@ -139,4 +148,10 @@ export type Source = {
   kind: string;
   description: string;
   rights: string;
+  audit?: {
+    status: "working" | "limited" | "blocked" | "directory";
+    checkedAt: string;
+    finding: string;
+    solution: string;
+  };
 };

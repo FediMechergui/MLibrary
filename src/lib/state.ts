@@ -9,6 +9,7 @@ export const defaults: AppState = {
   activity: {},
   dailyGoal: 20,
   marks: {},
+  sources: {},
   preferences: { genres: [], purposes: [], languages: ["en", "fr", "ar"] },
   settings: {
     theme: "paper",
@@ -29,6 +30,8 @@ function load(): AppState {
           ...raw,
           settings: { ...defaults.settings, ...raw.settings },
           marks: raw.marks && typeof raw.marks === "object" ? raw.marks : {},
+          sources:
+            raw.sources && typeof raw.sources === "object" ? raw.sources : {},
           preferences: { ...defaults.preferences, ...raw.preferences },
         }
       : defaults;

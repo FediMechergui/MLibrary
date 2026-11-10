@@ -2,6 +2,13 @@ import { sourceDirectory, searchCatalog, validateSearch } from "./catalog.mjs";
 import { cachedSearch, store } from "./storage.mjs";
 import { getContent } from "./content.mjs";
 import { getReaderFileChunk } from "./reading.mjs";
+import { diagnose } from "./source-policy.mjs";
+import { sourceAudit } from "./source-audit.mjs";
+import {
+  standardBook,
+  standardFileChunk,
+  standardUrlPath,
+} from "./standardebooks.mjs";
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
   "Access-Control-Allow-Origin": "*",
@@ -21,11 +28,25 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "0.2.1", time: new Date().toISOString() },
+        { status: "ok", version: "1.0.0", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
-      return Response.json({ sources: sourceDirectory }, { headers });
+      return Response.json(
+        {
+          sources: sourceDirectory.map((s) => ({
+            ...s,
+            audit: sourceAudit(s.id),
+          })),
+        },
+        { headers },
+      );
+    if (path === "/import-standard") {
+      const { book } = await standardBook(
+        standardUrlPath(url.searchParams.get("url") || ""),
+      );
+      return Response.json({ book }, { headers });
+    }
     if (path === "/sync-status") {
       let state;
       try {
@@ -46,6 +67,14 @@ export default async function handler(request) {
         return Response.json({ error: e.message }, { status: 400, headers });
       }
       const data = await cachedSearch(options, searchCatalog);
+      if (options.source === "all" && options.excluded?.length === 4)
+        return Response.json(
+          {
+            error:
+              "All connected libraries are disabled. Enable a source or choose a specific library.",
+          },
+          { status: 400, headers },
+        );
       return Response.json(data, {
         status: data.sources.length ? 200 : 503,
         headers: {
@@ -65,6 +94,7 @@ export default async function handler(request) {
       const data = await getContent(url.searchParams.get("id") || "", {
         language: url.searchParams.get("language") || "en",
         chapter: url.searchParams.get("chapter") || undefined,
+        format: url.searchParams.get("format") || "auto",
       });
       return Response.json(data, {
         headers: {
@@ -75,12 +105,19 @@ export default async function handler(request) {
       });
     }
     if (path === "/file") {
-      const data = await getReaderFileChunk(
-        url.searchParams.get("id") || "",
-        url.searchParams.get("name") || "",
-        Number(url.searchParams.get("start")),
-        Number(url.searchParams.get("end")),
-      );
+      const data =
+        url.searchParams.get("source") === "standardebooks"
+          ? await standardFileChunk(
+              url.searchParams.get("id") || "",
+              Number(url.searchParams.get("start")),
+              Number(url.searchParams.get("end")),
+            )
+          : await getReaderFileChunk(
+              url.searchParams.get("id") || "",
+              url.searchParams.get("name") || "",
+              Number(url.searchParams.get("start")),
+              Number(url.searchParams.get("end")),
+            );
       return new Response(data.bytes, {
         headers: {
           ...headers,
@@ -96,15 +133,26 @@ export default async function handler(request) {
     console.error("API request failed:", error.message);
     return Response.json(
       {
+        code: diagnose(error).code,
         error:
-          path === "/content" || path === "/file"
-            ? error.message
+          path === "/content" || path === "/file" || path === "/import-standard"
+            ? diagnose(error).message
             : "The catalogue is temporarily unavailable. Please try again.",
       },
       {
         status:
           (path === "/content" &&
-            error.message === "Unsupported book identifier") ||
+            [
+              "Unsupported book identifier",
+              "Invalid reader format",
+              "Invalid Standard Ebooks edition",
+            ].includes(error.message)) ||
+          (path === "/import-standard" &&
+            [
+              "Invalid URL",
+              "Invalid Standard Ebooks edition",
+              "Paste an individual Standard Ebooks book page URL.",
+            ].includes(error.message)) ||
           (path === "/file" && error.message === "Invalid reader file range")
             ? 400
             : path === "/file" &&

@@ -32,6 +32,7 @@ import type {
   ReaderSettings,
   ReadingMark,
   ReaderSelection,
+  ReaderFormat,
 } from "../types";
 import { translator } from "../lib/i18n";
 import { downloadReaderFile, loadBook, readerFileChunk } from "../lib/api";
@@ -44,6 +45,8 @@ import { highlightColors, intersectMarks } from "../lib/annotations";
 import { readerText } from "../lib/reader-i18n";
 import { MarkEditor } from "./ReadingNotes";
 import { SourcePanel } from "./SourceReader";
+import { FormatChoice } from "./SourceSettings";
+import { sourceText } from "../lib/source-i18n";
 import { selectedOffsets, paintTextMarks } from "../lib/selection";
 type Props = {
   book: Book;
@@ -68,6 +71,11 @@ export default function Reader({
   const t = translator(state.language),
     settings = state.settings;
   const r = readerText(state.language);
+  const st = sourceText(state.language);
+  const [format, setFormat] = useState<ReaderFormat>(
+    state.sources[book.source]?.format || "auto",
+  );
+  const canChooseFormat = ["archive", "openlibrary"].includes(book.source);
   const [chapter, setChapter] = useState(
     initialMark?.anchor.chapter || state.shelf[book.id]?.progress?.chapter,
   );
@@ -147,6 +155,8 @@ export default function Reader({
     setTransfer(null);
     loadBook(book, chapter, {
       signal: controller.signal,
+      format,
+      bypassOffline: retry > 0,
       onProgress: (progress) => {
         if (active) setTransfer(progress);
       },
@@ -157,7 +167,13 @@ export default function Reader({
           const entry = s.shelf[book.id] || newEntry(book);
           return {
             ...s,
-            shelf: { ...s.shelf, [book.id]: { ...entry, offline } },
+            shelf: {
+              ...s.shelf,
+              [book.id]: {
+                ...entry,
+                offline: data.type === "source" ? entry.offline : offline,
+              },
+            },
           };
         });
         setTransfer(null);
@@ -168,7 +184,7 @@ export default function Reader({
       active = false;
       controller.abort();
     };
-  }, [book, retry, chapter, update]);
+  }, [book, retry, chapter, update, format]);
   useEffect(() => {
     if (!ready || error) return;
     let lastTick = Date.now(),
@@ -271,6 +287,14 @@ export default function Reader({
       },
     }));
     notify(t("bookmarked"));
+  };
+  const chooseFormat = (next: ReaderFormat) => {
+    initial.current = undefined;
+    setChapter(undefined);
+    setJump(null);
+    setFormat(next);
+    setRetry((value) => value + 1);
+    setPanel(null);
   };
   const download = async () => {
     if (!content || content.type === "source") return;
@@ -439,6 +463,13 @@ export default function Reader({
             <BookOpen size={32} />
             <h2>{t("readerError")}</h2>
             <p>{error}</p>
+            {canChooseFormat && (
+              <FormatChoice
+                language={state.language}
+                value={format}
+                onChange={chooseFormat}
+              />
+            )}
             <button
               className="button primary"
               onClick={() => setRetry((r) => r + 1)}
@@ -499,6 +530,28 @@ export default function Reader({
                 <BookOpen size={40} weight="thin" />
                 <h2>{r("unreadable")}</h2>
                 <p>{r("unavailableCopy")}</p>
+                {content.reason && (
+                  <p className="edition-reason">
+                    {st(
+                      content.reason === "restricted"
+                        ? "restricted"
+                        : content.reason === "format"
+                          ? "unavailable"
+                          : content.reason === "missing"
+                            ? "missing"
+                            : content.reason === "no-edition"
+                              ? "noEdition"
+                              : "noFile",
+                    )}
+                  </p>
+                )}
+                {canChooseFormat && (
+                  <FormatChoice
+                    language={state.language}
+                    value={format}
+                    onChange={chooseFormat}
+                  />
+                )}
                 <label className="button primary">
                   {r("importCopy")}
                   <input
@@ -609,6 +662,16 @@ export default function Reader({
                 </div>
               ) : panel === "settings" ? (
                 <>
+                  {canChooseFormat && (
+                    <div className="reader-format-setting">
+                      <FormatChoice
+                        language={state.language}
+                        value={format}
+                        onChange={chooseFormat}
+                      />
+                      <p className="panel-note">{st("formatHint")}</p>
+                    </div>
+                  )}
                   <button
                     className="button secondary focus-setting"
                     onClick={() => {
