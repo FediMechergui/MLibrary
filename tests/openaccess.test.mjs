@@ -8,6 +8,34 @@ import {
   openAccessFileChunk,
 } from "../server/openaccess.mjs";
 import { searchOpenAccess } from "../server/openaccess-catalog.mjs";
+import { downloadOpenAccessSnapshot } from "../server/openaccess-feed.mjs";
+
+test("failed or malformed metadata streams cannot replace the last complete catalogue", async (t) => {
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.error(new Error("connection interrupted"));
+          },
+        }),
+      ),
+  );
+  await assert.rejects(downloadOpenAccessSnapshot(), /connection interrupted/);
+  globalThis.fetch.mock.mockImplementation(
+    async () => new Response("wrong,columns\na,b\n"),
+  );
+  await assert.rejects(downloadOpenAccessSnapshot(), /metadata columns/);
+  globalThis.fetch.mock.mockImplementation(
+    async () =>
+      new Response(
+        "dc.type,dc.title,dc.language,dc.identifier.uri,BITSTREAM_Download_URL\nbook,Example,eng,https://directory.doabooks.org/handle/20.500.12854/123,\n",
+      ),
+  );
+  await assert.rejects(downloadOpenAccessSnapshot(), /Incomplete feed/);
+});
 const field = (name, value) => `<field name="${name}">${value}</field>`;
 function metadata(
   id,

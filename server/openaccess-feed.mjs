@@ -19,14 +19,28 @@ export async function downloadOpenAccessSnapshot(timeoutMs = 22000) {
     }
   };
   const rows = [];
-  const parser = Readable.from(bounded()).pipe(
-    parse({
-      columns: true,
-      skip_empty_lines: true,
-      bom: true,
-      max_record_size: 1000000,
-    }),
-  );
+  const incoming = Readable.from(bounded());
+  const parser = parse({
+    columns: (columns) => {
+      if (
+        ![
+          "dc.type",
+          "dc.title",
+          "dc.language",
+          "dc.identifier.uri",
+          "BITSTREAM_Download_URL",
+        ].every((name) => columns.includes(name))
+      )
+        throw new Error("Incomplete metadata columns");
+      return columns;
+    },
+    skip_empty_lines: true,
+    bom: true,
+    max_record_size: 1000000,
+  });
+  incoming.on("error", (error) => parser.destroy(error));
+  parser.on("close", () => incoming.destroy());
+  incoming.pipe(parser);
   for await (const row of parser) {
     if (row["dc.type"] !== "book") continue;
     const languages = (row["dc.language"] || "")
@@ -47,17 +61,17 @@ export async function downloadOpenAccessSnapshot(timeoutMs = 22000) {
     const id = /\/handle\/20\.500\.12854\/(\d+)/.exec(
       row["dc.identifier.uri"] || "",
     )?.[1];
-    if (!id || !languages.length) continue;
+    if (!id || !languages.length || !row["dc.title"]) continue;
     rows.push([
       id,
       row["dc.title"],
-      row["dc.contributor.author"] || row["dc.contributor.editor"],
+      row["dc.contributor.author"] || row["dc.contributor.editor"] || "",
       languages,
-      row["dc.subject.other"],
-      row["dc.description.abstract"],
-      row.BITSTREAM_License,
-      row.BITSTREAM_Download_URL,
-      row["dc.date.issued"],
+      row["dc.subject.other"] || "",
+      (row["dc.description.abstract"] || "").slice(0, 400),
+      row.BITSTREAM_License || "",
+      row.BITSTREAM_Download_URL || "",
+      row["dc.date.issued"] || "",
     ]);
   }
   const snapshot = {

@@ -80,14 +80,18 @@ export async function searchOpenAccess({ source, q, language, page }) {
   const seen = new Set();
   const rows = snapshot.rows.filter((row) => {
     if (language !== "all" && !row[3].includes(language)) return false;
+    if (
+      !terms.every((term) =>
+        normalize(`${row[1]} ${row[2]} ${row[4]}`).includes(term),
+      )
+    )
+      return false;
     if (source === "oapen") {
       const id = oapenId(row[7]);
       if (!id || seen.has(id)) return false;
       seen.add(id);
     }
-    return terms.every((term) =>
-      normalize(`${row[1]} ${row[2]} ${row[4]}`).includes(term),
-    );
+    return true;
   });
   return {
     source,
