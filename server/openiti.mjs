@@ -55,15 +55,26 @@ export function cleanOpenITI(text) {
   const split = text.indexOf("#META#Header#End#");
   if (split < 0 || !text.startsWith("######OpenITI#"))
     throw new Error("Invalid OpenITI text");
-  return text
-    .slice(split + "#META#Header#End#".length)
-    .replace(/^#META#.*$/gm, "")
-    .replace(/^### \|+\s*/gm, "\n\n")
-    .replace(/^#\s?/gm, "\n")
-    .replace(/^~~/gm, "")
-    .replace(/PageV\d+P(\d+)/g, "\n\n[ص $1]\n\n")
-    .replace(/\n{4,}/g, "\n\n")
-    .trim();
+  return (
+    text
+      .slice(split + "#META#Header#End#".length)
+      .replace(/^#META#.*$/gm, "")
+      // Older poetry editions use standalone percent signs instead of %~%.
+      // Restrict this conversion to explicitly marked verse lines so percentages
+      // in prose, and numbers belonging to the source text, remain intact.
+      .replace(
+        /^# %[ \t]+(.*)$/gm,
+        (_, verse) =>
+          "# " + verse.replace(/[ \t]+%(?:[ \t]+%)*(?=[ \t]|$)[ \t]*/g, "\n"),
+      )
+      .replace(/[ \t]*%~%[ \t]*/g, "\n")
+      .replace(/^### \|+\s*/gm, "\n\n")
+      .replace(/^#\s?/gm, "\n")
+      .replace(/^~~/gm, "")
+      .replace(/PageV\d+P(\d+)/g, "\n\n[ص $1]\n\n")
+      .replace(/\n{4,}/g, "\n\n")
+      .trim()
+  );
 }
 export async function openitiContent(id, chapter, fetcher = fetch) {
   if (!openitiId.test(id)) throw new Error("Unsupported book identifier");

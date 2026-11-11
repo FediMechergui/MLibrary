@@ -7,6 +7,20 @@ import {
 } from "../server/openiti.mjs";
 import { parseBookId } from "../server/content.mjs";
 
+test("OpenITI poetry renders verse separators without changing prose percentages", () => {
+  const raw =
+    "######OpenITI#\n#META#Header#End#\n" +
+    "# % تطاول ليلي بهم وصب % ودمع كسح السقاء السرب % 2\n" +
+    "# % للعب قصي بأحلامها % % وهل يرجع الحلم بعد اللعب ؟ % 3\n" +
+    "# أول البيت %~% آخر البيت\n# بلغت النسبة 50% أو 50 % من المجموع";
+  const text = cleanOpenITI(raw);
+  assert.ok(text.includes("تطاول ليلي بهم وصب\nودمع كسح السقاء السرب\n2"));
+  assert.ok(text.includes("للعب قصي بأحلامها\nوهل يرجع الحلم بعد اللعب ؟\n3"));
+  assert.ok(text.includes("أول البيت\nآخر البيت"));
+  assert.ok(text.includes("50% أو 50 %"));
+  assert.ok(!text.includes("%~%"));
+});
+
 test("OpenITI indexes primary Arabic editions, supports Arabic normalization and keeps edition identities", () => {
   const results = searchOpenITI({ language: "ar" });
   assert.ok(results.count >= 7000);
