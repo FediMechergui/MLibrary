@@ -24,17 +24,17 @@ OpenITI uses a pinned official release and primary Arabic editions. Long texts a
 4. **Arabic coverage:** prioritize a publisher arrangement with Hindawi/Safahat, Arabic Collections Online, and rights-reviewed Wikisource works. Distinguish a full book from a chapter or contents page. Link chapter structures into a unified edition reader.
 5. **Scans:** add IIIF manifests and a dedicated image/PDF reading path, with on-demand page loading, OCR text layers, page anchors, and item-level rights. Never assume an accessible Archive item is freely redistributable.
 6. **Reliability:** shared provider rate limits, Retry-After handling, monitoring, ingestion error queues, retention rules, availability revalidation, and a takedown/correction route.
-7. **Personal accounts:** optional authentication, explicit cross-device sync, encrypted transport, export/import, conflict resolution, and user-controlled deletion. Preserve offline reading when the service is unavailable.
-8. **Reading features:** notes/highlights, dictionary lookup, text search, EPUB table of contents, accessible PDF text layers, reading lists, listening, and improved page-turn physics.
-9. **Android distribution:** permanent release signing key, automated signed APK/AAB builds, store listing, privacy documentation, accessibility testing, and real-device validation.
+7. **Personal accounts:** add optional account-based recovery and shared quota enforcement around the existing recovery-key sync. Preserve end-to-end encryption, explicit deletion, portable backups and offline access.
+8. **Reading features:** extend the existing highlights, quote studio, OCR and animated page turns with dictionary lookup, text search, listening and stronger PDF accessibility.
+9. **Android distribution:** use the permanent upload key and signed APK/AAB build scripts for Play enrollment; add protected CI signing, owner-supplied listing details, accessibility testing and real-device validation.
 
 ## Operating boundaries
 
 - The first UI supports English, French, and Arabic. Other-language catalogue records are filtered out of the Gutenberg snapshot.
 - Gutenberg rights checks use a US public-domain statement. They do not establish rights in every jurisdiction.
-- Wikisource currently reads the selected page and links to other chapters at the source.
-- Archive and Open Library content opens at the source. Borrowing remains with the original provider.
-- Online text responses are capped at 4 MiB; imported EPUB/PDF/TXT files at 50 MiB.
+- Wikisource reads the selected page inside the app with chapter navigation; some records represent chapters or indexes rather than complete books.
+- Available Archive and Open Library text, EPUB and PDF files open inside the reader. Restricted borrowing remains with the original provider.
+- Online text responses are capped at 4 MiB; local EPUB/PDF/TXT imports at 50 MiB. Supported ranged PDF downloads allow up to 500 MiB. Portable backups allow 250 MiB of files, with a 50 MiB limit per file.
 - Offline browser support requires a successful first visit and reader loading. Android bundles the app shell.
-- Personal data has no cloud sync. Browser/app data clearing removes local books and progress.
+- Optional encrypted sync carries metadata up to 2 MiB per vault. Book files remain local and travel through backups. Browser/app data clearing removes local copies and the locally stored recovery key; a saved key or backup is needed for recovery.
 - Provider totals overlap and can include parts, editions, or records with no downloadable file. Do not advertise their sum as a unique free-book count.

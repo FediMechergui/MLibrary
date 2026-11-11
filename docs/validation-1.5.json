@@ -1,0 +1,117 @@
+{
+  "androidBuildCommit": "9ee375fe25cb7030ed243d57ae25283d72783fd4",
+  "backendCommit": "feb1b9a0b07e9b30384feed71a7897bbea76bb5d",
+  "githubChecks": "https://github.com/FediMechergui/MLibrary/actions/runs/43082470125",
+  "tests": {
+    "backend": 56,
+    "browser": 41
+  },
+  "production": {
+    "checkedAt": "2026-11-11T19:00:56.541Z",
+    "report": [
+      {
+        "name": "production health",
+        "status": "pass",
+        "version": "1.5.0"
+      },
+      {
+        "name": "Gallica static-file delivery and integrity",
+        "status": "pass",
+        "characters": 1015916
+      },
+      {
+        "name": "Arabic OpenITI search and text",
+        "status": "pass",
+        "results": 33,
+        "characters": 36962
+      },
+      {
+        "name": "encrypted vault create/read/conditional writes/delete",
+        "status": "pass",
+        "encryptionRoundTrip": true,
+        "conflictRejected": true
+      },
+      {
+        "name": "online OCR remains configured",
+        "status": "pass",
+        "online": true,
+        "provider": "OCR.space",
+        "maxBytes": 1000000,
+        "languages": [
+          "en",
+          "fr",
+          "ar"
+        ]
+      }
+    ]
+  },
+  "native": {
+    "checkedAt": "2026-11-11T19:00:54.601Z",
+    "report": [
+      {
+        "name": "update preserves library",
+        "books": 8,
+        "notes": 2
+      },
+      {
+        "name": "native encrypted sync",
+        "createReadUpdateConflict": true,
+        "native": true
+      },
+      {
+        "name": "native Gallica reader",
+        "page": "Page 3 of 28650%",
+        "overflow": false
+      },
+      {
+        "name": "native OpenITI reader",
+        "arabic": true,
+        "overflow": false
+      },
+      {
+        "name": "native Arabic poetry formatting",
+        "verseSeparatorsRemoved": true,
+        "overflow": false
+      }
+    ]
+  },
+  "android": {
+    "version": "1.5.0",
+    "versionCode": 9,
+    "minSdk": 26,
+    "targetSdk": 36,
+    "storeDebuggable": false,
+    "bundletoolValidated": "1.18.1",
+    "nativeLibraries": 0,
+    "credentialPatternMatches": 0,
+    "updateCertificateSha256": "ec0ea947cf6c9f7ee98a11575fe41a055fe7ca96f41a20beba9a4647cf1585ef",
+    "storeCertificateSha256": "cd2fcf85b90b1ec388f102a9e3309d351a6f0a52bd8a780f80adc0c5bf223ae4"
+  },
+  "packages": [
+    {
+      "name": "MLibrary-1.5.0.apk",
+      "bytes": 31729761,
+      "sha256": "3283cd810298d7425344e510a0975bdc365a1ad1662a810e6202620c2a0fe727"
+    },
+    {
+      "name": "MLibrary-1.5.0-store.apk",
+      "bytes": 27576107,
+      "sha256": "48dfd1b4903517f50e370f581ac0b2665dbaf22ab96b4d1100cf9688c85003d4"
+    },
+    {
+      "name": "MLibrary-1.5.0-store.aab",
+      "bytes": 27461923,
+      "sha256": "c3c930db76d89abf36ba975b25d612838668ff814c12d2ef2e6ce57df3cbb35c"
+    },
+    {
+      "name": "MLibrary-1.5.0-store-assets.zip",
+      "bytes": 509418,
+      "sha256": "7e4e0bfb35aa54cf3739e6bc85a44438c9bcd95b3c483e1bc7a724759f1bf811"
+    },
+    {
+      "name": "MLibrary-upload-certificate.pem",
+      "bytes": 1822,
+      "sha256": "da5a378cca29f7e36c57a85f1daa4f1232a73f3153609fc1d6cad0e8fe3d6e49"
+    }
+  ]
+}
