@@ -9,6 +9,21 @@ import {
   hindawiFileChunk,
 } from "../server/hindawi.mjs";
 import { gallicaLink, gallicaBook, searchGallica } from "../server/gallica.mjs";
+
+test('Gallica production requests load only this deployment’s verified static file without relying on NETLIFY env', async t => {
+  const bytes = readFileSync('public/data/gallica/bpt6k5493777b.json.gz');
+  let calls = 0;
+  t.mock.method(globalThis, 'fetch', async url => {
+    calls++;
+    assert.equal(url, 'https://mlibrary-fedimechergui.netlify.app/data/gallica/bpt6k5493777b.json.gz');
+    return new Response(calls === 1 ? bytes : Buffer.concat([bytes, Buffer.from('tampered')]));
+  });
+  const edition = await gallicaBook('bpt6k5493777b', 'https://mlibrary-fedimechergui.netlify.app');
+  assert.ok(edition.content.text.includes('Germinal') || edition.content.text.includes('GERMINAL'));
+  await assert.rejects(gallicaBook('bpt6k5493777b', 'https://mlibrary-fedimechergui.netlify.app'), /integrity/);
+  await gallicaBook('bpt6k5493777b', 'https://unrelated.example');
+  assert.equal(calls, 2);
+});
 import handler from "../server/api.mjs";
 
 test("collection links accept official book identities and reject arbitrary file targets", () => {

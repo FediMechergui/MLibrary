@@ -3,6 +3,21 @@ import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import { vaultRequest } from "../server/vault.mjs";
 
+test('custom sync revisions work when a CDN removes standard conditional headers', async () => {
+  const token = randomBytes(32).toString('base64url'), id = createHash('sha256').update(token).digest('hex');
+  const url = `https://example.org/api/vault/${id}`;
+  const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream' };
+  const body = Buffer.concat([Buffer.from('MLV1'), randomBytes(100)]);
+  const put = revision => vaultRequest(new Request(url, { method: 'PUT', headers: { ...headers, 'X-Vault-Revision': revision }, body }));
+  assert.equal((await put('new')).status, 204);
+  const first = await vaultRequest(new Request(url, { headers }));
+  const revision = first.headers.get('x-vault-revision');
+  assert.ok(revision);
+  assert.equal((await put(revision)).status, 204);
+  assert.equal((await put(revision)).status, 409);
+  await vaultRequest(new Request(url, { method: 'DELETE', headers }));
+});
+
 test("private vault authenticates every operation, enforces conditional writes and supports deletion", async () => {
   const token = randomBytes(32).toString("base64url"),
     id = createHash("sha256").update(token).digest("hex");

@@ -40,8 +40,8 @@ export async function vaultRequest(request, context = {}, storage = store) {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers":
-      "Authorization, Content-Type, If-Match, If-None-Match",
-    "Access-Control-Expose-Headers": "ETag",
+      "Authorization, Content-Type, If-Match, If-None-Match, X-Vault-Revision",
+    "Access-Control-Expose-Headers": "ETag, X-Vault-Revision",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
   };
@@ -92,6 +92,7 @@ export async function vaultRequest(request, context = {}, storage = store) {
           ...headers,
           "Content-Type": "application/octet-stream",
           ETag: value.etag,
+          "X-Vault-Revision": value.etag,
         },
       });
     }
@@ -99,8 +100,15 @@ export async function vaultRequest(request, context = {}, storage = store) {
       await s.delete(id);
       return new Response(null, { status: 204, headers });
     }
-    const match = request.headers.get("if-match"),
-      fresh = request.headers.get("if-none-match") === "*";
+    // CDN caching layers may consume standard conditional request headers.
+    // Carry the application's revision separately, then apply native Blobs CAS.
+    const revision = request.headers.get("x-vault-revision"),
+      match =
+        revision && revision !== "new"
+          ? revision
+          : request.headers.get("if-match"),
+      fresh =
+        revision === "new" || request.headers.get("if-none-match") === "*";
     if (
       (!match && !fresh) ||
       (match && fresh) ||
@@ -143,7 +151,11 @@ export async function vaultRequest(request, context = {}, storage = store) {
       return reply("Another device synced. Merge and retry.", 409);
     return new Response(null, {
       status: 204,
-      headers: { ...headers, ETag: result.etag },
+      headers: {
+        ...headers,
+        ETag: result.etag,
+        "X-Vault-Revision": result.etag,
+      },
     });
   } catch {
     return reply(

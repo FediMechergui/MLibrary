@@ -38,14 +38,19 @@ export function gallicaMetadata(id) {
     );
   return record;
 }
-export async function gallicaBook(id) {
+export async function gallicaBook(id, origin) {
   const record = gallicaMetadata(id),
     path = `data/gallica/${id}.json.gz`;
   let bytes;
-  if (process.env.NETLIFY) {
-    const base = process.env.DEPLOY_URL;
-    if (!base || !/^https:\/\/[a-z0-9-]+\.netlify\.app$/.test(base))
-      throw new Error("Gallica collection deployment URL is unavailable");
+  const base = process.env.DEPLOY_URL || origin;
+  // Lambda runtime does not necessarily expose NETLIFY/DEPLOY_URL. The API
+  // supplies its own origin, constrained to this site's deployment hostnames.
+  if (
+    base &&
+    /^https:\/\/(?:[a-z0-9-]+--)?mlibrary-fedimechergui\.netlify\.app$/.test(
+      base,
+    )
+  ) {
     const response = await fetch(`${base}/${path}`, {
       signal: AbortSignal.timeout(20000),
       redirect: "error",

@@ -135,6 +135,7 @@ export default async function handler(request) {
     }
     if (path === "/content") {
       const data = await getContent(url.searchParams.get("id") || "", {
+        collectionOrigin: url.origin,
         language: url.searchParams.get("language") || "en",
         chapter: url.searchParams.get("chapter") || undefined,
         format: url.searchParams.get("format") || "auto",

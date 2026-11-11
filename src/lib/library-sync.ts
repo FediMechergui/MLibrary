@@ -226,7 +226,8 @@ export async function pullLibrary(
   if (response.status === 404) return null;
   if (!response.ok)
     throw new Error("Sync is unavailable. Your local library is safe.");
-  const etag = response.headers.get("etag");
+  const etag =
+    response.headers.get("x-vault-revision") || response.headers.get("etag");
   if (!etag) throw new Error("Sync revision missing. Please try again.");
   return {
     state: await decryptLibrary(await response.arrayBuffer(), recovery),
@@ -245,7 +246,7 @@ export async function pushLibrary(
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/octet-stream",
-      ...(etag ? { "If-Match": etag } : { "If-None-Match": "*" }),
+      "X-Vault-Revision": etag || "new",
     },
     body: await encryptLibrary(state, recovery),
   });
