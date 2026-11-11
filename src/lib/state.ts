@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { get, set, del } from "idb-keyval";
 import type { AppState, Book, BookContent } from "../types";
 import { embeddedMetadata, imagePdf } from "./book-metadata";
+import { stampChanges } from "./library-sync";
 const KEY = "mlibrary:v1";
 export const defaults: AppState = {
   version: 1,
@@ -43,13 +44,16 @@ function load(): AppState {
 export function useLibraryState() {
   const [state, setState] = useState<AppState>(load);
   const update = useCallback(
-    (fn: (previous: AppState) => AppState) =>
+    (fn: (previous: AppState) => AppState, preserveClocks = false) =>
       setState((previous) => {
-        const next = fn(previous);
+        const next = preserveClocks
+          ? fn(previous)
+          : stampChanges(previous, fn(previous));
         try {
           localStorage.setItem(KEY, JSON.stringify(next));
         } catch {
           window.dispatchEvent(new Event("mlibrary-storage-error"));
+          return previous;
         }
         return next;
       }),
@@ -115,7 +119,9 @@ export async function importBook(
   const book: Book = {
     id: `local:${hash}`,
     title:
-      origin?.title || metadata.title || file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
+      origin?.title ||
+      metadata.title ||
+      file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
     authors: metadata.authors || [],
     language: bookLanguage,
     languages: [bookLanguage],

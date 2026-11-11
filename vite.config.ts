@@ -50,7 +50,26 @@ for (const language of ["eng", "fra", "ara"]) {
   if (existsSync(legacy)) unlinkSync(legacy);
 }
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(process.env.MLIBRARY_NATIVE_BUILD === "1"
+      ? [
+          {
+            name: "native-public-assets",
+            closeBundle() {
+              const collection = resolve("public/data/gallica");
+              cpSync(resolve("public"), resolve("dist"), {
+                recursive: true,
+                filter: (source) =>
+                  source !== collection &&
+                  !source.startsWith(collection + "/") &&
+                  !source.startsWith(collection + "\\"),
+              });
+            },
+          },
+        ]
+      : []),
+  ],
   server: {
     host: "127.0.0.1",
     port: 5173,
@@ -65,5 +84,10 @@ export default defineConfig({
     },
     proxy: { "/api": "http://127.0.0.1:8889" },
   },
-  build: { chunkSizeWarningLimit: 900 },
+  // Gallica texts are served on demand by the backend. Do not put the entire
+  // public collection into every Android installation.
+  build: {
+    chunkSizeWarningLimit: 900,
+    copyPublicDir: process.env.MLIBRARY_NATIVE_BUILD !== "1",
+  },
 });

@@ -1,7 +1,7 @@
 {
   "name": "mlibrary",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "icons": "node scripts/generate-icons.mjs",
@@ -13,6 +13,8 @@
     "test:e2e": "playwright test",
     "android:sync": "npm run build && cap sync android",
     "android:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-android.ps1",
+    "android:store": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-store.ps1",
+    "catalog:openiti": "node scripts/seed-openiti.mjs",
     "catalog:seed": "node scripts/bulk-seed.mjs",
     "deploy": "netlify deploy --build --prod",
     "catalog:openaccess": "node scripts/seed-openaccess.mjs"

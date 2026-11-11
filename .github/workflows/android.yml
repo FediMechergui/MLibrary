@@ -25,6 +25,7 @@ jobs:
       - run: npm run build
         env:
           VITE_API_BASE_URL: https://mlibrary-fedimechergui.netlify.app
+          MLIBRARY_NATIVE_BUILD: '1'
       - run: npx cap sync android
       - run: chmod +x android/gradlew && cd android && ./gradlew testDebugUnitTest assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4

@@ -6,6 +6,8 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 
 **Repository:** https://github.com/FediMechergui/MLibrary
 
+**Version 1.5.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.5.0). Portable backups with offline book files, optional encrypted device sync, 7,098 primary Arabic OpenITI editions, 710 French Gallica texts, automatic checked deployments, and a separately signed store bundle. [Release details](docs/RELEASE-1.5.md) · [Play preparation](docs/STORE-READINESS.md).
+
 **Version 1.4.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.4.0). Rectangle OCR for scanned pages, editable book metadata, a quote-card studio with Story/square/portrait/landscape exports, real page curls, and QDL shortcuts on Discover. Existing shelves and quotes remain compatible.
 
 **Version 1.3.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.3.0). QDL browser with PDF download-to-reader handoff, plus Open with / Share to MLibrary for PDF, EPUB and TXT. [Flow, real-record verification and limitations](docs/QDL-BROWSER-1.3.md). Any interactive verification is performed by the user; automated QDL catalogue access remains blocked.
@@ -96,13 +98,13 @@ $env:VITE_API_BASE_URL = 'https://mlibrary-fedimechergui.netlify.app'
 npm.cmd run android:build
 ```
 
-The installable development build is copied to `artifacts/MLibrary-debug.apk`. For macOS/Linux, build the web app with `VITE_API_BASE_URL`, run `npx cap sync android`, then `./gradlew assembleDebug` inside `android`. GitHub Actions can also build the APK on demand. Play Store publication requires a permanent signing key and release setup.
+The compatible sideload build is copied to `artifacts/MLibrary-debug.apk`. For macOS/Linux, build with `VITE_API_BASE_URL` and `MLIBRARY_NATIVE_BUILD=1`, run `npx cap sync android`, then `./gradlew assembleDebug` inside `android`. GitHub Actions also builds a development APK on demand; its certificate is not the local update certificate. `npm run android:store` produces a non-debuggable signed AAB using the protected local upload key. [Signing and Play Console steps](docs/STORE-READINESS.md).
 
 For a native smoke test, install and launch the debug APK on a disposable emulator. Find its PID with `adb shell pidof app.mlibrary.reader`, then run `adb forward tcp:9223 localabstract:webview_devtools_remote_<PID>`. Run `node scripts/android-smoke.mjs --reset`; the explicit reset clears this app's shelf and settings on the test device. The script checks the native runtime, reading controls, offline reopening, and Arabic RTL through the app's WebView and writes screenshots to `artifacts/`.
 
 Use `--reset --downloads-only` for a real Archive PDF download and offline scan check, or `--reset --publisher-only` for a real Standard Ebooks EPUB download, visible page turns, and offline reopening. These tests use public source endpoints and a disposable emulator. The version 1.0.0 GitHub APK uses the same local development signing certificate as 0.2.1 so it can update that installation; it is a sideloadable development-signed build, not a Play Store package.
 
-Book files live in IndexedDB. Shelves, progress, highlights, notes, quotes, tags, and preferences live in local storage. The existing version-1 storage key is migrated with defaults for new fields. Clearing app/site data removes them. Progress export includes this metadata, not book files. No user account or server-side personal reading history is created. The source directory and attribution links can open source information in an in-app browser; these pages are never used as the book reader. Run the native smoke test with `--reset --notes --books` to check quote sharing and real online editions in the app's own reader.
+Book files live in IndexedDB; shelves, progress, notes and preferences live in local storage. My Library → Backup & device sync exports a ZIP with optional book files and previews a validated merge when restoring. Legacy progress JSON can also be imported. Optional sync encrypts reading metadata on the device using a private recovery key; book files transfer through backups. The server stores one encrypted manifest per vault, up to 2 MiB. Keys stay on the device and cannot be recovered by the server. Disconnect and cloud deletion are available in the same panel. Clearing app/site data removes local content. The source directory and attribution links open source information separately from the native reader.
 
 Run `npm run icons` to regenerate web PNGs, Android launcher images, and splash screens from `public/icon.svg`. The Android adaptive foreground is the corresponding vector in `android/app/src/main/res/drawable/mlibrary_mark.xml`.
 
@@ -113,9 +115,9 @@ npm run build
 netlify deploy --prod --dir dist --functions netlify/functions --no-build
 ```
 
-`netlify.toml` defines routes, headers, bundled catalogue data, and the update schedule. The functions use a small Lambda wrapper because the local Windows filesystem did not support the CLI's V2 NFT bundler. Application logic remains standard `Request`/`Response` code in `server/`.
+`netlify.toml` defines routes, headers, bundled catalogue data and the update schedule. Catalogue/OCR endpoints use the existing Lambda adapter. Private sync uses a modern Netlify Function with strongly consistent Blobs reads and conditional writes. Gallica texts are separate static compressed files with SHA-256 integrity checks; the function bundle holds only their index. Android excludes the collection files and fetches books on demand.
 
-GitHub Actions runs checks on pushes to `main`; deployment uses the authenticated local Netlify CLI. Automated approval review rejected transferring the local Netlify token into GitHub secrets, so no credential transfer or GitHub deployment job is configured. Netlify's scheduled catalogue refresh operates independently. Keep signing files, `.env`, `.netlify`, and device data out of Git.
+GitHub Actions runs checks on `main`, then calls a site-specific Netlify build hook stored as `NETLIFY_BUILD_HOOK`. Netlify clones the private repository with a read-only deploy key; no personal Netlify token is stored in GitHub. Hourly Gutenberg and daily DOAB/OAPEN refreshes run independently. The weekly Arabic catalogue workflow updates the pinned OpenITI snapshot when its official revision changes, validates it and dispatches checks. Keep `.private`, signing files, `.env`, `.netlify` and device data out of Git.
 
 ## Project layout
 

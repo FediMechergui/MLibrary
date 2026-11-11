@@ -33,3 +33,20 @@ jobs:
         with:
           name: browser-test-results
           path: test-results
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Trigger verified production build
+        env:
+          BUILD_HOOK: ${{ secrets.NETLIFY_BUILD_HOOK }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -n "$BUILD_HOOK" || { echo 'Site build hook is not configured'; exit 1; }
+          HEAD_SHA=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq '.sha')
+          if [ "$HEAD_SHA" != "$GITHUB_SHA" ]; then echo 'A newer revision will deploy after its own checks'; exit 0; fi
+          curl --fail --silent --show-error --retry 2 --request POST --data '{}' "$BUILD_HOOK" > /dev/null

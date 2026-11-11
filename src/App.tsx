@@ -53,7 +53,7 @@ import {
   newEntry,
   useLibraryState,
 } from "./lib/state";
-import { getSources, getSyncStatus, searchBooks } from "./lib/api";
+import { API, getSources, getSyncStatus, searchBooks } from "./lib/api";
 import { BookCover } from "./components/BookCover";
 import { MyQuotes, ReadingPreferences } from "./components/ReadingNotes";
 import { SourcePanel } from "./components/SourceReader";
@@ -65,9 +65,12 @@ import { BookDetailsEditor } from "./components/BookDetailsEditor";
 import { updateBookDetails } from "./lib/book-metadata";
 import { studioText } from "./lib/studio-i18n";
 import { openNativeSource } from "./lib/source-view";
+import { useLibrarySync } from "./lib/use-library-sync";
+import { LibraryBackup } from "./components/LibraryBackup";
 const Reader = lazy(() => import("./components/Reader"));
 type Tab = "discover" | "library" | "quotes" | "journey" | "sources";
 const sourceNames: Record<string, string> = {
+  openiti: "OpenITI · KITAB",
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
   openlibrary: "Open Library",
@@ -89,6 +92,7 @@ const genreKeys: MessageKey[] = [
 ];
 export default function App() {
   const [state, update] = useLibraryState();
+  const librarySync = useLibrarySync(state, update);
   const t = translator(state.language);
   const r = readerText(state.language);
   const st = sourceText(state.language);
@@ -1109,6 +1113,7 @@ export default function App() {
                 />
               )}
               <p className="import-note">{t("importHint")}</p>
+              <LibraryBackup state={state} update={update} sync={librarySync} />
             </>
           )}
           {tab === "journey" && (
@@ -1180,6 +1185,17 @@ export default function App() {
             MLibrary<span className="brand-dot">.</span>
           </span>
           <p>{t("footer")}</p>
+          <a
+            href={`${API}/privacy.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {state.language === "ar"
+              ? "الخصوصية"
+              : state.language === "fr"
+                ? "Confidentialité"
+                : "Privacy"}
+          </a>
           <span>EN / FR / AR</span>
         </footer>
       </div>
@@ -1465,6 +1481,7 @@ export function Modal({
   return (
     <div
       className="modal-backdrop"
+      data-reader-overlay
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -1479,6 +1496,7 @@ export function Modal({
       >
         <button
           className="icon-button modal-close"
+          data-modal-close
           aria-label="Close"
           onClick={onClose}
         >

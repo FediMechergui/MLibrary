@@ -1,0 +1,836 @@
+{
+  "checkedAt": "2026-11-11T18:16:54.501Z",
+  "scope": "All 11 listed sources; representative searches and books, not every catalogue record.",
+  "checks": [
+    {
+      "source": "openiti",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://openiti.org/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 43708,
+      "signature": "3c21444f43",
+      "title": "Open Islamicate Texts Initiative",
+      "ms": 619
+    },
+    {
+      "source": "gutenberg",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://www.gutenberg.org/",
+      "contentType": "text/html",
+      "bytes": 30618,
+      "signature": "3c21444f43",
+      "title": "Free eBooks | Project Gutenberg",
+      "ms": 746
+    },
+    {
+      "source": "wikisource",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://wikisource.org/wiki/Wikisource:Main_Page",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 131072,
+      "signature": "3c21444f43",
+      "title": "Wikisource",
+      "ms": 941
+    },
+    {
+      "source": "openlibrary",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://openlibrary.org/",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 93542,
+      "signature": "3c21444f43",
+      "title": "Welcome to Open Library | Open Library",
+      "ms": 1072
+    },
+    {
+      "source": "hindawi",
+      "name": "collection page",
+      "status": "fail",
+      "http": 403,
+      "url": "https://www.safahat.org/books/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5562,
+      "signature": "3c21444f43",
+      "title": "Just a moment...",
+      "ms": 442
+    },
+    {
+      "source": "archive",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://archive.org/details/texts",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 2046,
+      "signature": "3c21444f43",
+      "title": "Internet Archive: Digital Library of Free &amp; Borrowable Texts, Movies, Music &amp; Wayback Machine",
+      "ms": 709
+    },
+    {
+      "source": "gallica",
+      "name": "collection page",
+      "status": "fail",
+      "http": 403,
+      "url": "https://gallica.bnf.fr/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5665,
+      "signature": "3c21444f43",
+      "title": "Attention Required! | Cloudflare",
+      "ms": 256
+    },
+    {
+      "source": "standardebooks",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://standardebooks.org/ebooks",
+      "contentType": "application/xhtml+xml; charset=utf-8",
+      "bytes": 34019,
+      "signature": "3c3f786d6c",
+      "title": "Browse Standard Ebooks - Standard Ebooks: Free and liberated ebooks, carefully produced for the true book lover",
+      "ms": 596
+    },
+    {
+      "source": "doab",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://doabooks.org/",
+      "contentType": "text/html;charset=UTF-8",
+      "bytes": 54458,
+      "signature": "3c21646f63",
+      "title": "Directory of Open Access Books | Directory of Open Access Books",
+      "ms": 747
+    },
+    {
+      "source": "oapen",
+      "name": "collection page",
+      "status": "pass",
+      "http": 200,
+      "url": "https://library.oapen.org/",
+      "contentType": "text/html;charset=utf-8",
+      "bytes": 33690,
+      "signature": "3c21444f43",
+      "title": "OAPEN Home",
+      "ms": 2083
+    },
+    {
+      "source": "qdl",
+      "name": "collection page",
+      "status": "fail",
+      "http": 403,
+      "url": "https://www.qdl.qa/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5497,
+      "signature": "3c21444f43",
+      "title": "Just a moment...",
+      "ms": 214
+    },
+    {
+      "source": "standardebooks",
+      "name": "anonymous OPDS",
+      "status": "fail",
+      "http": 401,
+      "url": "https://standardebooks.org/feeds/opds",
+      "contentType": "application/xhtml+xml; charset=utf-8",
+      "bytes": 7665,
+      "signature": "3c3f786d6c",
+      "title": "The Standard Ebooks OPDS feed - Standard Ebooks: Free and liberated ebooks, carefully produced for the true book lover",
+      "ms": 199
+    },
+    {
+      "source": "hindawi",
+      "name": "original publisher redirect",
+      "status": "fail",
+      "http": 403,
+      "url": "https://www.safahat.org/books/",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5562,
+      "signature": "3c21444f43",
+      "title": "Just a moment...",
+      "ms": 500
+    },
+    {
+      "source": "standardebooks",
+      "name": "EPUB link returns landing HTML",
+      "status": "fail",
+      "http": 200,
+      "url": "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice/downloads/jane-austen_pride-and-prejudice.epub",
+      "contentType": "application/xhtml+xml; charset=utf-8",
+      "bytes": 8845,
+      "signature": "3c3f786d6c",
+      "title": "Your Download Has Started! - Standard Ebooks: Free and liberated ebooks, carefully produced for the true book lover",
+      "ms": 153
+    },
+    {
+      "source": "standardebooks",
+      "name": "individual EPUB via publisher download action",
+      "status": "pass",
+      "http": 200,
+      "url": "https://standardebooks.org/ebooks/jane-austen/pride-and-prejudice/downloads/jane-austen_pride-and-prejudice.epub?source=download",
+      "contentType": "application/epub+zip",
+      "bytes": 135392,
+      "signature": "504b030414",
+      "ms": 877
+    },
+    {
+      "source": "gallica",
+      "name": "scan manifest",
+      "status": "fail",
+      "http": 403,
+      "url": "https://gallica.bnf.fr/iiif/ark:/12148/bpt6k5619759j/manifest.json",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5665,
+      "signature": "3c21444f43",
+      "title": "Attention Required! | Cloudflare",
+      "ms": 150
+    },
+    {
+      "source": "gallica",
+      "name": "document metadata",
+      "status": "fail",
+      "http": 403,
+      "url": "https://gallica.bnf.fr/services/OAIRecord?ark=ark:/12148/bpt6k5619759j",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5665,
+      "signature": "3c21444f43",
+      "title": "Attention Required! | Cloudflare",
+      "ms": 157
+    },
+    {
+      "source": "oapen",
+      "name": "documented REST search",
+      "status": "fail",
+      "http": 403,
+      "url": "https://library.oapen.org/rest/search?query=history&expand=metadata,bitstreams&limit=1",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 46,
+      "signature": "596f752061",
+      "ms": 71
+    },
+    {
+      "source": "doab",
+      "name": "OAI identify",
+      "status": "pass",
+      "http": 200,
+      "url": "https://directory.doabooks.org/oai/request?verb=Identify",
+      "contentType": "text/xml;charset=UTF-8",
+      "bytes": 1299,
+      "signature": "3c3f786d6c",
+      "ms": 317
+    },
+    {
+      "source": "qdl",
+      "name": "English catalogue",
+      "status": "fail",
+      "http": 403,
+      "url": "https://www.qdl.qa/en/search/site",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 5560,
+      "signature": "3c21444f43",
+      "title": "Just a moment...",
+      "ms": 177
+    },
+    {
+      "source": "gutenberg",
+      "name": "en search",
+      "status": "pass",
+      "count": 372,
+      "books": [
+        {
+          "id": "gutenberg:11",
+          "title": "Alice's Adventures in Wonderland"
+        },
+        {
+          "id": "gutenberg:12",
+          "title": "Through the Looking-Glass"
+        },
+        {
+          "id": "gutenberg:688",
+          "title": "The Goodness of St. Rocque, and Other Stories"
+        }
+      ],
+      "ms": 297
+    },
+    {
+      "source": "gutenberg",
+      "name": "en first result reader",
+      "status": "pass",
+      "id": "gutenberg:11",
+      "title": "Alice's Adventures in Wonderland",
+      "type": "text",
+      "chars": 167712,
+      "chapters": 0,
+      "ms": 2040
+    },
+    {
+      "source": "gutenberg",
+      "name": "fr search",
+      "status": "pass",
+      "count": 2,
+      "books": [
+        {
+          "id": "gutenberg:4650",
+          "title": "Candide, ou l'optimisme"
+        },
+        {
+          "id": "gutenberg:59859",
+          "title": "Candide, ou l'optimisme"
+        }
+      ],
+      "ms": 18
+    },
+    {
+      "source": "gutenberg",
+      "name": "fr first result reader",
+      "status": "pass",
+      "id": "gutenberg:4650",
+      "title": "Candide, ou l'optimisme",
+      "type": "text",
+      "chars": 224870,
+      "chapters": 0,
+      "ms": 1248
+    },
+    {
+      "source": "gutenberg",
+      "name": "ar search",
+      "status": "pass",
+      "count": 0,
+      "books": [],
+      "ms": 4
+    },
+    {
+      "source": "wikisource",
+      "name": "en search",
+      "status": "pass",
+      "count": 7552,
+      "books": [
+        {
+          "id": "wikisource:en:3600099",
+          "title": "Alice"
+        },
+        {
+          "id": "wikisource:en:1434",
+          "title": "Through the Looking-Glass, and What Alice Found There"
+        },
+        {
+          "id": "wikisource:en:619600",
+          "title": "Alice in Wonderland in Words of One Syllable"
+        }
+      ],
+      "ms": 388
+    },
+    {
+      "source": "wikisource",
+      "name": "en first result reader",
+      "status": "pass",
+      "id": "wikisource:en:3600099",
+      "title": "Alice",
+      "type": "text",
+      "chars": 580,
+      "chapters": 0,
+      "ms": 249
+    },
+    {
+      "source": "wikisource",
+      "name": "fr search",
+      "status": "pass",
+      "count": 7211,
+      "books": [
+        {
+          "id": "wikisource:fr:341801",
+          "title": "Candide, ou l’Optimisme"
+        },
+        {
+          "id": "wikisource:fr:341931",
+          "title": "Candide, ou l’Optimisme/Garnier 1877"
+        },
+        {
+          "id": "wikisource:fr:3280124",
+          "title": "Lyon en l’an 2000/Candide à Lyon"
+        }
+      ],
+      "ms": 400
+    },
+    {
+      "source": "wikisource",
+      "name": "fr first result reader",
+      "status": "pass",
+      "id": "wikisource:fr:341801",
+      "title": "Candide, ou l’Optimisme",
+      "type": "text",
+      "chars": 375,
+      "chapters": 2,
+      "ms": 199
+    },
+    {
+      "source": "wikisource",
+      "name": "ar search",
+      "status": "pass",
+      "count": 10880,
+      "books": [
+        {
+          "id": "wikisource:ar:9594",
+          "title": "مقدمة فتح الباري"
+        },
+        {
+          "id": "wikisource:ar:1898",
+          "title": "مقدمة ابن خلدون"
+        },
+        {
+          "id": "wikisource:ar:9700",
+          "title": "مقدمة ابن الصلاح"
+        }
+      ],
+      "ms": 438
+    },
+    {
+      "source": "wikisource",
+      "name": "ar first result reader",
+      "status": "pass",
+      "id": "wikisource:ar:9594",
+      "title": "مقدمة فتح الباري",
+      "type": "text",
+      "chars": 5154,
+      "chapters": 99,
+      "ms": 548
+    },
+    {
+      "source": "openlibrary",
+      "name": "en search",
+      "status": "pass",
+      "count": 12264,
+      "books": [
+        {
+          "id": "openlibrary:OL3845146W",
+          "title": "Innocent Abroad"
+        },
+        {
+          "id": "openlibrary:OL453668W",
+          "title": "Witches Abroad"
+        },
+        {
+          "id": "openlibrary:OL413674W",
+          "title": "Tom Sawyer Abroad"
+        }
+      ],
+      "ms": 937
+    },
+    {
+      "source": "openlibrary",
+      "name": "en first result reader",
+      "status": "unavailable",
+      "id": "openlibrary:OL3845146W",
+      "title": "Innocent Abroad",
+      "type": "source",
+      "message": "This catalogue record does not provide a readable digital edition in the selected language. Import your EPUB, PDF, or text copy to read and highlight it here.",
+      "ms": 2114
+    },
+    {
+      "source": "openlibrary",
+      "name": "fr search",
+      "status": "pass",
+      "count": 194,
+      "books": [
+        {
+          "id": "openlibrary:OL893707W",
+          "title": "Madame Bovary"
+        },
+        {
+          "id": "openlibrary:OL857580W",
+          "title": "La orgía perpetua"
+        },
+        {
+          "id": "openlibrary:OL43029832W",
+          "title": "Madame Bovary"
+        }
+      ],
+      "ms": 496
+    },
+    {
+      "source": "openlibrary",
+      "name": "fr first result reader",
+      "status": "pass",
+      "id": "openlibrary:OL893707W",
+      "title": "Madame Bovary",
+      "type": "text",
+      "chars": 1053942,
+      "chapters": 0,
+      "ms": 7257
+    },
+    {
+      "source": "openlibrary",
+      "name": "ar search",
+      "status": "pass",
+      "count": 10,
+      "books": [
+        {
+          "id": "openlibrary:OL39606924W",
+          "title": "ألف ليلة و ليلة"
+        },
+        {
+          "id": "openlibrary:OL39575373W",
+          "title": "ألف ليلة وليلة.com"
+        },
+        {
+          "id": "openlibrary:OL1599691W",
+          "title": "ليالي ألف ليلة"
+        }
+      ],
+      "ms": 875
+    },
+    {
+      "source": "openlibrary",
+      "name": "ar first result reader",
+      "status": "unavailable",
+      "id": "openlibrary:OL39606924W",
+      "title": "ألف ليلة و ليلة",
+      "type": "source",
+      "message": "This catalogue record does not provide a readable digital edition in the selected language. Import your EPUB, PDF, or text copy to read and highlight it here.",
+      "ms": 568
+    },
+    {
+      "source": "archive",
+      "name": "en search",
+      "status": "pass",
+      "count": 39912,
+      "books": [
+        {
+          "id": "archive:abroadcranethoma00craniala",
+          "title": "Abroad"
+        },
+        {
+          "id": "archive:Sampson_Option",
+          "title": "The Samson Option: Israel's Nuclear Arsenal & American Foreign Policy"
+        },
+        {
+          "id": "archive:TragedyAndHope_501",
+          "title": "Tragedy and Hope"
+        }
+      ],
+      "ms": 2456
+    },
+    {
+      "source": "archive",
+      "name": "en first result reader",
+      "status": "pass",
+      "id": "archive:abroadcranethoma00craniala",
+      "title": "Abroad",
+      "type": "text",
+      "chars": 36043,
+      "chapters": 0,
+      "ms": 3452
+    },
+    {
+      "source": "archive",
+      "name": "fr search",
+      "status": "pass",
+      "count": 65,
+      "books": [
+        {
+          "id": "archive:madamebovarymoeu00flau",
+          "title": "Madame Bovary : moeurs de province"
+        },
+        {
+          "id": "archive:MadameBovaryGustaveFlaubert_201711",
+          "title": "Madame Bovary - Gustave Flaubert"
+        },
+        {
+          "id": "archive:MadameBovaryMursDeProvincecavecUnePrfaceParAdolpheGondry",
+          "title": "Madame Bovary: moeurs de province /cavec une preface par Adolphe Gondry"
+        }
+      ],
+      "ms": 1001
+    },
+    {
+      "source": "archive",
+      "name": "fr first result reader",
+      "status": "pass",
+      "id": "archive:madamebovarymoeu00flau",
+      "title": "Madame Bovary : moeurs de province",
+      "type": "text",
+      "chars": 1045667,
+      "chapters": 0,
+      "ms": 3069
+    },
+    {
+      "source": "archive",
+      "name": "ar search",
+      "status": "pass",
+      "count": 299,
+      "books": [
+        {
+          "id": "archive:1_20210618_202106",
+          "title": "شرح المثنوي المعنوي المسمى بالمنهج القوي الشيخ يوسف ابن أحمد المولوي"
+        },
+        {
+          "id": "archive:123boukrika44_maktoob_20140109_2134",
+          "title": "ألف ليلة وليلة كاملة"
+        },
+        {
+          "id": "archive:aliadnanzoom_2345555432",
+          "title": "نجيب محفوظ - الأعمال الكاملة (10 أجزاء)"
+        }
+      ],
+      "ms": 2906
+    },
+    {
+      "source": "archive",
+      "name": "ar first result reader",
+      "status": "fail",
+      "error": "The operation was aborted due to timeout",
+      "ms": 24015
+    },
+    {
+      "source": "doab",
+      "name": "en search",
+      "status": "pass",
+      "count": 4785,
+      "books": [
+        {
+          "id": "doab:184783",
+          "title": "Passing to América"
+        },
+        {
+          "id": "doab:151966",
+          "title": "The Routledge Handbook of Human-Animal Relations in the Byzantine World"
+        },
+        {
+          "id": "doab:183969",
+          "title": "Combating the Hydra"
+        }
+      ],
+      "ms": 2060
+    },
+    {
+      "source": "doab",
+      "name": "en first result reader",
+      "status": "fail",
+      "error": "Source returned 403",
+      "ms": 12418
+    },
+    {
+      "source": "doab",
+      "name": "fr search",
+      "status": "pass",
+      "count": 1242,
+      "books": [
+        {
+          "id": "doab:185679",
+          "title": "La publicité en Chine"
+        },
+        {
+          "id": "doab:185730",
+          "title": "Des banques sous surveillance ?"
+        },
+        {
+          "id": "doab:185726",
+          "title": "Révolutions et relectures du passé"
+        }
+      ],
+      "ms": 174
+    },
+    {
+      "source": "doab",
+      "name": "fr first result reader",
+      "status": "unavailable",
+      "id": "doab:185679",
+      "title": "La publicité en Chine",
+      "type": "source",
+      "message": "No supported public file is available for this edition. Try another format, edition, or import your copy.",
+      "ms": 1577
+    },
+    {
+      "source": "doab",
+      "name": "ar search",
+      "status": "pass",
+      "count": 3,
+      "books": [
+        {
+          "id": "doab:185482",
+          "title": "السودان من عصور ما قبل التاريخ إلى فتح محمد علي"
+        },
+        {
+          "id": "doab:87292",
+          "title": "أطلس مصر المعاصرة"
+        },
+        {
+          "id": "doab:144573",
+          "title": "السلطان الشريف – الجذور الدينية والسياسية للدولة المخزنية في المغرب"
+        }
+      ],
+      "ms": 11
+    },
+    {
+      "source": "doab",
+      "name": "ar first result reader",
+      "status": "unavailable",
+      "id": "doab:185482",
+      "title": "السودان من عصور ما قبل التاريخ إلى فتح محمد علي",
+      "type": "source",
+      "message": "No supported public file is available for this edition. Try another format, edition, or import your copy.",
+      "ms": 1446
+    },
+    {
+      "source": "oapen",
+      "name": "en search",
+      "status": "pass",
+      "count": 3395,
+      "books": [
+        {
+          "id": "oapen:100945",
+          "title": "Passing to América"
+        },
+        {
+          "id": "oapen:94221",
+          "title": "Combating the Hydra"
+        },
+        {
+          "id": "oapen:28341",
+          "title": "Modernism as Institution"
+        }
+      ],
+      "ms": 296
+    },
+    {
+      "source": "oapen",
+      "name": "en first result reader",
+      "status": "fail",
+      "error": "Source returned 403",
+      "ms": 5230
+    },
+    {
+      "source": "oapen",
+      "name": "fr search",
+      "status": "pass",
+      "count": 47,
+      "books": [
+        {
+          "id": "oapen:105624",
+          "title": "Histoire du texte des ›Parva naturalia‹ d’Aristote"
+        },
+        {
+          "id": "oapen:91710",
+          "title": "Le privilège d'une éducation transnationale"
+        },
+        {
+          "id": "oapen:25750",
+          "title": "Le Théâtre de Dumas père, entre héritage et renouvellement"
+        }
+      ],
+      "ms": 165
+    },
+    {
+      "source": "oapen",
+      "name": "fr first result reader",
+      "status": "fail",
+      "error": "Source returned 429",
+      "ms": 10554
+    },
+    {
+      "source": "oapen",
+      "name": "ar search",
+      "status": "pass",
+      "count": 0,
+      "books": [],
+      "ms": 31
+    },
+    {
+      "source": "gallica",
+      "name": "fr search",
+      "status": "pass",
+      "count": 1,
+      "books": [
+        {
+          "id": "gallica:bpt6k5493777b",
+          "title": "Germinal"
+        }
+      ],
+      "ms": 47
+    },
+    {
+      "source": "gallica",
+      "name": "fr first result reader",
+      "status": "pass",
+      "id": "gallica:bpt6k5493777b",
+      "title": "Germinal",
+      "type": "text",
+      "chars": 1015916,
+      "chapters": 0,
+      "ms": 53
+    },
+    {
+      "source": "openiti",
+      "name": "ar search",
+      "status": "pass",
+      "count": 33,
+      "books": [
+        {
+          "id": "openiti:0505Ghazali.AsnafMaghrurin.JK010255-ara1",
+          "title": "أصناف المغرورين"
+        },
+        {
+          "id": "openiti:0505Ghazali.BidayatHidaya.Shamela0012718-ara1",
+          "title": "بداية الهداية"
+        },
+        {
+          "id": "openiti:0505Ghazali.Fadaih.JK000345-ara1",
+          "title": "فضائح الباطنية"
+        }
+      ],
+      "ms": 456
+    },
+    {
+      "source": "openiti",
+      "name": "ar first result reader",
+      "status": "pass",
+      "id": "openiti:0505Ghazali.AsnafMaghrurin.JK010255-ara1",
+      "title": "أصناف المغرورين",
+      "type": "text",
+      "chars": 36962,
+      "chapters": 0,
+      "ms": 464
+    },
+    {
+      "source": "archive",
+      "name": "restricted edition remains unavailable",
+      "status": "pass",
+      "type": "source",
+      "message": "This edition requires borrowing or source authorization; a public reader file is not offered.",
+      "ms": 918
+    },
+    {
+      "source": "archive",
+      "name": "actual scanned PDF bytes",
+      "status": "pass",
+      "bytes": 65536,
+      "total": 7005056,
+      "signature": "%PDF-",
+      "ms": 2467
+    },
+    {
+      "source": "hindawi",
+      "name": "advertised Arabic PDF reader import",
+      "status": "pass",
+      "type": "remote",
+      "format": "pdf",
+      "ms": 3870
+    },
+    {
+      "source": "standardebooks",
+      "name": "individual EPUB reader import",
+      "status": "pass",
+      "type": "remote",
+      "format": "epub",
+      "ms": 680
+    }
+  ]
+}

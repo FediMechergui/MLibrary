@@ -83,9 +83,18 @@ export async function loadBook(
   options.signal?.throwIfAborted();
   if (
     local &&
-    (!chapter || (local.type === "text" && local.chapter === chapter))
+    (!chapter ||
+      (local.type === "text" &&
+        (local.chapter === chapter ||
+          Object.hasOwn(local.sections || {}, chapter))))
   )
-    return { content: local, offline: true };
+    return {
+      content:
+        local.type === "text" && chapter && local.sections?.[chapter]
+          ? { ...local, text: local.sections[chapter], chapter }
+          : local,
+      offline: true,
+    };
   if (["gutenberg:1342", "gutenberg:11"].includes(book.id)) {
     const response = await fetch(`/data/${book.id.replace(":", "-")}.json`, {
       signal: requestSignal(options.signal),
@@ -112,7 +121,7 @@ export async function loadBook(
   );
   const downloadedText =
     data.type === "text" &&
-    ["archive", "openlibrary", "oapen", "doab", "gallica"].includes(
+    ["archive", "openlibrary", "oapen", "doab", "gallica", "openiti"].includes(
       book.source,
     ) &&
     !data.chapters.length;
@@ -140,6 +149,33 @@ export async function loadBook(
     );
   }
   return { content, offline: true };
+}
+export async function downloadTextSections(
+  book: Book,
+  content: Extract<BookContent, { type: "text" }>,
+  signal?: AbortSignal,
+) {
+  if (book.source !== "openiti" || !content.chapters.length || content.sections)
+    return content;
+  const sections: Record<string, string> = {};
+  let total = 0;
+  for (const chapter of content.chapters) {
+    if (!chapter.id || !/^part-[1-9]\d{0,3}$/.test(chapter.id))
+      throw new Error("Invalid book section");
+    signal?.throwIfAborted();
+    const part =
+      chapter.id === content.chapter
+        ? content
+        : (await loadBook(book, chapter.id, { signal, bypassOffline: true }))
+            .content;
+    if (part.type !== "text" || part.chapter !== chapter.id)
+      throw new Error("Incomplete book section");
+    total += new TextEncoder().encode(part.text).length;
+    if (total > 50 * 1024 * 1024)
+      throw new Error("This book exceeds the offline text limit");
+    sections[chapter.id] = part.text;
+  }
+  return { ...content, sections };
 }
 function archiveFileUrl(value: string) {
   const url = new URL(value);

@@ -24,6 +24,7 @@ export type BookContent =
       sourceUrl: string;
       attribution: string;
       chapter?: string;
+      sections?: Record<string, string>;
     }
   | {
       type: "epub";
@@ -130,6 +131,10 @@ export type ReaderSettings = {
   focus: boolean;
 };
 export type AppState = {
+  sync?: {
+    clocks: Record<string, { at: number; device: string }>;
+    activity: Record<string, Record<string, number>>;
+  };
   version: 1;
   language: Language;
   shelf: Record<string, ShelfEntry>;

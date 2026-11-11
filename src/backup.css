@@ -1,0 +1,108 @@
+.library-backup {
+  border-block: 1px solid var(--line);
+  margin-block: 25px;
+}
+.backup-heading {
+  width: 100%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  text-align: start;
+  padding: 18px 0;
+  min-height: 64px;
+}
+.backup-heading span:nth-child(2) {
+  flex: 1;
+}
+.backup-heading strong,
+.backup-heading small {
+  display: block;
+}
+.backup-heading small {
+  color: var(--muted);
+  margin-top: 5px;
+}
+.backup-body {
+  padding-block: 4px 22px;
+}
+.backup-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.backup-body h3 {
+  font: 25px var(--serif);
+  margin-bottom: 12px;
+}
+.backup-body p,
+.backup-restore p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-block: 12px;
+  overflow-wrap: anywhere;
+}
+.backup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-block: 15px;
+}
+.backup-actions button {
+  min-height: 44px;
+}
+.backup-check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.backup-check input {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  accent-color: var(--green);
+}
+.recovery-key {
+  margin-block: 18px;
+}
+.recovery-key input {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 10px;
+  font-family: monospace;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.backup-body .backup-error {
+  color: #a42c42;
+}
+.backup-confirm {
+  border-inline-start: 2px solid var(--green);
+  padding-inline-start: 14px;
+}
+.backup-restore {
+  background: var(--surface);
+  padding: 28px;
+  border-radius: 18px;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 50px);
+  overflow: auto;
+}
+.backup-restore > .icon-button {
+  float: inline-end;
+}
+@media (max-width: 700px) {
+  .backup-columns {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .backup-actions .button {
+    flex: 1 1 auto;
+  }
+}

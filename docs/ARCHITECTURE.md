@@ -4,13 +4,17 @@
 
 The React/TypeScript interface is bundled by Vite and shared between Netlify and the Capacitor Android app. Native builds set an absolute `VITE_API_BASE_URL`; web builds use the same-origin API. Reader fonts are bundled. Gutenberg starter books are included with their original license notices.
 
-The backend normalizes editions from four sources. Gutenberg searches an official compressed catalogue snapshot. Wikisource uses independent Arabic, French, and English queries. Open Library and Internet Archive are discovery adapters. Each source can fail independently; the response identifies unavailable providers instead of showing an invented empty catalogue. Source result totals are shown individually.
+The backend connects Gutenberg, Wikisource, Open Library, Internet Archive, DOAB, OAPEN, Gallica and OpenITI search. Safahat, Standard Ebooks and QDL have individual-book/browser import flows. Each source can fail independently; errors never become invented empty catalogues. Provider totals are edition/record counts, not globally deduplicated readable-book counts. Similar titles remain separate until stronger identifiers establish identity.
 
 Netlify Blobs holds the refreshed Gutenberg snapshot and a bounded query cache. The scheduled updater conditionally fetches the official CSV, checks that it contains a plausible complete set, then replaces the compressed snapshot. It records success only after storage succeeds. A failed update leaves the last successful index usable. The function bundle also includes a seed snapshot, so first deployment does not depend on a successful cron run.
 
 This is suitable for a first catalogue of tens of thousands of locally indexed records and broader federated discovery. It is not a horizontally scalable search system for hundreds of millions of editions. Parsing a full snapshot in a serverless process and relying on provider APIs would become inappropriate at that scale.
 
-Reading files and bookmarks are device-local. Imported files are hashed to identify duplicates. EPUB iframes disable scripts. PDF.js is loaded only when needed and uses a worker. Plain text is paginated with font measurements; scroll mode uses the same logical pages. Reading time accrues only while a loaded reader is visible, with an inactivity limit. Milestones use actual stored activity, not seeded achievements.
+Reading files are device-local and imported files are hashed to identify duplicates. Optional encrypted sync transfers reading metadata using a generated 256-bit recovery key. HKDF separates the AES-GCM encryption key from the capability authentication token. The backend verifies SHA-256(token) against the vault ID; conditional writes detect races. Per-record timestamp/device clocks retain deletions, and per-device activity counters merge without double-counting. Concurrent changes to one shelf entry use last-write-wins; independent notes merge independently. Backup ZIPs carry metadata plus optional files, validate size/type/hash before preview, and roll back file changes if metadata storage fails.
+
+EPUB scripts remain disabled. PDF.js runs its parser in a worker. Plain text is paginated with font measurements; scroll mode uses the same logical pages. Reading time accrues only in a visible active reader. Milestones use actual activity.
+
+OpenITI uses a pinned official release and primary Arabic editions. Long texts are split into bounded responses; complete offline downloads fetch all sections before committing. Gallica uses a small searchable metadata index and separate compressed public text files, verified against their recorded hashes. The Android package excludes these collection files.
 
 ## Next scale
 

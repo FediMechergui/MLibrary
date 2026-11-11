@@ -201,11 +201,11 @@ test("source directory distinguishes integrated books from external collections"
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Our sources", exact: true }).click();
-  await expect(page.locator(".source-row")).toHaveCount(10);
+  await expect(page.locator(".source-row")).toHaveCount(11);
   await expect(page.locator(".source-summary")).toContainText(
     "A catalogue record is not a free copy",
   );
-  await expect(page.locator(".source-tag.integrated")).toHaveCount(3);
+  await expect(page.locator(".source-tag.integrated")).toHaveCount(4);
   await expect(page.locator('[data-source="gallica"] .source-tag')).toHaveClass(
     /integrated/,
   );

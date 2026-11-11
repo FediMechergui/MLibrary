@@ -62,7 +62,16 @@ for arg in sys.argv[1:]:
             records[book['id']] = {'book': book, 'text': text}
 if not records:
     raise ValueError('No valid complete TEI documents')
-output = {'updatedAt': datetime.now(timezone.utc).isoformat(), 'provenance': provenance, 'excluded': excluded, 'records': list(records.values())}
+content_dir = Path('public/data/gallica')
+content_dir.mkdir(parents=True, exist_ok=True)
+index = []
+for record in records.values():
+    book = record['book']
+    content = {'type': 'text', 'text': record['text'], 'chapters': [], 'sourceUrl': book['sourceUrl'], 'attribution': book['rights']}
+    packed = gzip.compress(json.dumps(content, ensure_ascii=False, separators=(',', ':')).encode(), mtime=0)
+    content_dir.joinpath(book['id'].split(':')[1] + '.json.gz').write_bytes(packed)
+    index.append({'book': book, 'sha256': hashlib.sha256(packed).hexdigest(), 'bytes': len(packed)})
+output = {'updatedAt': datetime.now(timezone.utc).isoformat(), 'provenance': provenance, 'excluded': excluded, 'records': index}
 target = Path('server/data/gallica.json.gz')
 target.with_suffix('.tmp').write_bytes(gzip.compress(json.dumps(output, ensure_ascii=False, separators=(',', ':')).encode(), mtime=0))
 target.with_suffix('.tmp').replace(target)

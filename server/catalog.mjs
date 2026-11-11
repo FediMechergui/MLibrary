@@ -1,9 +1,11 @@
 import { searchGutenberg } from "./gutenberg.mjs";
 import { searchOpenAccess } from "./openaccess-catalog.mjs";
 import { searchGallica } from "./gallica.mjs";
+import { searchOpenITI } from "./openiti.mjs";
 import { diagnose, sourceFromUrl, sourcePolicy } from "./source-policy.mjs";
 export const LANGUAGES = ["en", "fr", "ar"];
 export const SOURCES = [
+  "openiti",
   "gutenberg",
   "wikisource",
   "openlibrary",
@@ -14,6 +16,17 @@ export const SOURCES = [
 ];
 const codes = { en: "eng", fr: "fre", ar: "ara" };
 export const sourceDirectory = [
+  {
+    id: "openiti",
+    name: "OpenITI · KITAB",
+    languages: ["ar"],
+    url: "https://openiti.org",
+    kind: "integrated",
+    description:
+      "Primary Arabic editions from the Open Islamicate Texts Initiative, with full text in the reader.",
+    rights:
+      "CC BY-NC-SA 4.0. Attribute OpenITI / KITAB, retain the license, and use noncommercially.",
+  },
   {
     id: "gutenberg",
     name: "Project Gutenberg",
@@ -380,7 +393,11 @@ export async function searchCatalog(options) {
     options.source === "all"
       ? options.q
         ? SOURCES
-        : ["gutenberg", "wikisource"]
+        : [
+            "gutenberg",
+            "wikisource",
+            ...(options.language === "ar" ? ["openiti"] : []),
+          ]
       : [options.source]
   ).filter((s) => !options.excluded?.includes(s));
   const tasks = selected.flatMap((source) =>
@@ -394,9 +411,13 @@ export async function searchCatalog(options) {
             run: () =>
               ["doab", "oapen"].includes(source)
                 ? searchOpenAccess({ ...options, source })
-                : { gutenberg, openlibrary, archive, gallica: searchGallica }[
-                    source
-                  ](options),
+                : {
+                    gutenberg,
+                    openlibrary,
+                    archive,
+                    gallica: searchGallica,
+                    openiti: searchOpenITI,
+                  }[source](options),
           },
         ],
   );

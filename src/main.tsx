@@ -13,6 +13,7 @@ import "./styles.css";
 import "./reading-room.css";
 import "./release.css";
 import "./studio.css";
+import "./backup.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

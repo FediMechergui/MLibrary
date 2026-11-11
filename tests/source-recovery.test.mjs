@@ -61,7 +61,7 @@ test("disabled providers are never requested by federated search", async (t) => 
   });
   const options = validateSearch(
     new URLSearchParams(
-      "q=Alice&exclude=wikisource,archive,openlibrary,doab,oapen,gallica",
+      "q=Alice&exclude=wikisource,archive,openlibrary,doab,oapen,gallica,openiti",
     ),
   );
   const result = await searchCatalog(options);

@@ -5,6 +5,7 @@ import {
   SOURCES,
 } from "./catalog.mjs";
 import { ocrRequest } from "./ocr.mjs";
+import { vaultRequest } from "./vault.mjs";
 import {
   openAccessLink,
   openAccessEdition,
@@ -13,7 +14,7 @@ import {
 import { cachedSearch, store } from "./storage.mjs";
 import { getContent } from "./content.mjs";
 import { hindawiLink, hindawiEdition, hindawiFileChunk } from "./hindawi.mjs";
-import { gallicaLink, gallicaBook } from "./gallica.mjs";
+import { gallicaLink, gallicaMetadata } from "./gallica.mjs";
 import { getReaderFileChunk } from "./reading.mjs";
 import { diagnose } from "./source-policy.mjs";
 import { sourceAudit } from "./source-audit.mjs";
@@ -29,7 +30,14 @@ const headers = {
   "X-Content-Type-Options": "nosniff",
 };
 export default async function handler(request) {
-  if (/\/(?:api|\.netlify\/functions\/api)\/ocr\/?$/.test(new URL(request.url).pathname)) return ocrRequest(request);
+  if (/\/vault\//.test(new URL(request.url).pathname))
+    return vaultRequest(request);
+  if (
+    /\/(?:api|\.netlify\/functions\/api)\/ocr\/?$/.test(
+      new URL(request.url).pathname,
+    )
+  )
+    return ocrRequest(request);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "GET")
@@ -42,7 +50,7 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "1.3.0", time: new Date().toISOString() },
+        { status: "ok", version: "1.5.0", time: new Date().toISOString() },
         { headers },
       );
     if (path === "/sources")
@@ -63,7 +71,7 @@ export default async function handler(request) {
       const edition =
         source === "hindawi"
           ? await hindawiEdition(hindawiLink(link))
-          : gallicaBook(gallicaLink(link));
+          : gallicaMetadata(gallicaLink(link));
       return Response.json({ book: edition.book }, { headers });
     }
     if (path === "/import-standard") {

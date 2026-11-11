@@ -21,7 +21,7 @@ async function probe(url, expected) {
   const response = await fetch(url, {
     signal: AbortSignal.timeout(20000),
     headers: {
-      "User-Agent": "MLibrary/1.0 (https://github.com/FediMechergui/MLibrary)",
+      "User-Agent": "MLibrary/1.5 (https://github.com/FediMechergui/MLibrary)",
     },
   });
   const reader = response.body?.getReader();
@@ -109,9 +109,14 @@ const queries = {
   wikisource: ["Alice", "Candide", "مقدمة"],
   openlibrary: ["Abroad", "Madame Bovary", "ألف ليلة"],
   archive: ["Abroad", "Madame Bovary", "ألف ليلة"],
+  doab: ["history", "histoire", "تاريخ"],
+  oapen: ["history", "histoire", "تاريخ"],
+  gallica: [null, "Germinal", null],
+  openiti: [null, null, "الغزالي"],
 };
 for (const [source, terms] of Object.entries(queries)) {
   for (const [index, language] of ["en", "fr", "ar"].entries()) {
+    if (terms[index] === null) continue;
     let book;
     await check(source, `${language} search`, async () => {
       const result = await searchCatalog({
@@ -162,14 +167,22 @@ await check("archive", "actual scanned PDF bytes", async () => {
   if (signature !== "%PDF-") throw new Error("PDF signature missing");
   return { bytes: result.bytes.length, total: result.size, signature };
 });
+await check('hindawi', 'advertised Arabic PDF reader import', async () => {
+  const data = await getContent('hindawi:86869064');
+  return { type: data.type, format: data.format, status: data.type === 'remote' ? 'pass' : 'unavailable' };
+});
+await check('standardebooks', 'individual EPUB reader import', async () => {
+  const data = await getContent('standardebooks:jane-austen/pride-and-prejudice');
+  return { type: data.type, format: data.format, status: data.type === 'remote' ? 'pass' : 'unavailable' };
+});
 await mkdir("artifacts", { recursive: true });
 await writeFile(
-  "artifacts/source-audit.json",
+  "artifacts/source-audit-1.5.json",
   JSON.stringify(
     {
       checkedAt: new Date().toISOString(),
       scope:
-        "All 10 listed sources; representative searches and books, not every catalogue record.",
+        `All ${sourceDirectory.length} listed sources; representative searches and books, not every catalogue record.`,
       checks,
     },
     null,

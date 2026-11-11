@@ -1,4 +1,10 @@
 apply plugin: 'com.android.application'
+def uploadStore = System.getenv('MLIBRARY_UPLOAD_STORE')
+def uploadPassword = System.getenv('MLIBRARY_UPLOAD_PASSWORD')
+def hasUploadKey = uploadStore && uploadPassword
+if (gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') } && !hasUploadKey) {
+    throw new GradleException('Release signing requires MLIBRARY_UPLOAD_STORE and MLIBRARY_UPLOAD_PASSWORD. Use scripts/build-store.ps1 on the signing computer.')
+}
 
 android {
     namespace = "app.mlibrary.reader"
@@ -7,8 +13,8 @@ android {
         applicationId "app.mlibrary.reader"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.4.0"
+        versionCode 9
+        versionName "1.5.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,8 +22,21 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        upload {
+            if (hasUploadKey) {
+                storeFile file(uploadStore)
+                storePassword uploadPassword
+                keyAlias 'mlibrary-upload'
+                keyPassword uploadPassword
+                storeType 'PKCS12'
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.upload
+            debuggable false
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

@@ -1,4 +1,6 @@
 import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 let snapshot;
 function records() {
@@ -25,7 +27,7 @@ export function searchGallica({ q = "", language = "all", page = 1 }) {
     hasMore: page * 24 < matches.length,
   };
 }
-export function gallicaBook(id) {
+export function gallicaMetadata(id) {
   if (!/^bpt6k\d+[a-z0-9]$/.test(id))
     throw new Error("Invalid Gallica edition");
   const record = records().find((r) => r.book.id === `gallica:${id}`);
@@ -34,15 +36,47 @@ export function gallicaBook(id) {
       new Error("This edition is not in the imported Gallica text collection."),
       { status: 404, code: "not-imported" },
     );
+  return record;
+}
+export async function gallicaBook(id) {
+  const record = gallicaMetadata(id),
+    path = `data/gallica/${id}.json.gz`;
+  let bytes;
+  if (process.env.NETLIFY) {
+    const base = process.env.DEPLOY_URL;
+    if (!base || !/^https:\/\/[a-z0-9-]+\.netlify\.app$/.test(base))
+      throw new Error("Gallica collection deployment URL is unavailable");
+    const response = await fetch(`${base}/${path}`, {
+      signal: AbortSignal.timeout(20000),
+      redirect: "error",
+    });
+    if (!response.ok)
+      throw new Error(`Gallica collection file returned ${response.status}`);
+    const reader = response.body.getReader(),
+      chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.length;
+      if (size > 5 * 1024 * 1024) {
+        await reader.cancel();
+        throw new Error("Gallica collection size limit exceeded");
+      }
+      chunks.push(value);
+    }
+    bytes = Buffer.concat(chunks);
+  } else bytes = await readFile(`public/${path}`);
+  if (
+    bytes.length !== record.bytes ||
+    createHash("sha256").update(bytes).digest("hex") !== record.sha256
+  )
+    throw new Error("Gallica collection integrity check failed");
   return {
     book: record.book,
-    content: {
-      type: "text",
-      text: record.text,
-      chapters: [],
-      sourceUrl: record.book.sourceUrl,
-      attribution: record.book.rights,
-    },
+    content: JSON.parse(
+      gunzipSync(bytes, { maxOutputLength: 5 * 1024 * 1024 }),
+    ),
   };
 }
 export function gallicaLink(value) {

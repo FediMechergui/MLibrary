@@ -1,4 +1,4 @@
-const VERSION = "mlibrary-shell-v5";
+const VERSION = "mlibrary-shell-v6";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches

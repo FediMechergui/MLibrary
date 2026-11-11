@@ -24,7 +24,7 @@ export function store() {
 }
 export function cacheKey(options) {
   return createHash("sha256")
-    .update(JSON.stringify({ revision: 3, ...options }))
+    .update(JSON.stringify({ revision: 4, ...options }))
     .digest("hex");
 }
 export async function cachedSearch(options, fetcher) {

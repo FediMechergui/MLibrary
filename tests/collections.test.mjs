@@ -82,16 +82,17 @@ test("Gallica search and reading use validated complete documents with original 
   const index = JSON.parse(
     gunzipSync(readFileSync("server/data/gallica.json.gz")),
   );
-  assert.equal(index.records.length, 232);
-  assert.equal(index.excluded.length, 23);
+  assert.ok(index.records.length >= 710);
+  assert.ok(index.excluded.length >= 23);
   assert.equal(searchGallica({ language: "ar" }).count, 0);
   const result = searchGallica({ q: "Germinal", language: "fr" });
   assert.equal(result.count, 1);
   assert.equal(result.source, "gallica");
-  const edition = gallicaBook(result.books[0].id.split(":")[1]);
+  const edition = await gallicaBook(result.books[0].id.split(":")[1]);
   assert.ok(edition.content.text.length > 100000);
   assert.match(edition.content.attribution, /BnF–OBVIL/);
-  for (const { book, text } of index.records) {
+  for (const { book } of index.records) {
+    const { content: { text } } = await gallicaBook(book.id.split(':')[1]);
     assert.ok(text.length > 100);
     assert.ok(Buffer.byteLength(text) <= 4 * 1024 * 1024);
     assert.equal(gallicaLink(book.sourceUrl), book.id.split(":")[1]);

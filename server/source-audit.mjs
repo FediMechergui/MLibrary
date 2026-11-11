@@ -1,6 +1,11 @@
 // Evidence: docs/SOURCE-AUDIT-1.0.md and scripts/audit-sources.mjs.
 // These are dated observations, not a claim of continuous availability.
 const findings = {
+  openiti: [
+    "limited",
+    "Primary Arabic editions are indexed from an official, pinned OpenITI release. Full texts open in the reader; large works are divided into navigable sections. OCR and transcription quality varies.",
+    "Search in Arabic or transliterated author/title. Open Contents for large works. Download fetches every section before marking the complete work offline. Files above 50 MiB require a smaller volume. Preserve OpenITI attribution and the CC BY-NC-SA license.",
+  ],
   gutenberg: [
     "working",
     "English and French searches and full texts passed. An intermittent English text timeout passed on recheck. The Arabic query returned no matches; Arabic coverage is very limited.",
@@ -58,10 +63,12 @@ export function sourceAudit(id) {
     status,
     finding,
     solution,
-    checkedAt: ["hindawi", "gallica", "qdl"].includes(id)
-      ? "2026-11-10T12:00:00.000Z"
-      : ["doab", "oapen"].includes(id)
-        ? "2026-11-10T10:22:43.462Z"
-        : "2026-11-10T08:48:20.420Z",
+    checkedAt: ["openiti", "gallica"].includes(id)
+      ? "2026-11-11T18:00:00.000Z"
+      : ["hindawi", "qdl"].includes(id)
+        ? "2026-11-10T12:00:00.000Z"
+        : ["doab", "oapen"].includes(id)
+          ? "2026-11-10T10:22:43.462Z"
+          : "2026-11-10T08:48:20.420Z",
   };
 }

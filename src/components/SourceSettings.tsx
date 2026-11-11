@@ -20,6 +20,7 @@ import {
   importCollectionBook,
 } from "../lib/api";
 const names: Record<string, string> = {
+  openiti: "OpenITI · KITAB",
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
   openlibrary: "Open Library",

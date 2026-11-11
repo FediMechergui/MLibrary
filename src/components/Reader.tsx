@@ -39,7 +39,12 @@ import type {
   Language,
 } from "../types";
 import { translator } from "../lib/i18n";
-import { downloadReaderFile, loadBook, readerFileChunk } from "../lib/api";
+import {
+  downloadReaderFile,
+  downloadTextSections,
+  loadBook,
+  readerFileChunk,
+} from "../lib/api";
 import type { DownloadProgress } from "../lib/api";
 import { localDay, newEntry, saveOffline } from "../lib/state";
 import type { Book as EpubBook, Rendition } from "epubjs";
@@ -325,7 +330,9 @@ export default function Reader({
       const offline =
         content.type === "pdf-url"
           ? await downloadReaderFile(content.url, "pdf")
-          : content;
+          : content.type === "text"
+            ? await downloadTextSections(book, content)
+            : content;
       await saveOffline(book.id, offline);
       update((s) => ({
         ...s,
@@ -868,7 +875,7 @@ export default function Reader({
                       {content.chapters.map((ch) => (
                         <button
                           className="chapter-link"
-                          key={ch.url}
+                          key={ch.id || ch.url}
                           onClick={() => {
                             initial.current = undefined;
                             setJump(null);
