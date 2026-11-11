@@ -22,6 +22,8 @@ import {
   ArrowUpRight,
   Highlighter,
   CornersOut,
+  PencilSimple,
+  Scan,
 } from "@phosphor-icons/react";
 import type {
   AppState,
@@ -33,6 +35,8 @@ import type {
   ReadingMark,
   ReaderSelection,
   ReaderFormat,
+  ReadingAnchor,
+  Language,
 } from "../types";
 import { translator } from "../lib/i18n";
 import { downloadReaderFile, loadBook, readerFileChunk } from "../lib/api";
@@ -48,6 +52,11 @@ import { SourcePanel } from "./SourceReader";
 import { FormatChoice } from "./SourceSettings";
 import { sourceText } from "../lib/source-i18n";
 import { selectedOffsets, paintTextMarks } from "../lib/selection";
+import { ScanQuote } from "./ScanQuote";
+import { BookDetailsEditor } from "./BookDetailsEditor";
+import { updateBookDetails } from "../lib/book-metadata";
+import { studioText } from "../lib/studio-i18n";
+import { turnPage, waitForPage } from "../lib/page-turn";
 type Props = {
   book: Book;
   state: AppState;
@@ -59,7 +68,7 @@ type Props = {
   onFindEdition: () => void;
 };
 export default function Reader({
-  book,
+  book: suppliedBook,
   state,
   update,
   onClose,
@@ -68,6 +77,9 @@ export default function Reader({
   onImport,
   onFindEdition,
 }: Props) {
+  const book = state.shelf[suppliedBook.id]?.book || suppliedBook;
+  const [editingDetails, setEditingDetails] = useState(false);
+  const studio = studioText(state.language);
   const t = translator(state.language),
     settings = state.settings;
   const r = readerText(state.language);
@@ -232,6 +244,14 @@ export default function Reader({
   }, [ready, error, update]);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const modal = document.querySelector<HTMLElement>(
+        "[data-reader-overlay]",
+      );
+      if (modal) {
+        if (e.key === "Escape")
+          modal.querySelector<HTMLButtonElement>("[data-modal-close]")?.click();
+        return;
+      }
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLSelectElement ||
@@ -383,6 +403,13 @@ export default function Reader({
         <div className="reader-actions">
           <button
             className="icon-button"
+            aria-label={studio("editDetails")}
+            onClick={() => setEditingDetails(true)}
+          >
+            <PencilSimple size={22} />
+          </button>
+          <button
+            className="icon-button"
             aria-label={r("highlights")}
             aria-expanded={panel === "highlights"}
             onClick={() =>
@@ -515,6 +542,7 @@ export default function Reader({
               />
             ) : content.type === "pdf" || content.type === "pdf-url" ? (
               <PdfViewer
+                language={state.language}
                 marks={viewerMarks}
                 onSelect={select}
                 onEdit={editMark}
@@ -948,6 +976,45 @@ export default function Reader({
           }}
         />
       )}
+      {editingDetails && (
+        <div className="studio-overlay" data-reader-overlay>
+          <section
+            className="metadata-dialog"
+            onKeyDown={(event) => {
+              event.stopPropagation();
+              if (event.key === "Escape") setEditingDetails(false);
+              if (event.key === "Tab") {
+                const nodes = event.currentTarget.querySelectorAll<HTMLElement>(
+                  "button,input,select,textarea",
+                );
+                const first = nodes[0],
+                  last = nodes[nodes.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                  event.preventDefault();
+                  last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                  event.preventDefault();
+                  first.focus();
+                }
+              }
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={studio("details")}
+          >
+            <BookDetailsEditor
+              book={book}
+              language={state.language}
+              onCancel={() => setEditingDetails(false)}
+              onSave={(edited) => {
+                update((s) => updateBookDetails(s, edited));
+                setEditingDetails(false);
+                notify(studio("saved"));
+              }}
+            />
+          </section>
+        </div>
+      )}
       {sourceView && (
         <SourcePanel
           url={sourceView}
@@ -1043,7 +1110,6 @@ function TextViewer({
   const offset = useRef(initial?.offset || 0);
   const [dimensions, setDimensions] = useState({ width: 600, height: 650 });
   const [index, setIndex] = useState(initial?.position || 0);
-  const [turn, setTurn] = useState("next");
   const [fontsReady, setFontsReady] = useState(false);
   useEffect(() => {
     document.fonts.ready.then(() => setFontsReady(true));
@@ -1111,15 +1177,23 @@ function TextViewer({
   const go = useCallback(
     (next: number) => {
       const value = Math.max(0, Math.min(pages.length - 1, next));
-      // Keep a navigation intent through a concurrent font/viewport reflow.
-      offset.current = pages[value].offset;
-      setTurn(value > index ? "next" : "prev");
-      setIndex(value);
-      if (settings.mode === "scroll")
-        root.current
-          ?.querySelector(`[data-page="${value}"]`)
-          ?.scrollIntoView({ block: "start", behavior: "smooth" });
-      else root.current?.scrollTo(0, 0);
+      if (value === index) return;
+      void turnPage(
+        root.current,
+        settings,
+        value > index ? "next" : "prev",
+        () => {
+          // Keep a navigation intent through a concurrent font/viewport reflow.
+          offset.current = pages[value].offset;
+          setIndex(value);
+          if (settings.mode === "scroll")
+            root.current
+              ?.querySelector(`[data-page="${value}"]`)
+              ?.scrollIntoView({ block: "start", behavior: "smooth" });
+          else root.current?.scrollTo(0, 0);
+        },
+        root.current?.dir === "rtl",
+      );
     },
     [index, pages, settings.mode],
   );
@@ -1241,10 +1315,7 @@ function TextViewer({
           </section>
         ))
       ) : (
-        <article
-          className={`text-page ${settings.mode === "flip" ? `flip-page turn-${turn}` : ""}`}
-          key={`${safeIndex}-${pages.length}`}
-        >
+        <article className="text-page" key={`${safeIndex}-${pages.length}`}>
           {pageContent(pages[safeIndex])}
         </article>
       )}
@@ -1432,10 +1503,22 @@ function EpubViewer({
         // Imported EPUBs are untrusted: iframe scripting remains disabled.
         navigation.current = {
           next: () => {
-            void view.next();
+            void turnPage(
+              container.current,
+              currentSettings.current,
+              "next",
+              () => view.next(),
+              container.current?.closest("[dir=rtl]") !== null,
+            );
           },
           prev: () => {
-            void view.prev();
+            void turnPage(
+              container.current,
+              currentSettings.current,
+              "prev",
+              () => view.prev(),
+              container.current?.closest("[dir=rtl]") !== null,
+            );
           },
         };
         await book.ready;
@@ -1491,6 +1574,7 @@ function EpubViewer({
 
 function PdfViewer({
   data,
+  language,
   url,
   settings,
   initial,
@@ -1502,6 +1586,7 @@ function PdfViewer({
   onSelect,
   onEdit,
 }: ViewerProps & {
+  language: Language;
   data?: ArrayBuffer | Blob;
   url?: string;
   onError: (s: string) => void;
@@ -1513,6 +1598,45 @@ function PdfViewer({
   const marksRef = useRef(marks);
   marksRef.current = marks;
   const [textReady, setTextReady] = useState(0);
+  const [scanning, setScanning] = useState(false);
+  const renderedPage = useRef(-1);
+  const cropPage = async (
+    region: NonNullable<ReadingAnchor["region"]>,
+    signal: AbortSignal,
+  ) => {
+    const page = await pdf!.getPage(index + 1);
+    signal.throwIfAborted();
+    const base = page.getViewport({ scale: 1 });
+    const scale = Math.min(
+      4,
+      2400 / Math.max(base.width * region.width, base.height * region.height),
+    );
+    const viewport = page.getViewport({ scale });
+    const output = document.createElement("canvas");
+    output.width = Math.max(1, Math.round(viewport.width * region.width));
+    output.height = Math.max(1, Math.round(viewport.height * region.height));
+    const task = page.render({
+      canvas: output,
+      viewport,
+      transform: [
+        1,
+        0,
+        0,
+        1,
+        -viewport.width * region.x,
+        -viewport.height * region.y,
+      ],
+    });
+    const cancel = () => task.cancel();
+    signal.addEventListener("abort", cancel, { once: true });
+    try {
+      await task.promise;
+      signal.throwIfAborted();
+      return output;
+    } finally {
+      signal.removeEventListener("abort", cancel);
+    }
+  };
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null),
     [index, setIndex] = useState(initial?.position || 0),
     [width, setWidth] = useState(700);
@@ -1659,7 +1783,10 @@ function PdfViewer({
           });
           layerTask = layer;
           await layer.render();
-          if (active) setTextReady((n) => n + 1);
+          if (active) {
+            renderedPage.current = index;
+            setTextReady((n) => n + 1);
+          }
         }
         if (active)
           onProgress({
@@ -1686,17 +1813,33 @@ function PdfViewer({
     };
   }, [pdf, index, width, onProgress, onError]);
   useEffect(() => {
+    const go = (target: number) => {
+      if (target === index || scanning) return;
+      void turnPage(
+        root.current,
+        settings,
+        target > index ? "next" : "prev",
+        async () => {
+          renderedPage.current = -1;
+          setIndex(target);
+          root.current?.scrollTo(0, 0);
+          await waitForPage(
+            () => renderedPage.current === target,
+            root.current,
+          );
+        },
+        language === "ar",
+      );
+    };
     navigation.current = {
       next: () => {
-        setIndex((i) => Math.min((pdf?.numPages || 1) - 1, i + 1));
-        root.current?.scrollTo(0, 0);
+        go(Math.min((pdf?.numPages || 1) - 1, index + 1));
       },
       prev: () => {
-        setIndex((i) => Math.max(0, i - 1));
-        root.current?.scrollTo(0, 0);
+        go(Math.max(0, index - 1));
       },
     };
-  }, [pdf, navigation]);
+  }, [pdf, navigation, index, settings, scanning, language]);
   useEffect(() => {
     if (jump) setIndex(jump.position);
   }, [jump]);
@@ -1704,11 +1847,19 @@ function PdfViewer({
     if (textLayer.current)
       paintTextMarks(
         textLayer.current,
-        marks.filter((m) => m.anchor.type === "pdf" && m.anchor.page === index),
+        marks.filter(
+          (m) =>
+            m.anchor.type === "pdf" && m.anchor.page === index && !m.anchor.ocr,
+        ),
       );
   }, [marks, index, textReady]);
   const capture = () => {
-    if (!root.current) return;
+    if (
+      !root.current ||
+      scanning ||
+      document.querySelector("[data-reader-overlay]")
+    )
+      return;
     const value = selectedOffsets(root.current);
     if (value?.text.trim() && value.text.length <= 5000)
       onSelect({
@@ -1732,7 +1883,7 @@ function PdfViewer({
       clearTimeout(timer);
       document.removeEventListener("selectionchange", changed);
     };
-  }, [index, onSelect]);
+  }, [index, onSelect, scanning]);
   return (
     <div
       ref={root}
@@ -1745,13 +1896,17 @@ function PdfViewer({
           <CircleNotch className="spin" size={30} />
         </span>
       )}
+      {pdf && textReady > 0 && (
+        <button
+          className="button secondary scan-page-button"
+          onClick={() => setScanning(true)}
+        >
+          <Scan size={20} />
+          {studioText(language)("scan")}
+        </button>
+      )}
       <div className="pdf-page" ref={pageBox}>
-        <canvas
-          ref={canvas}
-          key={index}
-          className={settings.mode === "flip" ? "flip-page" : ""}
-          aria-label={`PDF page ${index + 1}`}
-        />
+        <canvas ref={canvas} key={index} aria-label={`PDF page ${index + 1}`} />
         <div
           ref={textLayer}
           className="textLayer"
@@ -1766,6 +1921,16 @@ function PdfViewer({
           }}
         />
       </div>
+      {scanning && canvas.current && (
+        <ScanQuote
+          preview={canvas.current}
+          language={language}
+          page={index}
+          onCrop={cropPage}
+          onSelect={onSelect}
+          onClose={() => setScanning(false)}
+        />
+      )}
     </div>
   );
 }

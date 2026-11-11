@@ -92,3 +92,15 @@ No working catalogue or book download source was obtained. The app advertises a 
 See [Safahat, Gallica and QDL findings for 1.2.0](COLLECTIONS-1.2.md) for the latest supported routes and remaining access blocker.
 
 Android 1.3 adds a [QDL browser and download-to-reader handoff](QDL-BROWSER-1.3.md). It also accepts PDF/EPUB/TXT files through Android Open with / Share. This is a user-assisted download route, not an automated QDL catalogue connection.
+
+Version 1.4 adds a QDL home shortcut and selected manuscript links verified against QDL's own records: [Thābit ibn Qurrah's treatise on the solar year](https://qdl.qa/en/archive/81055/vdc_100023697729.0x000001), [Qusṭā ibn Lūqā's treatise on the celestial globe](https://www.qdl.qa/en/archive/81055/vdc_100157836372.0x00000c), and [three treatises on astrology, astronomy and time-keeping](https://www.qdl.qa/en/archive/81055/vdc_100025475046.0x000001). They open the publisher browser and use its PDF import route; these links do not add an automated QDL search feed or imply every record has a downloadable PDF.
+
+## Scan recognition (1.4)
+
+The reader renders a user-selected PDF rectangle at up to 2400 pixels per edge, then recognizes the resulting image. OCR text is editable and must be reviewed before quoting. The quote retains the original book title, authors, page and rectangle; OCR text offsets are never treated as PDF text-layer offsets.
+
+[OCR.space's API](https://ocr.space/ocrapi) is optional. `server/ocr.mjs` reads `OCR_SPACE_API_KEY` from Netlify's environment and uses engine 2 with automatic language detection. The API accepts only bounded PNG/JPEG image data, never a remote URL. Only the selected area is uploaded. There is a best-effort per-instance burst limit, a 25-second provider timeout, generic error responses and no saved image payloads. Provider quotas still apply. The key must never use a `VITE_` prefix or appear in code, logs, repository files or APK assets. The current account uses a standard Netlify environment variable, approved by the owner; functions-only scopes and Secrets Controller were rejected by Netlify. [Netlify encrypts environment-variable storage](https://docs.netlify.com/build/environment-variables/secrets-controller/).
+
+[Tesseract.js](https://github.com/naptha/tesseract.js) supplies on-device OCR for English, French and Arabic. Worker, WebAssembly core and language models are bundled with Android; the web service worker caches them after use. Language models are packaged uncompressed because Android's asset packager automatically expands `.gz` files and removes their extension. No language pack is fetched from a third-party CDN. Web users must load a language pack before using it offline.
+
+Page curls use [StPageFlip](https://github.com/Nodlik/StPageFlip) with temporary snapshots; selectable reader content returns after the turn. Reduced-motion preferences disable the animation. Quote previews and PNG exports use the same canvas renderer, including Arabic shaping and pagination for long passages.

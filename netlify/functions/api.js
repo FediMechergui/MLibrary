@@ -6,6 +6,13 @@ export const handler = async (event) => {
     new Request(event.rawUrl || `https://mlibrary.local${event.path}`, {
       method: event.httpMethod,
       headers: event.headers,
+      ...(!["GET", "HEAD"].includes(event.httpMethod) && event.body
+        ? {
+            body: event.isBase64Encoded
+              ? Buffer.from(event.body, "base64")
+              : event.body,
+          }
+        : {}),
     }),
   );
   const binary =

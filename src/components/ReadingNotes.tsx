@@ -20,12 +20,11 @@ import type {
   ReaderSelection,
   ReadingMark,
 } from "../types";
-import {
-  exportQuote,
-  highlightColors,
-  normalizeTags,
-} from "../lib/annotations";
+import { highlightColors, normalizeTags } from "../lib/annotations";
 import { readerText } from "../lib/reader-i18n";
+import { studioText } from "../lib/studio-i18n";
+import { QuoteStudio, QuotePreview } from "./QuoteStudio";
+import { quotePalettes } from "../lib/quote-design";
 
 type StateProps = {
   state: AppState;
@@ -48,7 +47,11 @@ export function MarkEditor({
 }) {
   const r = readerText(state.language);
   const editor = useRef<HTMLElement>(null);
-  useEffect(() => { const previous = document.activeElement as HTMLElement | null; editor.current?.focus({ preventScroll: true }); return () => previous?.focus({ preventScroll: true }); }, []);
+  useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null;
+    editor.current?.focus({ preventScroll: true });
+    return () => previous?.focus({ preventScroll: true });
+  }, []);
   const [text, setText] = useState(selection.text);
   const [note, setNote] = useState(existing?.note || "");
   const [tags, setTags] = useState(existing?.tags.join(", ") || "");
@@ -71,6 +74,7 @@ export function MarkEditor({
       quoted: quoted || !!existing?.quoted,
       favorite: existing?.favorite || false,
       cardStyle: existing?.cardStyle || "paper",
+      cardDesign: existing?.cardDesign,
       createdAt: existing?.createdAt || Date.now(),
     };
     update((s) => ({
@@ -92,8 +96,24 @@ export function MarkEditor({
       dir={state.language === "ar" ? "rtl" : "ltr"}
       onKeyDown={(e) => {
         if (e.key === "Tab") {
-          const nodes = editor.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input,textarea');
-          if (nodes?.length) { const first = nodes[0], last = nodes[nodes.length - 1]; if (e.shiftKey && (document.activeElement === first || document.activeElement === editor.current)) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); } }
+          const nodes = editor.current?.querySelectorAll<HTMLElement>(
+            "button:not(:disabled),input,textarea",
+          );
+          if (nodes?.length) {
+            const first = nodes[0],
+              last = nodes[nodes.length - 1];
+            if (
+              e.shiftKey &&
+              (document.activeElement === first ||
+                document.activeElement === editor.current)
+            ) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
         }
         if (e.key === "Escape") {
           e.stopPropagation();
@@ -113,7 +133,12 @@ export function MarkEditor({
           <X size={20} />
         </button>
       </div>
-      {selection.anchor.type === "source" ? (
+      <p className="quote-attribution" dir="auto">
+        <strong>{book.title}</strong>
+        <span>{book.authors.join(" · ")}</span>
+      </p>
+      {selection.anchor.ocr && <p>{studioText(state.language)("ocrReview")}</p>}
+      {selection.anchor.type === "source" || selection.anchor.ocr ? (
         <label>
           {r("quoteText")}
           <textarea
@@ -191,8 +216,8 @@ export function MyQuotes({
     [tag, setTag] = useState(""),
     [favorites, setFavorites] = useState(false),
     [editing, setEditing] = useState<ReadingMark | null>(null),
-    [adding, setAdding] = useState(false),
-    [busy, setBusy] = useState("");
+    [adding, setAdding] = useState(false);
+  const [designing, setDesigning] = useState<ReadingMark | null>(null);
   const [title, setTitle] = useState(""),
     [author, setAuthor] = useState("");
   const all = Object.values(state.marks)
@@ -212,18 +237,6 @@ export function MyQuotes({
       ...s,
       marks: { ...s.marks, [id]: { ...s.marks[id], ...value } },
     }));
-  const exportCard = async (mark: ReadingMark, share: boolean) => {
-    setBusy(mark.id);
-    try {
-      await exportQuote(mark, share);
-      notify(r("cardExported"));
-    } catch (e) {
-      if (!(e instanceof Error && e.name === "AbortError"))
-        notify(r("exportError"));
-    } finally {
-      setBusy("");
-    }
-  };
   const copy = async (mark: ReadingMark) => {
     try {
       await navigator.clipboard.writeText(
@@ -348,7 +361,11 @@ export function MyQuotes({
               <span className="quote-glyph" aria-hidden="true">
                 “
               </span>
-              <blockquote dir="auto">{mark.text}</blockquote>
+              {mark.cardDesign ? (
+                <QuotePreview mark={mark} />
+              ) : (
+                <blockquote dir="auto">{mark.text}</blockquote>
+              )}
               <div className="quote-attribution">
                 <strong dir="auto">{mark.book.title}</strong>
                 <span dir="auto">{mark.book.authors.join(" · ")}</span>
@@ -374,12 +391,36 @@ export function MyQuotes({
                       className={`card-swatch swatch-${style}`}
                       aria-label={r(`${style}Card`)}
                       aria-pressed={mark.cardStyle === style}
-                      onClick={() => patch(mark.id, { cardStyle: style })}
+                      onClick={() =>
+                        patch(mark.id, {
+                          cardStyle: style,
+                          ...(mark.cardDesign
+                            ? {
+                                cardDesign: {
+                                  ...mark.cardDesign,
+                                  ...quotePalettes[
+                                    style === "forest"
+                                      ? 1
+                                      : style === "clay"
+                                        ? 2
+                                        : 0
+                                  ],
+                                },
+                              }
+                            : {}),
+                        })
+                      }
                     />
                   ))}
                 </div>
               </div>
               <div className="quote-actions">
+                <button
+                  className="customize-quote"
+                  onClick={() => setDesigning(mark)}
+                >
+                  {studioText(state.language)("customize")}
+                </button>
                 <button
                   aria-label={r("edit")}
                   title={r("edit")}
@@ -395,18 +436,16 @@ export function MyQuotes({
                   <Copy size={19} />
                 </button>
                 <button
-                  disabled={busy === mark.id}
                   aria-label={r("exportCard")}
                   title={r("exportCard")}
-                  onClick={() => void exportCard(mark, false)}
+                  onClick={() => setDesigning(mark)}
                 >
                   <DownloadSimple size={19} />
                 </button>
                 <button
-                  disabled={busy === mark.id}
                   aria-label={r("shareCard")}
                   title={r("shareCard")}
-                  onClick={() => void exportCard(mark, true)}
+                  onClick={() => setDesigning(mark)}
                 >
                   <ShareNetwork size={19} />
                 </button>
@@ -494,6 +533,14 @@ export function MyQuotes({
             )}
           </div>
         </div>
+      )}
+      {designing && (
+        <QuoteStudio
+          mark={designing}
+          language={state.language}
+          onSave={(cardDesign) => patch(designing.id, { cardDesign })}
+          onClose={() => setDesigning(null)}
+        />
       )}
     </section>
   );

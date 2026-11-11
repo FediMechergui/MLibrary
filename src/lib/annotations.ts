@@ -46,83 +46,21 @@ export function intersectMarks(
 export const locationLabel = (mark: ReadingMark) =>
   mark.anchor.chapter || `Page ${mark.anchor.page + 1}`;
 
-export async function quoteImage(mark: ReadingMark): Promise<Blob> {
-  await document.fonts.ready;
-  const canvas = document.createElement("canvas");
-  canvas.width = 1200;
-  const ctx = canvas.getContext("2d")!;
-  const lines: string[] = [];
-  const fontSize =
-    mark.text.length > 700 ? 38 : mark.text.length > 320 ? 48 : 62;
-  ctx.font = `${fontSize}px "Newsreader", "Noto Naskh Arabic", Georgia, serif`;
-  for (const paragraph of mark.text.split("\n")) {
-    let line = "";
-    for (const word of paragraph.split(/\s+/)) {
-      const candidate = line ? `${line} ${word}` : word;
-      if (ctx.measureText(candidate).width > 960 && line) {
-        lines.push(line);
-        line = word;
-      } else line = candidate;
-    }
-    lines.push(line);
-  }
-  const lineHeight = fontSize * 1.42;
-  canvas.height = Math.max(1200, Math.ceil(440 + lines.length * lineHeight));
-  const colors =
-    mark.cardStyle === "forest"
-      ? ["#173b32", "#f6f1e5", "#b9c9af"]
-      : mark.cardStyle === "clay"
-        ? ["#edd5c5", "#4d302b", "#93644e"]
-        : ["#f6f1e5", "#253b32", "#7e816f"];
-  ctx.fillStyle = colors[0];
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = colors[2];
-  ctx.lineWidth = 1;
-  ctx.strokeRect(46, 46, 1108, canvas.height - 92);
-  ctx.font = '150px "Newsreader", Georgia, serif';
-  ctx.fillStyle = colors[2];
-  ctx.fillText("“", 112, 190);
-  const rtl = mark.book.language === "ar";
-  ctx.direction = rtl ? "rtl" : "ltr";
-  ctx.textAlign = rtl ? "right" : "left";
-  ctx.fillStyle = colors[1];
-  ctx.font = `${fontSize}px "Newsreader", "Noto Naskh Arabic", Georgia, serif`;
-  lines.forEach((line, i) =>
-    ctx.fillText(line, rtl ? 1080 : 120, 240 + i * lineHeight),
-  );
-  ctx.font = '500 26px "DM Sans", "Noto Naskh Arabic", sans-serif';
-  ctx.fillText(
-    mark.book.title.slice(0, 100),
-    rtl ? 1080 : 120,
-    canvas.height - 225,
-    960,
-  );
-  ctx.fillStyle = colors[2];
-  ctx.font = '24px "DM Sans", "Noto Naskh Arabic", sans-serif';
-  ctx.fillText(
-    mark.book.authors.join(" · ").slice(0, 140) || "Personal reading",
-    rtl ? 1080 : 120,
-    canvas.height - 183,
-    960,
-  );
-  ctx.direction = "ltr";
-  ctx.textAlign = "left";
-  ctx.font = '600 24px "DM Sans", sans-serif';
-  ctx.fillText("MLibrary  /  My Quotes", 120, canvas.height - 100);
+export async function quoteImage(mark: ReadingMark, part = 0): Promise<Blob> {
+  const { renderQuote } = await import("./quote-design");
+  const { canvas } = await renderQuote(mark, undefined, part);
   return new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) =>
-        blob
-          ? resolve(blob)
-          : reject(new Error("Could not create the quote card")),
+        blob ? resolve(blob) : reject(new Error("Could not create card")),
       "image/png",
     ),
   );
 }
 
-export async function exportQuote(mark: ReadingMark, share = false) {
-  const blob = await quoteImage(mark);
-  const filename = `mlibrary-quote-${mark.id.slice(0, 8)}.png`;
+export async function exportQuote(mark: ReadingMark, share = false, part = 0) {
+  const blob = await quoteImage(mark, part);
+  const filename = `mlibrary-quote-${mark.id.slice(0, 8)}-${part + 1}.png`;
   const { Capacitor } = await import("@capacitor/core");
   if (Capacitor.isNativePlatform()) {
     const { Filesystem, Directory } = await import("@capacitor/filesystem");

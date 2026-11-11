@@ -12,6 +12,7 @@ import App from "./App";
 import "./styles.css";
 import "./reading-room.css";
 import "./release.css";
+import "./studio.css";
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

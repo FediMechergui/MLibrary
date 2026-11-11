@@ -1,6 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { cpSync, mkdirSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  copyFileSync,
+  readdirSync,
+  writeFileSync,
+  readFileSync,
+  existsSync,
+  unlinkSync,
+} from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { resolve } from "node:path";
 // PDF scans need the decoder binaries even when the device is offline.
 for (const directory of ["wasm", "standard_fonts", "cmaps"]) {
@@ -9,6 +19,35 @@ for (const directory of ["wasm", "standard_fonts", "cmaps"]) {
   cpSync(resolve("node_modules/pdfjs-dist", directory), destination, {
     recursive: true,
   });
+}
+mkdirSync(resolve("public/ocr/core"), { recursive: true });
+mkdirSync(resolve("public/ocr/lang"), { recursive: true });
+copyFileSync(
+  resolve("node_modules/tesseract.js/dist/worker.min.js"),
+  resolve("public/ocr/worker.min.js"),
+);
+for (const file of readdirSync(
+  resolve("node_modules/tesseract.js-core"),
+).filter((name) => /-lstm\.wasm(?:\.js)?$/.test(name)))
+  copyFileSync(
+    resolve("node_modules/tesseract.js-core", file),
+    resolve("public/ocr/core", file),
+  );
+for (const language of ["eng", "fra", "ara"]) {
+  // Android's asset packager expands .gz assets and strips their extension.
+  // Serve identical uncompressed names on web and native to avoid 404s.
+  writeFileSync(
+    resolve(`public/ocr/lang/${language}.traineddata`),
+    gunzipSync(
+      readFileSync(
+        resolve(
+          `node_modules/@tesseract.js-data/${language}/4.0.0_best_int/${language}.traineddata.gz`,
+        ),
+      ),
+    ),
+  );
+  const legacy = resolve(`public/ocr/lang/${language}.traineddata.gz`);
+  if (existsSync(legacy)) unlinkSync(legacy);
 }
 export default defineConfig({
   plugins: [react()],

@@ -61,6 +61,10 @@ import { SourceSettings } from "./components/SourceSettings";
 import { sourceText } from "./lib/source-i18n";
 import { readerText } from "./lib/reader-i18n";
 import { normalizeTags } from "./lib/annotations";
+import { BookDetailsEditor } from "./components/BookDetailsEditor";
+import { updateBookDetails } from "./lib/book-metadata";
+import { studioText } from "./lib/studio-i18n";
+import { openNativeSource } from "./lib/source-view";
 const Reader = lazy(() => import("./components/Reader"));
 type Tab = "discover" | "library" | "quotes" | "journey" | "sources";
 const sourceNames: Record<string, string> = {
@@ -100,6 +104,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("discover");
   const [featured, setFeatured] = useState<Book[]>([]);
   const [detail, setDetail] = useState<Book | null>(null);
+  const [editingDetails, setEditingDetails] = useState<string | null>(null);
   const [reading, setReading] = useState<Book | null>(null);
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
@@ -281,6 +286,13 @@ export default function App() {
     let removeListener: (() => void) | undefined;
     import("@capacitor/app").then(async ({ App }) => {
       const listener = await App.addListener("backButton", () => {
+        const modalClose = document.querySelector<HTMLButtonElement>(
+          "[data-reader-overlay] [data-modal-close]",
+        );
+        if (modalClose) {
+          modalClose.click();
+          return;
+        }
         if (sourceView) setSourceView("");
         else if (preferencesOpen) setPreferencesOpen(false);
         else if (reading) setReading(null);
@@ -342,8 +354,12 @@ export default function App() {
         },
       }));
       notify(t("imported"));
-      if (read) openBook(book);
-      else setDetail(book);
+      const imported = state.shelf[book.id]?.book || book;
+      if (read) openBook(imported);
+      else {
+        setDetail(imported);
+        setEditingDetails(imported.id);
+      }
     } catch {
       notify(t("importError"));
     } finally {
@@ -399,65 +415,69 @@ export default function App() {
         (shelfTab === "offline" ? e.offline : e.status === shelfTab)),
   );
 
-  const renderCard = (book: Book) => (
-    <article className="book-card" key={book.id}>
-      <button
-        className="book-open"
-        onClick={() => setDetail(book)}
-        aria-label={book.title}
-      >
-        <BookCover book={book} />
-        <span className="book-language">
-          {languageNames[book.language] || book.language}
-        </span>
-      </button>
-      <div className="book-card-info">
+  const renderCard = (candidate: Book) => {
+    const book = state.shelf[candidate.id]?.book || candidate;
+    return (
+      <article className="book-card" key={book.id}>
         <button
-          className="title-button"
+          className="book-open"
           onClick={() => setDetail(book)}
-          dir="auto"
+          aria-label={book.title}
         >
-          <h3>{book.title}</h3>
-        </button>
-        <p dir="auto">
-          {book.authors[0]?.replace(/^([^,]+), (.+)$/, "$2 $1") ||
-            t("unknownAuthor")}
-        </p>
-        <div className="book-meta">
-          <span>
-            {book.access === "read" ? (
-              <>
-                <span className="status-dot" />
-                {t("readable")}
-              </>
-            ) : book.formats.includes("SCAN") ? (
-              t("scan")
-            ) : (
-              sourceNames[book.source]
-            )}
+          <BookCover book={book} />
+          <span className="book-language">
+            {languageNames[book.language] || book.language}
           </span>
+        </button>
+        <div className="book-card-info">
           <button
-            className={`icon-button save-button ${state.shelf[book.id] ? "is-saved" : ""}`}
-            aria-label={state.shelf[book.id] ? t("saved") : t("save")}
-            onClick={() =>
-              state.shelf[book.id] ? setDetail(book) : saveBook(book)
-            }
+            className="title-button"
+            onClick={() => setDetail(book)}
+            dir="auto"
           >
-            <BookmarkSimple
-              size={19}
-              weight={state.shelf[book.id] ? "fill" : "regular"}
-            />
+            <h3>{book.title}</h3>
           </button>
+          <p dir="auto">
+            {book.authors[0]?.replace(/^([^,]+), (.+)$/, "$2 $1") ||
+              t("unknownAuthor")}
+          </p>
+          <div className="book-meta">
+            <span>
+              {book.access === "read" ? (
+                <>
+                  <span className="status-dot" />
+                  {t("readable")}
+                </>
+              ) : book.formats.includes("SCAN") ? (
+                t("scan")
+              ) : (
+                sourceNames[book.source]
+              )}
+            </span>
+            <button
+              className={`icon-button save-button ${state.shelf[book.id] ? "is-saved" : ""}`}
+              aria-label={state.shelf[book.id] ? t("saved") : t("save")}
+              onClick={() =>
+                state.shelf[book.id] ? setDetail(book) : saveBook(book)
+              }
+            >
+              <BookmarkSimple
+                size={19}
+                weight={state.shelf[book.id] ? "fill" : "regular"}
+              />
+            </button>
+          </div>
         </div>
-      </div>
-      {state.shelf[book.id]?.progress && (
-        <div className="book-progress">
-          <i style={{ width: `${state.shelf[book.id].progress!.percent}%` }} />
-        </div>
-      )}
-    </article>
-  );
-
+        {state.shelf[book.id]?.progress && (
+          <div className="book-progress">
+            <i
+              style={{ width: `${state.shelf[book.id].progress!.percent}%` }}
+            />
+          </div>
+        )}
+      </article>
+    );
+  };
   if (reading)
     return (
       <>
@@ -675,6 +695,20 @@ export default function App() {
                       <i />
                       <span lang="ar">العربية</span>
                     </div>
+                    <button
+                      className="text-button home-qdl-link"
+                      onClick={() => {
+                        const url = `https://www.qdl.qa/${state.language === "ar" ? "ar" : "en"}`;
+                        if (window.Capacitor?.isNativePlatform())
+                          void openNativeSource(url, state.language).catch(() =>
+                            setSourceView(url),
+                          );
+                        else setSourceView(url);
+                      }}
+                    >
+                      <GlobeHemisphereWest size={17} />
+                      {studioText(state.language)("qdl")}
+                    </button>
                     <button
                       className="text-button preference-link"
                       onClick={() => setPreferencesOpen(true)}
@@ -941,6 +975,68 @@ export default function App() {
               </section>
             </>
           )}
+          {tab === "discover" && isBrowse && (
+            <>
+              {isBrowse && (
+                <section className="qdl-discovery">
+                  <div>
+                    <span className="eyebrow">Qatar Digital Library</span>
+                    <p>{studioText(state.language)("qdlHint")}</p>
+                    <button
+                      className="button secondary"
+                      onClick={() => {
+                        const url = `https://www.qdl.qa/${state.language === "ar" ? "ar" : "en"}`;
+                        if (window.Capacitor?.isNativePlatform())
+                          void openNativeSource(url, state.language).catch(() =>
+                            setSourceView(url),
+                          );
+                        else setSourceView(url);
+                      }}
+                    >
+                      <GlobeHemisphereWest size={20} />
+                      {studioText(state.language)("qdl")}
+                    </button>
+                  </div>
+                  <div className="qdl-selections">
+                    {[
+                      {
+                        id: "vdc_100023697729.0x000001",
+                        title: "كتاب في سنة الشمس بالإرصاد",
+                        author: "Thābit ibn Qurrah · ثابت بن قرّة",
+                      },
+                      {
+                        id: "vdc_100157836372.0x00000c",
+                        title: "كتاب العمل بالكرة الفلكية",
+                        author: "Qusṭā ibn Lūqā · قسطا بن لوقا",
+                      },
+                      {
+                        id: "vdc_100025475046.0x000001",
+                        title:
+                          "Three treatises on astrology, astronomy and time-keeping",
+                        author: "British Library · Or 7716",
+                      },
+                    ].map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          const url = `https://www.qdl.qa/en/archive/81055/${item.id}`;
+                          if (window.Capacitor?.isNativePlatform())
+                            void openNativeSource(url, state.language).catch(
+                              () => setSourceView(url),
+                            );
+                          else setSourceView(url);
+                        }}
+                      >
+                        <span dir="auto">{item.title}</span>
+                        <small dir="auto">{item.author}</small>
+                        <ArrowUpRight size={18} />
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
           {tab === "library" && (
             <>
               <PageHeading
@@ -1091,7 +1187,7 @@ export default function App() {
         className="visually-hidden"
         type="file"
         ref={input}
-        accept=".epub,.pdf,.txt"
+        accept=".epub,.pdf,.txt,.png,.jpg,.jpeg,.webp"
         onChange={(e) => handleImport(e.target.files?.[0])}
       />
       {detail && (
@@ -1115,6 +1211,38 @@ export default function App() {
                   <span key={f}>{f}</span>
                 ))}
               </div>
+              {editingDetails === detail.id ? (
+                <BookDetailsEditor
+                  key={detail.id}
+                  book={detail}
+                  language={state.language}
+                  onCancel={() => setEditingDetails(null)}
+                  onSave={(book) => {
+                    update((s) =>
+                      updateBookDetails(
+                        {
+                          ...s,
+                          shelf: {
+                            ...s.shelf,
+                            [book.id]: s.shelf[book.id] || newEntry(book),
+                          },
+                        },
+                        book,
+                      ),
+                    );
+                    setDetail(book);
+                    setEditingDetails(null);
+                    notify(studioText(state.language)("saved"));
+                  }}
+                />
+              ) : (
+                <button
+                  className="button secondary"
+                  onClick={() => setEditingDetails(detail.id)}
+                >
+                  {studioText(state.language)("editDetails")}
+                </button>
+              )}
               <p className="detail-description" dir="auto">
                 {detail.description || t("noDescription")}
               </p>

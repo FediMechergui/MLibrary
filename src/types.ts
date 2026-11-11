@@ -55,6 +55,26 @@ export type ReadingAnchor = {
   cfi?: string;
   page: number;
   chapter?: string;
+  ocr?: boolean;
+  region?: { x: number; y: number; width: number; height: number };
+};
+export type QuoteDesign = {
+  format: "story" | "square" | "portrait" | "landscape";
+  layout: "editorial" | "centered" | "minimal" | "poster";
+  font: "serif" | "sans";
+  fontSize: number;
+  lineHeight: number;
+  align: "start" | "center" | "end";
+  background: string;
+  foreground: string;
+  accent: string;
+  padding: number;
+  showTitle: boolean;
+  showAuthor: boolean;
+  showBrand: boolean;
+  showPage: boolean;
+  backgroundImage?: string;
+  imageShade: number;
 };
 export type ReadingMark = {
   id: string;
@@ -67,6 +87,7 @@ export type ReadingMark = {
   quoted: boolean;
   favorite: boolean;
   cardStyle: "paper" | "forest" | "clay";
+  cardDesign?: QuoteDesign;
   createdAt: number;
 };
 export type ReaderSelection = { text: string; anchor: ReadingAnchor };

@@ -1,10 +1,17 @@
 import http from "node:http";
 import { spawn } from "node:child_process";
+import { Readable } from "node:stream";
 import handler from "../server/api.mjs";
 const server = http.createServer(async (req, res) => {
   try {
     const response = await handler(
-      new Request(`http://127.0.0.1:8889${req.url}`, { method: req.method }),
+      new Request(`http://127.0.0.1:8889${req.url}`, {
+        method: req.method,
+        headers: req.headers,
+        ...(!["GET", "HEAD"].includes(req.method)
+          ? { body: Readable.toWeb(req), duplex: "half" }
+          : {}),
+      }),
     );
     res.writeHead(response.status, Object.fromEntries(response.headers));
     res.end(Buffer.from(await response.arrayBuffer()));

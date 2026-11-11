@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { get, set, del } from "idb-keyval";
 import type { AppState, Book, BookContent } from "../types";
+import { embeddedMetadata, imagePdf } from "./book-metadata";
 const KEY = "mlibrary:v1";
 export const defaults: AppState = {
   version: 1,
@@ -89,12 +90,12 @@ export async function importBook(
   const extension = file.name.split(".").pop()?.toLowerCase();
   if (
     !extension ||
-    !["epub", "pdf", "txt"].includes(extension) ||
+    !["epub", "pdf", "txt", "png", "jpg", "jpeg", "webp"].includes(extension) ||
     file.size > 50 * 1024 * 1024 ||
     !file.size
   )
     throw new Error("Invalid file");
-  const buffer = await file.arrayBuffer();
+  let buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   if (
     (extension === "pdf" &&
@@ -106,24 +107,29 @@ export async function importBook(
     new Uint8Array(await crypto.subtle.digest("SHA-256", buffer)),
     (b) => b.toString(16).padStart(2, "0"),
   ).join("");
+  const isImage = ["png", "jpg", "jpeg", "webp"].includes(extension);
+  if (isImage) buffer = await imagePdf(buffer);
+  const format = isImage ? "pdf" : extension;
+  const metadata = await embeddedMetadata(buffer, format);
+  const bookLanguage = metadata.language || language;
   const book: Book = {
     id: `local:${hash}`,
     title:
-      origin?.title || file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
-    authors: [],
-    language,
-    languages: [language],
+      origin?.title || metadata.title || file.name.replace(/\.[^.]+$/, "").replace(/_/g, " "),
+    authors: metadata.authors || [],
+    language: bookLanguage,
+    languages: [bookLanguage],
     source: "local",
     sourceUrl: origin?.sourceUrl || "",
     cover: null,
     subjects: [],
-    description: "",
+    description: metadata.description || "",
     access: "read",
     rights: "Personal copy imported on this device.",
-    formats: [extension.toUpperCase()],
+    formats: [format.toUpperCase()],
   };
   const content: BookContent =
-    extension === "txt"
+    format === "txt"
       ? {
           type: "text",
           text: new TextDecoder().decode(buffer),
@@ -131,7 +137,7 @@ export async function importBook(
           sourceUrl: "",
           attribution: "",
         }
-      : { type: extension as "epub" | "pdf", data: buffer };
+      : { type: format as "epub" | "pdf", data: buffer };
   await saveOffline(book.id, content);
   return book;
 }

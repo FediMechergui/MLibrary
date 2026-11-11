@@ -107,6 +107,7 @@ test("text highlights persist, become tagged quote cards, export, and return to 
   await page.getByRole("button", { name: "Forest", exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Save card", exact: true }).click();
+  await page.getByRole("button", { name: "Download PNG", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(
     /^mlibrary-quote-.*\.png$/,
   );

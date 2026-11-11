@@ -4,6 +4,7 @@ import {
   validateSearch,
   SOURCES,
 } from "./catalog.mjs";
+import { ocrRequest } from "./ocr.mjs";
 import {
   openAccessLink,
   openAccessEdition,
@@ -28,6 +29,7 @@ const headers = {
   "X-Content-Type-Options": "nosniff",
 };
 export default async function handler(request) {
+  if (/\/(?:api|\.netlify\/functions\/api)\/ocr\/?$/.test(new URL(request.url).pathname)) return ocrRequest(request);
   if (request.method === "OPTIONS")
     return new Response(null, { status: 204, headers });
   if (request.method !== "GET")

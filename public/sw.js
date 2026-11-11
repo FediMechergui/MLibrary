@@ -1,4 +1,4 @@
-const VERSION = "mlibrary-shell-v4";
+const VERSION = "mlibrary-shell-v5";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -59,6 +59,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/assets/") ||
     url.pathname.startsWith("/data/") ||
     url.pathname.startsWith("/pdfjs/") ||
+    url.pathname.startsWith("/ocr/") ||
     url.pathname === "/icon.svg"
   )
     event.respondWith(
