@@ -224,10 +224,10 @@ test("phone layouts keep books visible, navigation reachable and reader controls
   await page.getByRole("button", { name: "Back to library" }).click();
   await page.getByRole("button", { name: "Our sources", exact: true }).click();
   for (const source of await page.locator(".source-row").all()) {
-    const summary = source.locator("summary");
+    const summary = source.locator(".source-settings > summary");
     await summary.scrollIntoViewIfNeeded();
     await summary.click();
-    await expect(source.locator("details")).toHaveAttribute("open", "");
+    await expect(source.locator(".source-settings")).toHaveAttribute("open", "");
     const body = (await source.locator(".source-body").boundingBox())!;
     const actions = (await source.locator(".source-actions").boundingBox())!;
     expect(actions.y).toBeGreaterThanOrEqual(body.y + body.height - 1);
