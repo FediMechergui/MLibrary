@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-11-12T13:55:23.952Z",
+  "package": "annas-archive-api",
+  "version": "0.3.0",
+  "sha256": "464a2aca9cec69a3519073030f0f6e6d9d0fcdad276d1fbfad11abd009384820",
+  "method": "Source inspection plus Node reproduction of anonymous session/search requests; Rust crate not executed",
+  "checks": [
+    {
+      "name": "anonymous session status",
+      "status": 200,
+      "url": "https://annas-archive.gd/dyn/up/",
+      "contentType": "text/json; charset=utf-8",
+      "loggedIn": 0,
+      "cookieReceived": true
+    },
+    {
+      "name": "crate-style anonymous search",
+      "status": 403,
+      "url": "https://annas-archive.gd/search?q=Pride%20and%20Prejudice&page=1&check=1",
+      "contentType": "text/html; charset=UTF-8",
+      "wouldReturnBrowserCheck": true,
+      "title": "DDoS-Guard",
+      "bookRecordLinks": 0
+    }
+  ]
+}

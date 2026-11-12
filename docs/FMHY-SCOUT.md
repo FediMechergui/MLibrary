@@ -4,7 +4,7 @@ FMHY is useful for finding providers, but it is not a book catalogue feed. Its f
 
 The [17 recorded probes](fmhy-scout-2026-11-12.json) used local Node HTTPS and a fresh headless Edge context, without accounts or challenge cookies. They do not establish Netlify-region availability. No catalogue records were added to production during this scouting pass.
 
-## Anna's Archive: substantial discovery potential, separate ingestion project
+## Anna's Archive: bulk indexing or session-based live search
 
 The documented custom-search route is to load its Elasticsearch/MariaDB exports. Its stable JSON API supplies fast download URLs for members; free downloads involve browser verification and sometimes queues. This is not a documented anonymous search API. [FAQ](https://annas-archive.gl/faq#api).
 
@@ -19,6 +19,20 @@ Observed here:
 **Recommended architecture:** start with a bounded metadata pilot, selecting English/French/Arabic book editions. Preserve source IDs, ISBNs, language, formats and availability evidence. Deduplicate editions against existing sources by identifiers, not just titles. Run ingestion and a persistent search index outside Netlify functions; keep Netlify as the API layer. Resolve a matching accessible edition before offering in-app reading. Discovery metadata alone must not set `access: read`. File-level authorization and license evidence remain separate from metadata availability.
 
 The export's storage footprint makes loading the full mirror into our current compressed function snapshots impractical. A small extraction pilot should establish language coverage, duplicates, disk/RAM requirements and incremental refresh behavior before infrastructure is selected. No full mirror was downloaded.
+
+### Follow-up: the user-supplied Rust client
+
+The [`annas-archive-api` crate](https://lib.rs/crates/annas-archive-api) adds a third option: **live, user-assisted searches without importing the full metadata mirror**. This makes the earlier bulk-index recommendation incomplete for an optional personal connection.
+
+I inspected published version **0.3.0**, dated 5 October 2026, and verified its archive against the crates.io SHA-256. Its package points to commit `593b4bf89ff308244080b368f5150838cb9e3e91` of `RemiKalbe/annas-archive-mcp`; similarly named Node projects are separate software.
+
+The client parses `/search` HTML. It can log in using an account secret, checks `/dyn/up/`, reads authenticated item JSON and requests member download URLs. Its search options expose query/page, so MLibrary would need language/format filtering. [Published client source](https://github.com/RemiKalbe/annas-archive-mcp/blob/593b4bf89ff308244080b368f5150838cb9e3e91/annas-archive-api/src/client.rs).
+
+Its browser helper launches local Chrome, waits for the user to complete verification, then reuses that browser's cookies. This requires a browser on the client machine; it is not a hands-off Netlify function workflow. [Browser helper](https://github.com/RemiKalbe/annas-archive-mcp/blob/593b4bf89ff308244080b368f5150838cb9e3e91/annas-archive-api/src/browser.rs).
+
+An [anonymous endpoint probe](anna-crate-probe-2026-11-12.json) reproduced its URLs/session-cookie flow in Node: `/dyn/up/` returned 200 and logged-out status, then search returned 403 DDoS-Guard. The Rust binary and interactive/authenticated path were not executed. Therefore the crate is a useful implementation reference, not verified anonymous access from our deployment.
+
+**Revised integration option:** prototype an optional Anna connection using same-device browser verification and its permitted account/download flow. Adapt the session handling to Android and our Node backend; test session expiry and file import before enabling it. Do not assume a phone's verification session transfers to Netlify. A fully independent catalogue still needs the separate metadata-indexing architecture above.
 
 ## Other candidates with verified routes
 
@@ -37,6 +51,6 @@ Unglue.it advertises over 250,000 free ebooks, but that includes overlap with pr
 
 1. Add Unglue.it metadata ingestion and licensed EPUB/PDF resolution, with a small sample validated in MLibrary's reader before scaling.
 2. Add Faded Page metadata and its browser-compatible download/import route, preserving rights statements and file validation.
-3. Size an Anna's Archive metadata pilot and external search service. Its potential catalogue reach is much larger, but today's anonymous requests cannot support a reliable live-search adapter.
+3. Prototype Anna's session-based personal connection using the inspected crate as a reference. Independently size a metadata pilot if MLibrary needs its own complete index; anonymous server requests remain challenged.
 
 Run `node scripts/scout-fmhy.mjs` to repeat bounded HTTP/feed/file-header checks. `--files-only` appends file probes to an existing `artifacts/fmhy-scout.json`. The recorded browser test is separate: open the public Flatland detail page, click its EPUB link, then inspect the downloaded EPUB container. Header probes are not a replacement for full reader integration tests.
