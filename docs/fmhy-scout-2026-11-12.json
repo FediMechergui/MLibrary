@@ -1,0 +1,325 @@
+{
+  "checkedAt": "2026-11-12T12:45:38.038Z",
+  "environment": "Local Node HTTPS, without accounts or challenge cookies",
+  "checks": [
+    {
+      "name": "Open SLUM status page",
+      "url": "https://open-slum.org/",
+      "finalUrl": "https://open-slum.org/",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 117759,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 440
+    },
+    {
+      "name": "Anna home",
+      "url": "https://annas-archive.gl/",
+      "finalUrl": "https://annas-archive.gl/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 175818,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 575
+    },
+    {
+      "name": "Anna English metadata search",
+      "url": "https://annas-archive.gl/search?lang=en&q=Pride%20and%20Prejudice",
+      "finalUrl": "https://annas-archive.gl/search?lang=en&q=Pride%20and%20Prejudice&check=1",
+      "status": 403,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 902,
+      "truncated": false,
+      "challenge": true,
+      "milliseconds": 2664
+    },
+    {
+      "name": "Anna French metadata search",
+      "url": "https://annas-archive.gl/search?lang=fr&q=Les%20Argonautes",
+      "finalUrl": "https://annas-archive.gl/search?lang=fr&q=Les%20Argonautes&check=1",
+      "status": 403,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 902,
+      "truncated": false,
+      "challenge": true,
+      "milliseconds": 642
+    },
+    {
+      "name": "Anna Arabic metadata search",
+      "url": "https://annas-archive.gl/search?lang=ar&q=%D9%86%D8%AC%D9%8A%D8%A8%20%D9%85%D8%AD%D9%81%D9%88%D8%B8",
+      "finalUrl": "https://annas-archive.gl/search?lang=ar&q=%D9%86%D8%AC%D9%8A%D8%A8%20%D9%85%D8%AD%D9%81%D9%88%D8%B8&check=1",
+      "status": 403,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 902,
+      "truncated": false,
+      "challenge": true,
+      "milliseconds": 4035
+    },
+    {
+      "name": "Anna documented download API, without credentials",
+      "url": "https://annas-archive.gl/dyn/api/fast_download.json",
+      "finalUrl": "https://annas-archive.gl/dyn/api/fast_download.json",
+      "status": 400,
+      "contentType": "text/json; charset=utf-8",
+      "bytes": 1076,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 3531,
+      "jsonFields": [
+        "///download_url",
+        "download_url",
+        "error"
+      ],
+      "apiError": "Invalid md5"
+    },
+    {
+      "name": "Unglue.it OPDS",
+      "url": "https://unglue.it/api/opds/",
+      "finalUrl": "https://unglue.it/api/opds/",
+      "status": 200,
+      "contentType": "application/atom+xml; profile=opds-catalog; kind=navigation; charset=utf-8",
+      "bytes": 8045,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 1032,
+      "feed": {
+        "title": "Unglue.it Catalog",
+        "entries": 18,
+        "samples": [
+          {
+            "id": "https://unglue.it/api/opds/all//?order_by=popular",
+            "title": "Unglue.it Free eBooks - Popular",
+            "links": [
+              {
+                "rel": "http://opds-spec.org/sort/popular",
+                "type": "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                "url": "https://unglue.it/api/opds/all/?order_by=popular"
+              }
+            ]
+          },
+          {
+            "id": "https://unglue.it/api/opds/all//?order_by=newest",
+            "title": "Unglue.it Free eBooks - New",
+            "links": [
+              {
+                "rel": "http://opds-spec.org/sort/new",
+                "type": "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                "url": "https://unglue.it/api/opds/all/?order_by=newest"
+              }
+            ]
+          },
+          {
+            "id": "https://unglue.it/api/opds/creative_commons/",
+            "title": "Unglue.it Catalog:  Creative Commons Books",
+            "links": [
+              {
+                "rel": "subsection",
+                "type": "application/atom+xml;profile=opds-catalog;kind=acquisition",
+                "url": "https://unglue.it/api/opds/creative_commons/"
+              }
+            ]
+          }
+        ],
+        "navigation": [
+          {
+            "rel": "start",
+            "url": "https://unglue.it/api/opds/"
+          },
+          {
+            "rel": "http://opds-spec.org/featured",
+            "url": "https://unglue.it/api/opds/all/?order_by=popular"
+          },
+          {
+            "rel": "http://opds-spec.org/featured",
+            "url": "https://unglue.it/api/opds/all/?order_by=popular"
+          }
+        ],
+        "languagesOnSampledPage": {}
+      }
+    },
+    {
+      "name": "Unglue.it EPUB excluding Gutenberg and DOAB",
+      "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?page=1",
+      "finalUrl": "https://unglue.it/api/opds/epub/-gtbg/-doab/?page=1",
+      "status": 200,
+      "contentType": "application/atom+xml; profile=opds-catalog ;kind=acquisition; charset=utf-8",
+      "bytes": 52612,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 18506,
+      "feed": {
+        "title": "Unglue.it eBooks available in format: epub not from Project Gutenberg - sorted by newest",
+        "entries": 10,
+        "samples": [
+          {
+            "id": "https://unglue.it/api/id/work/228329/",
+            "title": "Mapping and the Citizen Sensor",
+            "links": [
+              {
+                "rel": "http://opds-spec.org/acquisition/open-access",
+                "type": "application/epub+zip",
+                "url": "https://unglue.it/download_ebook/384540/?feed=opds",
+                "license": "CC BY"
+              }
+            ],
+            "language": "en"
+          },
+          {
+            "id": "https://unglue.it/api/id/work/140714/",
+            "title": "Le temps des loups. Mission canis lupus",
+            "links": [
+              {
+                "rel": "http://opds-spec.org/acquisition/open-access",
+                "type": "application/epub+zip",
+                "url": "https://unglue.it/download_ebook/2468/?feed=opds",
+                "license": "CC BY-NC-ND"
+              }
+            ],
+            "language": "fr"
+          },
+          {
+            "id": "https://unglue.it/api/id/work/140721/",
+            "title": "Geektionnerd tome 5. How I Met Your Sysadmin",
+            "links": [
+              {
+                "rel": "http://opds-spec.org/acquisition/open-access",
+                "type": "application/epub+zip",
+                "url": "https://unglue.it/download_ebook/2479/?feed=opds",
+                "license": "CC BY-SA"
+              }
+            ],
+            "language": "fr"
+          }
+        ],
+        "navigation": [
+          {
+            "rel": "start",
+            "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?order_by=newest"
+          },
+          {
+            "rel": "next",
+            "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?order_by=newest&page=2"
+          },
+          {
+            "rel": "http://opds-spec.org/facet",
+            "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?order_by=popular"
+          },
+          {
+            "rel": "http://opds-spec.org/facet",
+            "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?order_by=newest"
+          },
+          {
+            "rel": "previous",
+            "url": "https://unglue.it/api/opds/epub/-gtbg/-doab/?order_by=newest&page=0"
+          }
+        ],
+        "languagesOnSampledPage": {
+          "en": 6,
+          "fr": 3,
+          "ru": 1
+        }
+      }
+    },
+    {
+      "name": "Unglue.it French title query",
+      "url": "https://unglue.it/api/opds/s.mis%C3%A9rables/",
+      "finalUrl": "https://unglue.it/api/opds/s.mis%C3%A9rables/",
+      "status": 503,
+      "contentType": "text/plain; charset=utf-8",
+      "bytes": 66,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 5604
+    },
+    {
+      "name": "Faded Page catalogue",
+      "url": "https://www.fadedpage.com/allbooks.php",
+      "finalUrl": "https://www.fadedpage.com/allbooks.php",
+      "status": 200,
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 51025,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 543
+    },
+    {
+      "name": "Global Grey home",
+      "url": "https://www.globalgreyebooks.com/",
+      "finalUrl": "https://www.globalgreyebooks.com/index.html",
+      "status": 200,
+      "contentType": "text/html",
+      "bytes": 17134,
+      "truncated": false,
+      "challenge": false,
+      "milliseconds": 528
+    },
+    {
+      "name": "Faded Page English EPUB: Flatland",
+      "url": "https://www.fadedpage.com/link.php?file=20140519.epub",
+      "finalUrl": "https://www.fadedpage.com/showbook.php?pid=20140519",
+      "status": 206,
+      "contentType": "text/html; charset=UTF-8",
+      "contentRange": "bytes 0-6007/6008",
+      "sampledBytes": 19617,
+      "zipHeader": false,
+      "epubMime": false,
+      "milliseconds": 879
+    },
+    {
+      "name": "Faded Page French EPUB: Le Feu sous la Cendre",
+      "url": "https://www.fadedpage.com/link.php?file=20220141.epub",
+      "finalUrl": "https://www.fadedpage.com/showbook.php?pid=20220141",
+      "status": 206,
+      "contentType": "text/html; charset=UTF-8",
+      "contentRange": "bytes 0-5091/5092",
+      "sampledBytes": 16615,
+      "zipHeader": false,
+      "epubMime": false,
+      "milliseconds": 325
+    },
+    {
+      "name": "Unglue.it French EPUB: Le temps des loups",
+      "url": "https://unglue.it/download_ebook/2468/?feed=opds",
+      "finalUrl": "https://files.unglue.it/ebf/b79cccaf7d352f41862a54edeec54378.epub",
+      "status": 206,
+      "contentType": "application/epub+zip",
+      "contentRange": "bytes 0-65535/1298708",
+      "sampledBytes": 65536,
+      "zipHeader": true,
+      "epubMime": true,
+      "milliseconds": 1289
+    },
+    {
+      "name": "Unglue.it English EPUB: Mapping and the Citizen Sensor",
+      "url": "https://unglue.it/download_ebook/384540/?feed=opds",
+      "finalUrl": "https://files.unglue.it/ebf/655e5a66c92b4a08a66ce22115e426c8.epub",
+      "status": 206,
+      "contentType": "application/epub+zip",
+      "contentRange": "bytes 0-65535/37485310",
+      "sampledBytes": 65536,
+      "zipHeader": true,
+      "epubMime": true,
+      "milliseconds": 840
+    },
+    {
+      "name": "Anna French search in ordinary Chromium",
+      "status": 403,
+      "url": "https://annas-archive.gl/search?lang=fr&q=Les%20Argonautes&check=1",
+      "title": "DDoS-Guard",
+      "challenge": true,
+      "bookRecordLinks": 0
+    },
+    {
+      "name": "Faded Page normal browser download: Flatland",
+      "bytes": 374810,
+      "filename": "20140519.epub",
+      "epubMime": "application/epub+zip",
+      "container": true,
+      "htmlEntries": 30
+    }
+  ],
+  "completedAt": "2026-11-12T12:54:08.436Z",
+  "scope": "Five priority FMHY candidates. File-header checks validate format availability, not end-to-end MLibrary integration. No books or metadata collections were added to production."
+}

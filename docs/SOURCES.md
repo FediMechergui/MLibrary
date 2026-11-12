@@ -1,5 +1,7 @@
 # Source research and integration status
 
+**12 November 2026 — FMHY scouting:** [Anna's Archive, Open SLUM, Unglue.it, Faded Page and Global Grey](FMHY-SCOUT.md), with 17 recorded probes, working EPUB samples and a proposed expansion order. This is source research; the candidates are not yet connected catalogue adapters.
+
 **Version 1.5.0:** OpenITI adds 7,098 primary Arabic editions from its official CC BY-NC-SA corpus, with pinned source files, attribution and multi-section offline reading. Gallica now includes 710 complete French OCR texts from the official BnF–OBVIL i/u/x/y/z archives. See the [current eleven-source audit](SOURCE-AUDIT-1.5.md) for working routes, representative failures and recovery options; historical research below records earlier observations.
 
 **Version 1.1.0:** [DOAB/OAPEN public metadata, search and reader integration](OPENACCESS-1.1.md) supersedes their older directory-only status below. This update does not bypass access controls on other providers.
