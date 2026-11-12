@@ -11,6 +11,13 @@ import java.io.InputStream;
 
 @CapacitorPlugin(name = "BookImport")
 public class BookImportPlugin extends Plugin {
+    @PluginMethod public void openPublisher(PluginCall call) {
+        String url = call.getString("url", "");
+        if (BookDownloadRules.publisher(url).isEmpty()) { call.reject("Invalid publisher address"); return; }
+        Intent intent = new Intent(getContext(), QdlBrowserActivity.class);
+        intent.putExtra("url", url).putExtra("language", call.getString("language", "en"));
+        getActivity().startActivity(intent); call.resolve();
+    }
     @PluginMethod public void openQdl(PluginCall call) {
         String url = call.getString("url", "https://www.qdl.qa/en");
         if (!BookDownloadRules.qdlPage(url)) { call.reject("Invalid QDL address"); return; }

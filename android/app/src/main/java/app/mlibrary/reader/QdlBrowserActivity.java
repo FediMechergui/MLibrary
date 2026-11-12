@@ -23,7 +23,7 @@ public class QdlBrowserActivity extends AppCompatActivity {
     private TextView status;
     private Button cancel;
     private ProgressBar progress;
-    private String language, pageUrl, pageTitle = "";
+    private String language, pageUrl, publisher, pageTitle = "";
     private boolean busy;
     private final AtomicBoolean cancelled = new AtomicBoolean();
     private final ExecutorService downloads = Executors.newSingleThreadExecutor();
@@ -38,7 +38,8 @@ public class QdlBrowserActivity extends AppCompatActivity {
         super.onCreate(state);
         language = getIntent().getStringExtra("language");
         pageUrl = getIntent().getStringExtra("url");
-        if (!BookDownloadRules.qdlPage(pageUrl)) { finish(); return; }
+        publisher = BookDownloadRules.publisher(pageUrl);
+        if (publisher.isEmpty()) { finish(); return; }
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.rgb(248, 245, 242));
         root.setLayoutDirection("ar".equals(language) ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         ViewCompat.setOnApplyWindowInsetsListener(root, (view, insets) -> {
@@ -49,7 +50,7 @@ public class QdlBrowserActivity extends AppCompatActivity {
         Button close = button(text("Close", "Fermer", "إغلاق")); close.setOnClickListener(view -> finish());
         Button back = button(text("Back", "Retour", "رجوع")); back.setOnClickListener(view -> goBack());
         Button external = button(text("Open browser", "Navigateur", "المتصفح")); external.setOnClickListener(view -> {
-            String url = BookDownloadRules.qdlPage(browser.getUrl()) ? browser.getUrl() : pageUrl;
+            String url = BookDownloadRules.publisherPage(browser.getUrl(), publisher) ? browser.getUrl() : pageUrl;
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)).addCategory(Intent.CATEGORY_BROWSABLE)); }
             catch (Exception error) { status.setText(text("No browser installed.", "Aucun navigateur installé.", "لا يوجد متصفح مثبت.")); }
         });
@@ -58,7 +59,7 @@ public class QdlBrowserActivity extends AppCompatActivity {
         toolbar.addView(external, new LinearLayout.LayoutParams(0, dp(52), 1.5f)); root.addView(toolbar);
         status = new TextView(this); status.setTextColor(Color.rgb(51, 43, 48)); status.setTextSize(13); status.setPadding(dp(14), dp(8), dp(14), dp(8));
         status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        status.setText(text("qdl.qa · Choose a book and download its PDF to read in MLibrary. Complete any verification yourself. If needed, use Open browser, then Open with / Share to MLibrary.", "qdl.qa · Téléchargez le PDF d’un livre pour le lire dans MLibrary. Effectuez la vérification si nécessaire. Sinon, utilisez Navigateur, puis Ouvrir avec / Partager vers MLibrary.", "qdl.qa · نزّل ملف PDF للقراءة في MLibrary. أكمل التحقق بنفسك عند الحاجة. يمكنك استخدام المتصفح ثم فتح باستخدام أو مشاركة إلى MLibrary.")); root.addView(status);
+        status.setText(text("Choose a book and download its EPUB or PDF to read in MLibrary. Complete any verification yourself. If needed, use Open browser, then Open with / Share to MLibrary.", "Téléchargez l’EPUB ou le PDF d’un livre pour le lire dans MLibrary. Effectuez la vérification si nécessaire. Sinon, utilisez Navigateur, puis Ouvrir avec / Partager vers MLibrary.", "نزّل ملف EPUB أو PDF للقراءة في MLibrary. أكمل التحقق بنفسك عند الحاجة. يمكنك استخدام المتصفح ثم فتح باستخدام أو مشاركة إلى MLibrary.")); root.addView(status);
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal); progress.setVisibility(View.GONE); root.addView(progress);
         cancel = button(text("Cancel download", "Annuler le téléchargement", "إلغاء التنزيل")); cancel.setVisibility(View.GONE); cancel.setOnClickListener(view -> cancelDownload()); root.addView(cancel);
         browser = new WebView(this);
@@ -72,10 +73,10 @@ public class QdlBrowserActivity extends AppCompatActivity {
                 if (!request.isForMainFrame()) return false;
                 String url = request.getUrl().toString();
                 if (BookDownloadRules.qdlPdf(url)) { download(url); return true; }
-                return !BookDownloadRules.qdlPage(url);
+                return !BookDownloadRules.publisherDownload(url, publisher);
             }
             @Override public void onPageFinished(WebView view, String url) {
-                if (BookDownloadRules.qdlPage(url) && !BookDownloadRules.qdlPdf(url)) { pageUrl = url; pageTitle = view.getTitle(); }
+                if (BookDownloadRules.publisherPage(url, publisher) && !BookDownloadRules.qdlPdf(url)) { pageUrl = url; pageTitle = view.getTitle(); }
             }
         });
         browser.setDownloadListener((url, userAgent, disposition, mime, length) -> download(url));
@@ -87,9 +88,9 @@ public class QdlBrowserActivity extends AppCompatActivity {
     private void cancelDownload() { cancelled.set(true); HttpURLConnection active = connection; if (active != null) active.disconnect(); }
     private void download(String url) {
         if (busy) return;
-        if (!BookDownloadRules.qdlPdf(url)) { status.setText(text("This download is not a supported QDL PDF.", "Ce téléchargement n’est pas un PDF QDL pris en charge.", "هذا التنزيل ليس ملف PDF مدعومًا من المكتبة.")); return; }
+        if (!BookDownloadRules.publisherDownload(url, publisher)) { status.setText(text("This download host is not supported. Use Open browser, then Share to MLibrary.", "Utilisez Navigateur, puis Partager vers MLibrary pour ce téléchargement.", "هذا التنزيل ليس ملف PDF مدعومًا من المكتبة.")); return; }
         busy = true; cancelled.set(false); cancel.setVisibility(View.VISIBLE); progress.setVisibility(View.VISIBLE); progress.setIndeterminate(true);
-        status.setText(text("Downloading PDF… Keep this screen open.", "Téléchargement du PDF… Gardez cet écran ouvert.", "جارٍ تنزيل PDF… أبقِ هذه الشاشة مفتوحة."));
+        status.setText(text("Downloading book… Keep this screen open.", "Téléchargement du livre… Gardez cet écran ouvert.", "جارٍ تنزيل PDF… أبقِ هذه الشاشة مفتوحة."));
         String source = pageUrl, title = pageTitle, agent = browser.getSettings().getUserAgentString();
         // Use this device's current browser session only for the publisher's own download.
         // Neither session cookies nor this request ever go to the catalogue backend.
@@ -98,10 +99,11 @@ public class QdlBrowserActivity extends AppCompatActivity {
                 String next = url;
                 for (int hop = 0; hop < 4; hop++) {
                     if (cancelled.get()) throw new IOException("cancelled");
-                    if (!BookDownloadRules.qdlPdf(next)) throw new IOException("redirect");
+                    if (!BookDownloadRules.publisherDownload(next, publisher)) throw new IOException("redirect");
                     HttpURLConnection request = (HttpURLConnection) new URL(next).openConnection(); connection = request;
                     request.setInstanceFollowRedirects(false); request.setConnectTimeout(20000); request.setReadTimeout(30000);
-                    request.setRequestProperty("User-Agent", agent); request.setRequestProperty("Accept", "application/pdf");
+                    request.setRequestProperty("User-Agent", agent); request.setRequestProperty("Accept", "application/epub+zip, application/pdf, application/octet-stream");
+                    if (new URL(next).getHost().equals(new URL(source).getHost())) request.setRequestProperty("Referer", source);
                     request.setRequestProperty("Accept-Encoding", "identity");
                     String cookie = CookieManager.getInstance().getCookie(next);
                     if (cookie != null) request.setRequestProperty("Cookie", cookie);
@@ -116,10 +118,12 @@ public class QdlBrowserActivity extends AppCompatActivity {
                         String mime = request.getContentType();
                         if (mime != null && mime.toLowerCase(java.util.Locale.ROOT).contains("text/html")) throw new IOException("verification");
                         long length = request.getContentLengthLong();
-                        String name = Uri.parse(next).getLastPathSegment();
+                        String name = URLUtil.guessFileName(next, request.getHeaderField("Content-Disposition"), mime);
+                        if ("qdl".equals(publisher)) name = Uri.parse(next).getLastPathSegment();
+                        final String bookMime = mime == null ? "application/octet-stream" : mime.split(";")[0].trim();
                         try (InputStream input = request.getInputStream()) {
                             final long[] lastUpdate = {0};
-                            IncomingBookStore.stage(getApplicationContext(), input, name, "application/pdf", length, source, title, bytes -> {
+                            IncomingBookStore.stage(getApplicationContext(), input, name, bookMime, length, source, title, bytes -> {
                                 if (cancelled.get()) throw new IOException("cancelled");
                                 long now = System.currentTimeMillis();
                                 if (now - lastUpdate[0] > 300) { lastUpdate[0] = now; runOnUiThread(() -> {
@@ -141,8 +145,8 @@ public class QdlBrowserActivity extends AppCompatActivity {
                     busy = false; cancel.setVisibility(View.GONE); progress.setVisibility(View.GONE);
                     String code = error.getMessage();
                     status.setText(cancelled.get() ? text("Download cancelled.", "Téléchargement annulé.", "تم إلغاء التنزيل.")
-                        : "size".equals(code) ? text("This PDF exceeds the 50 MB import limit.", "Ce PDF dépasse la limite de 50 Mo.", "يتجاوز هذا الملف حد الاستيراد البالغ 50 ميغابايت.")
-                        : text("QDL did not provide a complete PDF. You can finish verification and retry, or use Open browser. In Chrome, download the PDF and choose Open with / Share to MLibrary.", "QDL n’a pas fourni de PDF complet. Terminez la vérification et réessayez, ou utilisez Navigateur. Dans Chrome, téléchargez le PDF puis choisissez Ouvrir avec / Partager vers MLibrary.", "لم توفر المكتبة ملف PDF كاملًا. أكمل التحقق وأعد المحاولة أو استخدم المتصفح. بعد التنزيل في Chrome اختر فتح باستخدام أو مشاركة إلى MLibrary."));
+                        : "size".equals(code) ? text("This book exceeds the 50 MB import limit.", "Ce livre dépasse la limite de 50 Mo.", "يتجاوز هذا الملف حد الاستيراد البالغ 50 ميغابايت.")
+                        : text("The publisher did not provide a complete EPUB or PDF. You can finish verification and retry, or use Open browser. In Chrome, download the PDF and choose Open with / Share to MLibrary.", "La source n’a pas fourni de livre complet. Terminez la vérification et réessayez, ou utilisez Navigateur. Dans Chrome, téléchargez le PDF puis choisissez Ouvrir avec / Partager vers MLibrary.", "لم توفر المكتبة ملف PDF كاملًا. أكمل التحقق وأعد المحاولة أو استخدم المتصفح. بعد التنزيل في Chrome اختر فتح باستخدام أو مشاركة إلى MLibrary."));
                 });
             }
         });

@@ -12,6 +12,12 @@ export function trustedSourceUrl(value: string) {
       "doabooks.org",
       "oapen.org",
       "qdl.qa",
+      "unglue.it",
+      "fadedpage.com",
+      "globalgreyebooks.com",
+      "annas-archive.gd",
+      "annas-archive.gl",
+      "annas-archive.pk",
     ];
     return u.protocol === "https:" &&
       !u.username &&
@@ -32,6 +38,20 @@ export async function openNativeSource(url: string, language = "en") {
   if (["www.qdl.qa", "qdl.qa"].includes(new URL(safe).hostname)) {
     const { BookImport } = await import("./book-import");
     await BookImport.openQdl({ url: safe, language });
+    return;
+  }
+  if (
+    [
+      "unglue.it",
+      "www.fadedpage.com",
+      "www.globalgreyebooks.com",
+      "annas-archive.gd",
+      "annas-archive.gl",
+      "annas-archive.pk",
+    ].includes(new URL(safe).hostname)
+  ) {
+    const { BookImport } = await import("./book-import");
+    await BookImport.openPublisher({ url: safe, language });
     return;
   }
   const { InAppBrowser, DefaultWebViewOptions } = await import(

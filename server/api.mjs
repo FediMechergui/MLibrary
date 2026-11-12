@@ -1,4 +1,11 @@
 import {
+  communityEdition,
+  communityFileChunk,
+  communityStatus,
+  sourceMonitor,
+} from "./community.mjs";
+import { communityLink, communitySources } from "./community-parsers.mjs";
+import {
   sourceDirectory,
   searchCatalog,
   validateSearch,
@@ -50,9 +57,20 @@ export default async function handler(request) {
   try {
     if (path === "/health")
       return Response.json(
-        { status: "ok", version: "1.5.0", time: new Date().toISOString() },
+        { status: "ok", version: "1.6.0", time: new Date().toISOString() },
         { headers },
       );
+    if (path === "/community-status")
+      return Response.json(communityStatus(), { headers });
+    if (path === "/source-monitor")
+      return Response.json(await sourceMonitor(), { headers });
+    if (path === "/import-community") {
+      const { source, id } = communityLink(url.searchParams.get("url") || "");
+      return Response.json(
+        { book: (await communityEdition(source, id)).book },
+        { headers },
+      );
+    }
     if (path === "/sources")
       return Response.json(
         {
@@ -149,8 +167,15 @@ export default async function handler(request) {
       });
     }
     if (path === "/file") {
-      const data =
-        url.searchParams.get("source") === "hindawi"
+      const data = communitySources.includes(url.searchParams.get("source"))
+        ? await communityFileChunk(
+            url.searchParams.get("source"),
+            url.searchParams.get("id") || "",
+            url.searchParams.get("format") || "epub",
+            Number(url.searchParams.get("start")),
+            Number(url.searchParams.get("end")),
+          )
+        : url.searchParams.get("source") === "hindawi"
           ? await hindawiFileChunk(
               url.searchParams.get("id") || "",
               Number(url.searchParams.get("start")),
@@ -197,41 +222,46 @@ export default async function handler(request) {
           path === "/file" ||
           path === "/import-collection" ||
           path === "/import-standard" ||
+          path === "/import-community" ||
           path === "/import-openaccess"
             ? diagnose(error).message
             : "The catalogue is temporarily unavailable. Please try again.",
       },
       {
-        status: [401, 403, 429].includes(error.status)
-          ? error.status
-          : (path === "/import-collection" &&
-                error.message.startsWith("Invalid ")) ||
-              (path === "/import-openaccess" &&
-                error.message === "Invalid open-access book link") ||
-              (path === "/content" &&
-                [
-                  "Unsupported book identifier",
-                  "Invalid reader format",
-                  "Invalid Standard Ebooks edition",
-                ].includes(error.message)) ||
-              (path === "/import-standard" &&
-                [
-                  "Invalid URL",
-                  "Invalid Standard Ebooks edition",
-                  "Paste an individual Standard Ebooks book page URL.",
-                ].includes(error.message)) ||
-              (path === "/file" &&
-                [
-                  "Invalid reader file range",
-                  "Invalid open-access edition",
-                ].includes(error.message))
+        status:
+          path === "/import-community" && /Invalid/.test(error.message)
             ? 400
-            : path === "/file" &&
-                error.message === "No publicly accessible reader file"
-              ? 404
-              : error.status === 404
-                ? 404
-                : 502,
+            : [401, 403, 429].includes(error.status)
+              ? error.status
+              : (path === "/import-collection" &&
+                    error.message.startsWith("Invalid ")) ||
+                  (path === "/import-openaccess" &&
+                    error.message === "Invalid open-access book link") ||
+                  (path === "/content" &&
+                    [
+                      "Unsupported book identifier",
+                      "Invalid reader format",
+                      "Invalid Standard Ebooks edition",
+                      "Invalid community edition",
+                    ].includes(error.message)) ||
+                  (path === "/import-standard" &&
+                    [
+                      "Invalid URL",
+                      "Invalid Standard Ebooks edition",
+                      "Paste an individual Standard Ebooks book page URL.",
+                    ].includes(error.message)) ||
+                  (path === "/file" &&
+                    [
+                      "Invalid reader file range",
+                      "Invalid open-access edition",
+                    ].includes(error.message))
+                ? 400
+                : path === "/file" &&
+                    error.message === "No publicly accessible reader file"
+                  ? 404
+                  : error.status === 404
+                    ? 404
+                    : 502,
         headers: { ...headers, "Cache-Control": "no-store" },
       },
     );

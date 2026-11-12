@@ -1,3 +1,5 @@
+import { communityContent } from "./community.mjs";
+import { communitySources, communityId } from "./community-parsers.mjs";
 import { fetchUpstream } from "./catalog.mjs";
 import { parseHTML } from "linkedom";
 import { standardBook, standardPath } from "./standardebooks.mjs";
@@ -34,6 +36,9 @@ export async function readLimited(response, maxBytes = LIMIT) {
   return Buffer.concat(chunks).toString("utf8");
 }
 export function parseBookId(id) {
+  const [provider, key] = id.split(":");
+  if (communitySources.includes(provider) && id.split(":").length === 2)
+    return { source: provider, id: communityId(provider, key) };
   if (id.startsWith("openiti:") && openitiId.test(id.slice(8)))
     return { source: "openiti", id: id.slice(8) };
   const collection = /^(hindawi:\d{8}|gallica:bpt6k\d+[a-z0-9])$/.exec(id);
@@ -63,6 +68,8 @@ export async function getContent(
   if (!["auto", "text", "epub", "pdf"].includes(format))
     throw new Error("Invalid reader format");
   const book = parseBookId(bookId);
+  if (communitySources.includes(book.source))
+    return communityContent(book.source, book.id, format);
   if (book.source === "openiti") return openitiContent(book.id, chapter);
   if (book.source === "hindawi") return (await hindawiEdition(book.id)).content;
   if (book.source === "gallica")

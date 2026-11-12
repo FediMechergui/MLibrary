@@ -6,6 +6,8 @@ A multilingual book-discovery and reading app for the web and Android. React 19,
 
 **Repository:** https://github.com/FediMechergui/MLibrary
 
+**Version 1.6.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.6.0). Faded Page, Global Grey and Unglue.it add **11,157 source editions** with automatic download into the offline reader. Anna’s Archive has browser-assisted search/import; Open SLUM supplies provider status. [Coverage, verification and limitations](docs/CANDIDATES-1.6.md).
+
 **Version 1.5.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.5.0). Portable backups with offline book files, optional encrypted device sync, 7,098 primary Arabic OpenITI editions, 710 French Gallica texts, automatic checked deployments, and a separately signed store bundle. [Release details](docs/RELEASE-1.5.md) · [Play preparation](docs/STORE-READINESS.md).
 
 **Version 1.4.0:** [Android release](https://github.com/FediMechergui/MLibrary/releases/tag/v1.4.0). Rectangle OCR for scanned pages, editable book metadata, a quote-card studio with Story/square/portrait/landscape exports, real page curls, and QDL shortcuts on Discover. Existing shelves and quotes remain compatible.

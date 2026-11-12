@@ -1,3 +1,9 @@
+import { searchCommunity } from "./community.mjs";
+import {
+  communitySources,
+  rights as communityRights,
+  origins,
+} from "./community-parsers.mjs";
 import { searchGutenberg } from "./gutenberg.mjs";
 import { searchOpenAccess } from "./openaccess-catalog.mjs";
 import { searchGallica } from "./gallica.mjs";
@@ -5,6 +11,7 @@ import { searchOpenITI } from "./openiti.mjs";
 import { diagnose, sourceFromUrl, sourcePolicy } from "./source-policy.mjs";
 export const LANGUAGES = ["en", "fr", "ar"];
 export const SOURCES = [
+  ...communitySources,
   "openiti",
   "gutenberg",
   "wikisource",
@@ -16,6 +23,41 @@ export const SOURCES = [
 ];
 const codes = { en: "eng", fr: "fre", ar: "ara" };
 export const sourceDirectory = [
+  ...communitySources.map((id) => ({
+    id,
+    name: {
+      unglue: "Unglue.it",
+      fadedpage: "Faded Page",
+      globalgrey: "Global Grey",
+    }[id],
+    languages:
+      id === "globalgrey"
+        ? ["en"]
+        : ["en", "fr", ...(id === "unglue" ? ["ar"] : [])],
+    url: origins[id],
+    kind: "integrated",
+    description: {
+      unglue:
+        "Creative Commons and public-domain ebooks. A growing cached selection of the public OPDS catalogue.",
+      fadedpage:
+        "Canadian public-domain editions in English and French, downloaded directly into your reader.",
+      globalgrey:
+        "Curated classic editions for personal reading, with the original publisher credits.",
+    }[id],
+    rights: communityRights[id],
+  })),
+  {
+    id: "annas",
+    name: "Anna’s Archive",
+    languages: ["en", "fr", "ar"],
+    url: "https://annas-archive.gd",
+    kind: "directory",
+    description:
+      "Search in the on-device browser, complete provider verification, then download an available EPUB or PDF into your reader.",
+    rights:
+      "Availability and permissions vary by edition. Provider verification and account requirements apply.",
+  },
+
   {
     id: "openiti",
     name: "OpenITI · KITAB",
@@ -409,15 +451,17 @@ export async function searchCatalog(options) {
           {
             source,
             run: () =>
-              ["doab", "oapen"].includes(source)
-                ? searchOpenAccess({ ...options, source })
-                : {
-                    gutenberg,
-                    openlibrary,
-                    archive,
-                    gallica: searchGallica,
-                    openiti: searchOpenITI,
-                  }[source](options),
+              communitySources.includes(source)
+                ? searchCommunity({ ...options, source })
+                : ["doab", "oapen"].includes(source)
+                  ? searchOpenAccess({ ...options, source })
+                  : {
+                      gutenberg,
+                      openlibrary,
+                      archive,
+                      gallica: searchGallica,
+                      openiti: searchOpenITI,
+                    }[source](options),
           },
         ],
   );

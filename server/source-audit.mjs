@@ -58,17 +58,41 @@ const findings = {
   ],
 };
 export function sourceAudit(id) {
-  const [status, finding, solution] = findings[id];
+  const added = {
+    unglue: [
+      "limited",
+      "A bounded, growing OPDS snapshot is searchable; it is not the entire advertised catalogue.",
+      "Open an edition to download its public EPUB/PDF. Publisher-hosted files outside the supported service offer the original download page.",
+    ],
+    fadedpage: [
+      "working",
+      "Public English and French catalogue metadata is indexed. Downloads require the session from the book page.",
+      "MLibrary opens that normal publisher session and imports the complete EPUB/PDF automatically. Canadian public-domain conditions remain attached.",
+    ],
+    globalgrey: [
+      "working",
+      "Category metadata is searchable and public publisher EPUB/PDF links are resolved on demand.",
+      "Choose a book to download it into the reader. Original credits and branding remain in the file; personal-use publisher terms apply.",
+    ],
+    annas: [
+      "limited",
+      "Anonymous server search currently encounters browser verification. The Rust crate also requires an interactive browser session; it does not remove that requirement.",
+      "Use Search & import on Android. Complete verification yourself, choose an available EPUB/PDF download, and MLibrary imports it. If the embedded browser is refused, download in your browser and Share/Open with MLibrary. Web users download then use Import.",
+    ],
+  };
+  const [status, finding, solution] = added[id] || findings[id];
   return {
     status,
     finding,
     solution,
-    checkedAt: ["openiti", "gallica"].includes(id)
-      ? "2026-11-11T18:00:00.000Z"
-      : ["hindawi", "qdl"].includes(id)
-        ? "2026-11-10T12:00:00.000Z"
-        : ["doab", "oapen"].includes(id)
-          ? "2026-11-10T10:22:43.462Z"
-          : "2026-11-10T08:48:20.420Z",
+    checkedAt: added[id]
+      ? "2026-11-12T17:00:00.000Z"
+      : ["openiti", "gallica"].includes(id)
+        ? "2026-11-11T18:00:00.000Z"
+        : ["hindawi", "qdl"].includes(id)
+          ? "2026-11-10T12:00:00.000Z"
+          : ["doab", "oapen"].includes(id)
+            ? "2026-11-10T10:22:43.462Z"
+            : "2026-11-10T08:48:20.420Z",
   };
 }

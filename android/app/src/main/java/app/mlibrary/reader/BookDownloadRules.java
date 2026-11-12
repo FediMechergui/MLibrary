@@ -9,6 +9,35 @@ import java.util.Locale;
 /** Rules shared by the native browser and incoming-document receiver. */
 public final class BookDownloadRules {
     public static final long MAX_BYTES = 50L * 1024 * 1024;
+    public static String publisher(String value) {
+        try {
+            URI uri = new URI(value);
+            if (value.length() > 4096 || !"https".equals(uri.getScheme()) || uri.getUserInfo() != null || uri.getPort() != -1 || uri.getHost() == null) return "";
+            String host = uri.getHost();
+            if (host.equals("qdl.qa") || host.equals("www.qdl.qa")) return "qdl";
+            if (host.equals("unglue.it") || host.equals("files.unglue.it")) return "unglue";
+            if (host.equals("www.fadedpage.com")) return "fadedpage";
+            if (host.equals("www.globalgreyebooks.com")) return "globalgrey";
+            for (String domain : new String[]{"annas-archive.gd", "annas-archive.gl", "annas-archive.pk"})
+                if (host.equals(domain) || host.endsWith("." + domain)) return "annas";
+            return "";
+        } catch (Exception error) { return ""; }
+    }
+    public static boolean publisherPage(String value, String source) {
+        return source != null && !source.isEmpty() && source.equals(publisher(value));
+    }
+    public static boolean publisherDownload(String value, String source) {
+        if ("qdl".equals(source)) return qdlPdf(value);
+        if (publisherPage(value, source)) return true;
+        // Public Anna download domains listed by the provider's availability monitor.
+        // Unknown mirrors stay external; monitor responses never expand this allowlist.
+        if ("annas".equals(source)) try {
+            URI uri = new URI(value);
+            return value.length() <= 4096 && "https".equals(uri.getScheme()) && uri.getUserInfo() == null && uri.getPort() == -1
+                && ("yqrii5.org".equals(uri.getHost()) || "wbsg8v.xyz".equals(uri.getHost()));
+        } catch (Exception ignored) { }
+        return false;
+    }
     public static boolean qdlPage(String value) {
         try {
             URI uri = new URI(value);
@@ -24,9 +53,12 @@ public final class BookDownloadRules {
             && !uri.getRawPath().contains("..");
     }
     public static String sourcePage(String value) {
-        if (!qdlPage(value)) return "";
+        if (publisher(value).isEmpty()) return "";
         URI uri = URI.create(value);
-        return "https://www.qdl.qa" + uri.getRawPath();
+        if (qdlPage(value)) return "https://www.qdl.qa" + uri.getRawPath();
+        // Preserve the public Faded Page identifier, never account/download query tokens.
+        String query = "fadedpage".equals(publisher(value)) && uri.getRawQuery() != null && uri.getRawQuery().matches("pid=[0-9A-Z]{8}") ? "?" + uri.getRawQuery() : "";
+        return "https://" + uri.getHost() + uri.getRawPath() + query;
     }
     public static String name(String value, String mime) throws IOException {
         String clean = (value == null ? "" : value).replace('\\', '/');

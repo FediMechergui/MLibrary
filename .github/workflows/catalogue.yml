@@ -1,4 +1,4 @@
-name: Refresh Arabic catalogue
+name: Refresh book catalogues
 on:
   workflow_dispatch:
   schedule:
@@ -22,16 +22,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run catalog:openiti
+      - run: node scripts/seed-community.mjs
       - name: Validate catalogue before committing
-        run: node --test tests/openiti.test.mjs
+        run: node --test tests/openiti.test.mjs tests/community.test.mjs
       - name: Save changed official metadata and run deployment checks
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if git diff --quiet -- server/data/openiti.json.gz; then exit 0; fi
+          if git diff --quiet -- server/data/openiti.json.gz server/data/community.json.gz; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add server/data/openiti.json.gz
-          git commit -m 'Refresh pinned OpenITI catalogue'
+          git add server/data/openiti.json.gz server/data/community.json.gz
+          git commit -m 'Refresh OpenITI and public publisher catalogues'
           git push origin HEAD:main
           gh workflow run checks.yml --ref main

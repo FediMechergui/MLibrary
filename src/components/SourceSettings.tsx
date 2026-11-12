@@ -14,6 +14,7 @@ import type {
 import { sourceText } from "../lib/source-i18n";
 import { translator } from "../lib/i18n";
 import { QdlImport } from "./QdlImport";
+import { AnnaLibrary, CommunityImport } from "./CommunitySources";
 import {
   importStandardBook,
   importOpenAccessBook,
@@ -21,6 +22,9 @@ import {
 } from "../lib/api";
 const names: Record<string, string> = {
   openiti: "OpenITI · KITAB",
+  unglue: "Unglue.it",
+  fadedpage: "Faded Page",
+  globalgrey: "Global Grey",
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
   openlibrary: "Open Library",
@@ -120,8 +124,18 @@ export function SourceSettings({
               <h3>{source.name}</h3>
               <p>{source.description}</p>
               {source.id === "qdl" && <QdlImport language={state.language} />}
+              {source.id === "annas" && (
+                <AnnaLibrary language={state.language} />
+              )}
               <details className="source-settings">
                 <summary>{t("settings")}</summary>
+                {["unglue", "fadedpage", "globalgrey"].includes(source.id) && (
+                  <CommunityImport
+                    source={source.id}
+                    language={state.language}
+                    onRead={onRead}
+                  />
+                )}
                 {source.id === "standardebooks" && (
                   <StandardImport language={state.language} onRead={onRead} />
                 )}

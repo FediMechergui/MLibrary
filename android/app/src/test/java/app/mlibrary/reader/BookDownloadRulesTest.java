@@ -6,6 +6,14 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 
 public class BookDownloadRulesTest {
+    @Test public void publisherBrowserUsesFixedHostsAndStripsPrivateQueryParameters() {
+        assertEquals("annas", BookDownloadRules.publisher("https://annas-archive.gd/search?q=history"));
+        assertTrue(BookDownloadRules.publisherDownload("https://files.unglue.it/ebf/abcd.epub", "unglue"));
+        assertFalse(BookDownloadRules.publisherDownload("https://www.fadedpage.com/link.php?file=20140519.epub", "annas"));
+        for (String url : new String[]{"https://annas-archive.gd.evil.test/book", "https://user:secret@annas-archive.gd/book", "http://annas-archive.gd/book", "https://127.0.0.1/book.epub", "file:///private/book"}) assertEquals("", BookDownloadRules.publisher(url));
+        assertEquals("https://annas-archive.gd/md5/abc", BookDownloadRules.sourcePage("https://annas-archive.gd/md5/abc?key=secret"));
+        assertEquals("https://www.fadedpage.com/showbook.php?pid=201410E7", BookDownloadRules.sourcePage("https://www.fadedpage.com/showbook.php?pid=201410E7"));
+    }
     @Test public void browserAndDownloadsStayOnPublisher() {
         assertTrue(BookDownloadRules.qdlPage("https://www.qdl.qa/en/archive/81055/vdc_100023807156.0x000001"));
         assertTrue(BookDownloadRules.qdlPdf("https://www.qdl.qa/download/pdf/81055_vdc_100023807156.0x000001_en.pdf"));

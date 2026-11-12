@@ -1,0 +1,125 @@
+{
+  "checkedAt": "2026-11-12T17:25:33.492Z",
+  "catalogue": {
+    "updatedAt": "2026-11-12T17:32:25.499Z",
+    "sources": {
+      "fadedpage": {
+        "records": 9025,
+        "complete": true
+      },
+      "unglue": {
+        "records": 479,
+        "complete": false,
+        "nextPage": 81
+      },
+      "globalgrey": {
+        "records": 1653,
+        "pages": 78,
+        "complete": true
+      }
+    }
+  },
+  "checks": [
+    {
+      "source": "fadedpage",
+      "id": "20140519",
+      "title": "Flatland--A Romance of Many Dimensions",
+      "authors": [
+        "Abbott, Edwin Abbott"
+      ],
+      "language": "en",
+      "bytes": 374810,
+      "epub": true,
+      "htmlEntries": 30,
+      "ms": 1157
+    },
+    {
+      "source": "fadedpage",
+      "id": "20220141",
+      "title": "Le Feu sous la Cendre",
+      "authors": [
+        "Abraham, Berthe"
+      ],
+      "language": "fr",
+      "bytes": 284055,
+      "epub": true,
+      "htmlEntries": 6,
+      "ms": 536
+    },
+    {
+      "source": "globalgrey",
+      "id": "on-liberty",
+      "title": "On Liberty",
+      "authors": [
+        "John Stuart Mill"
+      ],
+      "language": "en",
+      "bytes": 533451,
+      "epub": true,
+      "htmlEntries": 25,
+      "ms": 637
+    },
+    {
+      "source": "unglue",
+      "id": "140714",
+      "title": "Le temps des loups. Mission canis lupus",
+      "authors": [
+        "Timberwolf"
+      ],
+      "language": "fr",
+      "bytes": 1298708,
+      "epub": true,
+      "htmlEntries": 53,
+      "ms": 1711
+    },
+    {
+      "source": "unglue",
+      "id": "228329",
+      "title": "Mapping and the Citizen Sensor",
+      "authors": [
+        "Linda See"
+      ],
+      "language": "en",
+      "bytes": 37485310,
+      "epub": true,
+      "htmlEntries": 22,
+      "ms": 12508
+    }
+  ],
+  "monitor": {
+    "checkedAt": "2026-11-12T17:25:50.572Z",
+    "url": "https://open-slum.org/",
+    "domains": [
+      {
+        "domain": "annas-archive.gd",
+        "status": "PROTECTED"
+      },
+      {
+        "domain": "annas-archive.gl",
+        "status": "PROTECTED"
+      },
+      {
+        "domain": "annas-archive.pk",
+        "status": "PROTECTED"
+      }
+    ],
+    "note": "Availability reports do not prove books can be downloaded. PROTECTED means verification is required."
+  },
+  "languages": {
+    "fadedpage": {
+      "en": 8759,
+      "fr": 266,
+      "ar": 0
+    },
+    "globalgrey": {
+      "en": 1653,
+      "fr": 0,
+      "ar": 0
+    },
+    "unglue": {
+      "en": 464,
+      "fr": 15,
+      "ar": 0
+    }
+  }
+}

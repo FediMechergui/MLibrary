@@ -20,7 +20,7 @@ test("per-source preferences persist, exclude providers and select a fallback li
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Our sources", exact: true }).click();
-  await expect(page.locator(".source-row")).toHaveCount(11);
+  await expect(page.locator(".source-row")).toHaveCount(15);
   const archive = page.locator('[data-source="archive"]');
   await archive.locator("summary").click();
   await archive.getByLabel("Download format").selectOption("pdf");

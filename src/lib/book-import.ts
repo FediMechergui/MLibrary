@@ -1,3 +1,4 @@
+import { trustedSourceUrl } from "./source-view";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import type { PluginListenerHandle } from "@capacitor/core";
 import { importBook } from "./state";
@@ -12,6 +13,7 @@ export type IncomingBook = {
   title: string;
 };
 export const BookImport = registerPlugin<{
+  openPublisher(options: { url: string; language: string }): Promise<void>;
   openQdl(options: { url: string; language: string }): Promise<void>;
   pending(): Promise<{ items: IncomingBook[] }>;
   complete(options: { id: string }): Promise<void>;
@@ -52,7 +54,7 @@ export async function importIncoming(
   if (!response.ok) throw new Error("Incoming file unavailable");
   const blob = await response.blob();
   if (blob.size !== item.size) throw new Error("Incomplete incoming file");
-  const sourceUrl = qdlUrl(item.sourceUrl);
+  const sourceUrl = trustedSourceUrl(item.sourceUrl);
   const title = item.title
     ?.replace(/\s*[|–-]\s*Qatar Digital Library\s*$/i, "")
     .trim();
@@ -63,6 +65,7 @@ export async function importIncoming(
       ? {
           sourceUrl,
           title:
+            qdlUrl(item.sourceUrl) &&
             title &&
             !/just a moment|qatar digital library|attention required/i.test(
               title,

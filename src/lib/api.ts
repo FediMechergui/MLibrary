@@ -14,7 +14,13 @@ export type DownloadProgress = {
 };
 type DownloadOptions = {
   file?: {
-    source: "oapen" | "doab" | "hindawi";
+    source:
+      | "oapen"
+      | "doab"
+      | "hindawi"
+      | "unglue"
+      | "fadedpage"
+      | "globalgrey";
     id: string;
     format: "pdf" | "epub";
   };
@@ -263,8 +269,21 @@ export async function readerFileChunk(
     try {
       if (file) {
         if (
-          !["oapen", "doab", "hindawi"].includes(file.source) ||
-          !/^\d{1,10}$/.test(file.id) ||
+          ![
+            "oapen",
+            "doab",
+            "hindawi",
+            "unglue",
+            "fadedpage",
+            "globalgrey",
+          ].includes(file.source) ||
+          !(
+            file.source === "globalgrey"
+              ? /^[a-z0-9][a-z0-9-]{0,220}$/
+              : file.source === "fadedpage"
+                ? /^\d{6}[A-Z0-9]{2}$/
+                : /^\d{1,10}$/
+          ).test(file.id) ||
           !["epub", "pdf"].includes(file.format)
         )
           throw new Error("Unsupported repository file");
@@ -363,3 +382,9 @@ async function fetchFileRange(
     throw new Error("The source returned an incomplete book file.");
   return { bytes, size };
 }
+
+export const importCommunityBook = (url: string, signal?: AbortSignal) =>
+  request<{ book: Book }>(
+    `/import-community?${new URLSearchParams({ url })}`,
+    signal,
+  );

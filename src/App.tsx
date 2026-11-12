@@ -71,6 +71,9 @@ const Reader = lazy(() => import("./components/Reader"));
 type Tab = "discover" | "library" | "quotes" | "journey" | "sources";
 const sourceNames: Record<string, string> = {
   openiti: "OpenITI · KITAB",
+  unglue: "Unglue.it",
+  fadedpage: "Faded Page",
+  globalgrey: "Global Grey",
   gutenberg: "Project Gutenberg",
   wikisource: "Wikisource",
   openlibrary: "Open Library",
@@ -713,6 +716,7 @@ export default function App() {
                       <GlobeHemisphereWest size={17} />
                       {studioText(state.language)("qdl")}
                     </button>
+
                     <button
                       className="text-button preference-link"
                       onClick={() => setPreferencesOpen(true)}
@@ -982,48 +986,33 @@ export default function App() {
           {tab === "discover" && isBrowse && (
             <>
               {isBrowse && (
-                <section className="qdl-discovery">
-                  <div>
-                    <span className="eyebrow">Qatar Digital Library</span>
-                    <p>{studioText(state.language)("qdlHint")}</p>
-                    <button
-                      className="button secondary"
-                      onClick={() => {
-                        const url = `https://www.qdl.qa/${state.language === "ar" ? "ar" : "en"}`;
-                        if (window.Capacitor?.isNativePlatform())
-                          void openNativeSource(url, state.language).catch(() =>
-                            setSourceView(url),
-                          );
-                        else setSourceView(url);
-                      }}
-                    >
-                      <GlobeHemisphereWest size={20} />
-                      {studioText(state.language)("qdl")}
-                    </button>
-                  </div>
-                  <div className="qdl-selections">
-                    {[
-                      {
-                        id: "vdc_100023697729.0x000001",
-                        title: "كتاب في سنة الشمس بالإرصاد",
-                        author: "Thābit ibn Qurrah · ثابت بن قرّة",
-                      },
-                      {
-                        id: "vdc_100157836372.0x00000c",
-                        title: "كتاب العمل بالكرة الفلكية",
-                        author: "Qusṭā ibn Lūqā · قسطا بن لوقا",
-                      },
-                      {
-                        id: "vdc_100025475046.0x000001",
-                        title:
-                          "Three treatises on astrology, astronomy and time-keeping",
-                        author: "British Library · Or 7716",
-                      },
-                    ].map((item) => (
+                <>
+                  <button
+                    className="text-button home-qdl-link"
+                    onClick={() => {
+                      const url = `https://annas-archive.gd/search?lang=${state.language}`;
+                      if (window.Capacitor?.isNativePlatform())
+                        void openNativeSource(url, state.language).catch(() =>
+                          setSourceView(url),
+                        );
+                      else window.open(url, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    <GlobeHemisphereWest size={17} />
+                    {state.language === "ar"
+                      ? "البحث في Anna’s Archive"
+                      : state.language === "fr"
+                        ? "Rechercher sur Anna’s Archive"
+                        : "Search Anna’s Archive"}
+                  </button>
+                  <section className="qdl-discovery">
+                    <div>
+                      <span className="eyebrow">Qatar Digital Library</span>
+                      <p>{studioText(state.language)("qdlHint")}</p>
                       <button
-                        key={item.id}
+                        className="button secondary"
                         onClick={() => {
-                          const url = `https://www.qdl.qa/en/archive/81055/${item.id}`;
+                          const url = `https://www.qdl.qa/${state.language === "ar" ? "ar" : "en"}`;
                           if (window.Capacitor?.isNativePlatform())
                             void openNativeSource(url, state.language).catch(
                               () => setSourceView(url),
@@ -1031,13 +1020,48 @@ export default function App() {
                           else setSourceView(url);
                         }}
                       >
-                        <span dir="auto">{item.title}</span>
-                        <small dir="auto">{item.author}</small>
-                        <ArrowUpRight size={18} />
+                        <GlobeHemisphereWest size={20} />
+                        {studioText(state.language)("qdl")}
                       </button>
-                    ))}
-                  </div>
-                </section>
+                    </div>
+                    <div className="qdl-selections">
+                      {[
+                        {
+                          id: "vdc_100023697729.0x000001",
+                          title: "كتاب في سنة الشمس بالإرصاد",
+                          author: "Thābit ibn Qurrah · ثابت بن قرّة",
+                        },
+                        {
+                          id: "vdc_100157836372.0x00000c",
+                          title: "كتاب العمل بالكرة الفلكية",
+                          author: "Qusṭā ibn Lūqā · قسطا بن لوقا",
+                        },
+                        {
+                          id: "vdc_100025475046.0x000001",
+                          title:
+                            "Three treatises on astrology, astronomy and time-keeping",
+                          author: "British Library · Or 7716",
+                        },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            const url = `https://www.qdl.qa/en/archive/81055/${item.id}`;
+                            if (window.Capacitor?.isNativePlatform())
+                              void openNativeSource(url, state.language).catch(
+                                () => setSourceView(url),
+                              );
+                            else setSourceView(url);
+                          }}
+                        >
+                          <span dir="auto">{item.title}</span>
+                          <small dir="auto">{item.author}</small>
+                          <ArrowUpRight size={18} />
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                </>
               )}
             </>
           )}

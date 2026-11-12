@@ -1,6 +1,6 @@
 # Source research and integration status
 
-**12 November 2026 — FMHY scouting:** [Anna's Archive, Open SLUM, Unglue.it, Faded Page and Global Grey](FMHY-SCOUT.md), with 17 recorded probes, working EPUB samples and a proposed expansion order. This is source research; the candidates are not yet connected catalogue adapters.
+**Version 1.6.0 — candidate integrations:** [Unglue.it, Faded Page, Global Grey, Anna’s Archive and Open SLUM](CANDIDATES-1.6.md) are connected. The first three add 11,157 indexed editions with automatic reader download/import; Anna’s uses an on-device browser-assisted route, and Open SLUM supplies status information. Coverage and remaining provider limitations are documented separately from the [original scouting](FMHY-SCOUT.md).
 
 The [Rust client follow-up](FMHY-SCOUT.md#follow-up-the-user-supplied-rust-client) identifies an additional Anna's Archive route: a personal browser-verified session for live searches. The published 0.3.0 source was inspected and checksum-verified; anonymous endpoint checks still returned a challenge. Interactive and authenticated access remain unverified.
 
