@@ -417,13 +417,38 @@ let monitor;
 export async function sourceMonitor() {
   if (monitor && Date.now() - monitor.time < 900000) return monitor.value;
   try {
-    const r = await fetch("https://open-slum.org/", {
-      redirect: "error",
-      signal: AbortSignal.timeout(8000),
-    });
+    let target = "https://open-slum.org/",
+      r;
+    for (let hop = 0; hop < 3; hop++) {
+      r = await fetch(target, {
+        redirect: "manual",
+        headers: {
+          "User-Agent":
+            "MLibrary/1.6 (+https://github.com/FediMechergui/MLibrary)",
+          Accept: "text/html",
+        },
+        signal: AbortSignal.timeout(12000),
+      });
+      if (![301, 302, 303, 307, 308].includes(r.status)) break;
+      const location = r.headers.get("location");
+      await r.body?.cancel();
+      const next = new URL(location || "", target);
+      if (
+        !location ||
+        next.protocol !== "https:" ||
+        next.username ||
+        next.password ||
+        next.port ||
+        !["open-slum.org", "www.open-slum.org"].includes(next.hostname)
+      )
+        throw new Error("Monitor redirect unavailable");
+      target = next.href;
+    }
     if (!r.ok) {
       await r.body?.cancel();
-      throw new Error("Monitor unavailable");
+      throw Object.assign(new Error("Monitor unavailable"), {
+        status: r.status,
+      });
     }
     const value = {
       checkedAt: new Date().toISOString(),
@@ -435,7 +460,7 @@ export async function sourceMonitor() {
     };
     monitor = { time: Date.now(), value };
     return value;
-  } catch {
+  } catch (error) {
     return {
       ...(monitor?.value || {
         domains: annaDomains.map((domain) => ({ domain, status: "UNKNOWN" })),
@@ -443,6 +468,11 @@ export async function sourceMonitor() {
         url: "https://open-slum.org/",
       }),
       stale: true,
+      reason: error.status
+        ? `HTTP ${error.status}`
+        : error.name === "TimeoutError"
+          ? "timeout"
+          : "connection",
     };
   }
 }

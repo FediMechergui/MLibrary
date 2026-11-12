@@ -118,7 +118,9 @@ public class QdlBrowserActivity extends AppCompatActivity {
                         String mime = request.getContentType();
                         if (mime != null && mime.toLowerCase(java.util.Locale.ROOT).contains("text/html")) throw new IOException("verification");
                         long length = request.getContentLengthLong();
-                        String name = URLUtil.guessFileName(next, request.getHeaderField("Content-Disposition"), mime);
+                        // A generic application/octet-stream must not make Android
+                        // rename a publisher's .epub attachment to .bin.
+                        String name = URLUtil.guessFileName(next, request.getHeaderField("Content-Disposition"), null);
                         if ("qdl".equals(publisher)) name = Uri.parse(next).getLastPathSegment();
                         final String bookMime = mime == null ? "application/octet-stream" : mime.split(";")[0].trim();
                         try (InputStream input = request.getInputStream()) {
