@@ -30,6 +30,8 @@ Browser tests cover each source’s download/import/offline-reopen path, Anna qu
 
 All three configured Anna domains were reported PROTECTED during the live monitor check. Completing its live challenge or successfully downloading an Anna book remains provider- and user-session-dependent. It is not a working anonymous Netlify search API. Unknown Unglue.it publisher hosts likewise require the ordinary browser/download/import route.
 
+The final production check downloaded complete EPUBs from all three catalogues through Netlify. Android opened each in MLibrary and reopened them with network access disabled. A real Faded Page browser download also handed its EPUB directly to the reader with title, author and source attribution preserved; generic download MIME types no longer overwrite the `.epub` extension. The native Anna search reached DDoS-Guard, and no Anna book download is claimed as verified. Open SLUM first returned an intermittent HTTP 403 and subsequently supplied live PROTECTED statuses; failures remain visible as unavailable. [Final validation and package hashes](validation-1.6.json).
+
 ## Publisher references
 
 - [Unglue.it API documentation](https://unglue.it/api/help): public OPDS/ONIX and work identifiers.

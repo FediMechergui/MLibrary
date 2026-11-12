@@ -1,0 +1,263 @@
+{
+  "checkedAt": "2026-11-12T18:33:45.364Z",
+  "androidBuildCommit": "035cb82e537fbaaf27bc7bbe760c86bf0f925b83",
+  "backendCommit": "035cb82e537fbaaf27bc7bbe760c86bf0f925b83",
+  "netlifyDeploy": "6af60343ca860ac9edb06e64",
+  "githubChecks": "https://github.com/FediMechergui/MLibrary/actions/runs/43278035181",
+  "tests": {
+    "backend": 64,
+    "browser": 45,
+    "nativeDownloadRules": 8,
+    "nativeVariants": [
+      "debug",
+      "release"
+    ]
+  },
+  "production": {
+    "checkedAt": "2026-11-12T18:26:05.464Z",
+    "health": {
+      "status": "ok",
+      "version": "1.6.0",
+      "time": "2026-11-12T18:26:06.099Z"
+    },
+    "sources": [
+      "unglue",
+      "fadedpage",
+      "globalgrey",
+      "annas",
+      "openiti",
+      "gutenberg",
+      "wikisource",
+      "openlibrary",
+      "archive",
+      "hindawi",
+      "gallica",
+      "standardebooks",
+      "doab",
+      "oapen",
+      "qdl"
+    ],
+    "catalogue": {
+      "updatedAt": "2026-11-12T17:32:25.499Z",
+      "sources": {
+        "fadedpage": {
+          "records": 9025,
+          "complete": true
+        },
+        "unglue": {
+          "records": 479,
+          "complete": false,
+          "nextPage": 81
+        },
+        "globalgrey": {
+          "records": 1653,
+          "pages": 78,
+          "complete": true
+        }
+      }
+    },
+    "checks": [
+      {
+        "source": "fadedpage",
+        "id": "20140519",
+        "searchMatches": 1,
+        "bytes": 374810,
+        "epub": true
+      },
+      {
+        "source": "globalgrey",
+        "id": "on-liberty",
+        "searchMatches": 1,
+        "bytes": 533451,
+        "epub": true
+      },
+      {
+        "source": "unglue",
+        "id": "140714",
+        "searchMatches": 1,
+        "bytes": 1298708,
+        "epub": true
+      }
+    ],
+    "monitor": {
+      "checkedAt": "2026-11-12T18:26:54.307Z",
+      "url": "https://open-slum.org/",
+      "domains": [
+        {
+          "domain": "annas-archive.gd",
+          "status": "PROTECTED"
+        },
+        {
+          "domain": "annas-archive.gl",
+          "status": "PROTECTED"
+        },
+        {
+          "domain": "annas-archive.pk",
+          "status": "PROTECTED"
+        }
+      ],
+      "note": "Availability reports do not prove books can be downloaded. PROTECTED means verification is required."
+    },
+    "monitorObservations": [
+      {
+        "domains": [
+          {
+            "domain": "annas-archive.gd",
+            "status": "UNKNOWN"
+          },
+          {
+            "domain": "annas-archive.gl",
+            "status": "UNKNOWN"
+          },
+          {
+            "domain": "annas-archive.pk",
+            "status": "UNKNOWN"
+          }
+        ],
+        "checkedAt": null,
+        "url": "https://open-slum.org/",
+        "stale": true,
+        "reason": "HTTP 403"
+      },
+      {
+        "checkedAt": "2026-11-12T18:26:54.307Z",
+        "url": "https://open-slum.org/",
+        "domains": [
+          {
+            "domain": "annas-archive.gd",
+            "status": "PROTECTED"
+          },
+          {
+            "domain": "annas-archive.gl",
+            "status": "PROTECTED"
+          },
+          {
+            "domain": "annas-archive.pk",
+            "status": "PROTECTED"
+          }
+        ],
+        "note": "Availability reports do not prove books can be downloaded. PROTECTED means verification is required."
+      }
+    ]
+  },
+  "native": {
+    "checkedAt": "2026-11-12T18:19:26.715Z",
+    "baselineBooks": 9,
+    "booksAfter": 10,
+    "oldBooksPreserved": true,
+    "oldMarksPreserved": true,
+    "publisherImport": {
+      "title": "Flatland--A Romance of Many Dimensions",
+      "authors": [
+        "Abbott, Edwin Abbott"
+      ],
+      "sourceUrl": "https://www.fadedpage.com/showbook.php?pid=20140519",
+      "offline": true,
+      "readerTextCharacters": 959
+    },
+    "annaBrowser": {
+      "url": "https://annas-archive.gd/search",
+      "title": "DDoS-Guard",
+      "bookLinks": 0,
+      "challenge": true
+    },
+    "directReader": [
+      {
+        "id": "globalgrey:on-liberty",
+        "title": "On Liberty",
+        "authors": [
+          "John Stuart Mill"
+        ],
+        "offline": true,
+        "reader": true
+      },
+      {
+        "id": "unglue:140714",
+        "title": "Le temps des loups. Mission canis lupus",
+        "authors": [
+          "Timberwolf"
+        ],
+        "offline": true,
+        "reader": true
+      }
+    ],
+    "offlineReopen": [
+      {
+        "title": "On Liberty",
+        "offline": true,
+        "readerTextCharacters": 146
+      },
+      {
+        "title": "Flatland--A Romance of Many Dimensions",
+        "offline": true,
+        "readerTextCharacters": 953
+      },
+      {
+        "title": "Le temps des loups. Mission canis lupus",
+        "offline": true,
+        "readerTextCharacters": 196
+      }
+    ],
+    "finalShelfCount": 12,
+    "offlineCheckedAt": "2026-11-12T18:30:32.185Z",
+    "unglueChapterTextCharacters": 4511
+  },
+  "android": {
+    "checkedAt": "2026-11-12T18:28:06.547Z",
+    "packages": [
+      {
+        "name": "MLibrary-1.6.0.apk",
+        "certificateSha256": "ec0ea947cf6c9f7ee98a11575fe41a055fe7ca96f41a20beba9a4647cf1585ef",
+        "version": "1.6.0",
+        "versionCode": 10,
+        "minSdk": 26,
+        "targetSdk": 36,
+        "debuggable": true
+      },
+      {
+        "name": "MLibrary-1.6.0-store.apk",
+        "certificateSha256": "cd2fcf85b90b1ec388f102a9e3309d351a6f0a52bd8a780f80adc0c5bf223ae4",
+        "version": "1.6.0",
+        "versionCode": 10,
+        "minSdk": 26,
+        "targetSdk": 36,
+        "debuggable": false
+      }
+    ],
+    "bundletool": "1.18.1",
+    "bundleValid": true,
+    "bundleCertificateSha256": "cd2fcf85b90b1ec388f102a9e3309d351a6f0a52bd8a780f80adc0c5bf223ae4"
+  },
+  "packageScan": {
+    "nativeLibraries": 0,
+    "credentialPatternMatches": 0,
+    "gallicaCorpusBundled": false
+  },
+  "packages": [
+    {
+      "name": "MLibrary-1.6.0.apk",
+      "bytes": 31735175,
+      "sha256": "1436516caa05cf5274424a4a4d705aac3d5280b4b741a04e2b8ef9fb634a09a2"
+    },
+    {
+      "name": "MLibrary-1.6.0-store.apk",
+      "bytes": 27578675,
+      "sha256": "1383f014fea3800b6ea2366e690e0ab6d4b1d8f8a55bc48a18552f6298a9432c"
+    },
+    {
+      "name": "MLibrary-1.6.0-store.aab",
+      "bytes": 27464479,
+      "sha256": "234c17693c5b49a7c38b477cc5ace24b6772ac4567534b007890d37b509d5375"
+    },
+    {
+      "name": "MLibrary-1.6.0-store-assets.zip",
+      "bytes": 681497,
+      "sha256": "9563508dd849880a4e183d40ba12e50541f7d1d69df8dc1798e543ff949cd687"
+    },
+    {
+      "name": "MLibrary-upload-certificate.pem",
+      "bytes": 1822,
+      "sha256": "da5a378cca29f7e36c57a85f1daa4f1232a73f3153609fc1d6cad0e8fe3d6e49"
+    }
+  ]
+}

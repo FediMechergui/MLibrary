@@ -6,11 +6,13 @@ Faded Page, Global Grey and Unglue.it now appear in catalogue search and source 
 - **Global Grey:** 1,653 English editions; original files, branding and credits retained.
 - **Unglue.it:** 479 English/French editions in a growing OPDS snapshot. The format-selection resolver recovers EPUB links omitted from individual-work feeds.
 - **Anna’s Archive:** language-aware browser search and download-to-reader handoff on Android. Provider verification and account requirements still apply; unknown download hosts use the external browser and Share/Open with MLibrary. On the web, download then import.
-- **Open SLUM:** a cached status view for the three configured Anna domains. PROTECTED is shown as verification required, without implying that the books are downloadable.
+- **Open SLUM:** a cached status view for the three configured Anna domains. PROTECTED is shown as verification required, without implying that the books are downloadable. Intermittent provider failures show status unavailable.
 
 The 11,157 records are source editions, with possible overlap with existing libraries. No Arabic editions were present in this initial candidate snapshot; existing Arabic catalogues remain available. Weekly metadata refresh extends Unglue.it incrementally and refreshes Faded Page and Global Grey. No bulk publisher book files are bundled or rehosted.
 
-The Android publisher browser keeps sessions on-device, uses fixed trusted hosts and imports completed files only. Existing books, highlights, quotes and progress remain compatible. New publisher downloads are limited to 50 MiB per file. [Implementation and live sample evidence](CANDIDATES-1.6.md).
+The Android publisher browser keeps sessions on-device, uses fixed trusted hosts and imports completed files only. Existing books, highlights, quotes and progress remain compatible. New publisher downloads are limited to 50 MiB per file. [Implementation and live sample evidence](https://github.com/FediMechergui/MLibrary/blob/main/docs/CANDIDATES-1.6.md).
+
+Validation: 64 backend tests, 45 browser tests and 8 native download-rule tests passed. Real files from all three catalogues were downloaded through production and opened in the Android reader; all three reopened with network access disabled. The in-place APK update preserved the emulator's nine existing books and saved notes. APK signatures, version code 10 and the signed AAB were verified. [Checks](https://github.com/FediMechergui/MLibrary/actions/runs/43278035181) · [Package and device evidence](https://github.com/FediMechergui/MLibrary/blob/main/docs/validation-1.6.json).
 
 ## Install
 
